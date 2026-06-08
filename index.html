@@ -596,7 +596,7 @@
       // Master timeline: Section 01 → Section 02
       var tl = gsap.timeline({
         paused: true,
-        defaults: { ease: 'power3.inOut' },
+        defaults: { ease: 'expo.inOut' },
         onComplete: function ()        { animating = false; },
         onReverseComplete: function () { animating = false; }
       });
@@ -604,14 +604,14 @@
       // 1 — Flynn exits upward: text first, then image chases up and dissolves.
       //     Total Flynn exit done by t≈0.7 so iPhone never collides.
       tl.to('.hero-title .line', {
-            yPercent: -130, opacity: 0, duration: 0.6,
-            ease: 'power3.in', stagger: 0.08
+            yPercent: -130, opacity: 0, duration: 0.55,
+            ease: 'expo.in', stagger: 0.08
           }, 0)
         .to('.hero-subtitle', {
-            y: -32, opacity: 0, duration: 0.38, ease: 'power2.in'
+            y: -32, opacity: 0, duration: 0.38, ease: 'expo.in'
           }, 0)
         .to('.image-block', {
-            y: -320, scale: 0.78, opacity: 0, duration: 0.72, ease: 'power3.in'
+            y: -320, scale: 0.78, opacity: 0, duration: 0.65, ease: 'expo.in'
           }, 0)
         .to('.image-mask', {
             opacity: 1, duration: 0.55, ease: 'power2.in'
@@ -620,13 +620,13 @@
       // 2 — iPhone enters only after Flynn has cleared the stage (offset 0.45).
       //     Rises from below viewport into exact centre, scaling up to 1.
         .to('.byond-phone', {
-            y: 0, scale: 1, opacity: 1, duration: 1.2, ease: 'power4.out'
+            y: 0, scale: 1, opacity: 1, duration: 1.05, ease: 'expo.out'
           }, 0.45)
 
       // 3 — BYOND copy lifts in with rapid stagger after iPhone settles
         .to('.byond-text .line', {
-            yPercent: 0, opacity: 1, duration: 0.85,
-            ease: 'expo.out', stagger: 0.08
+            yPercent: 0, opacity: 1, duration: 0.75,
+            ease: 'expo.out', stagger: 0.06
           }, 0.65)
 
       // 4 — Side indicator: number swaps + thumb / curve glide down
