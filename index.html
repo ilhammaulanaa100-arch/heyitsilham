@@ -189,6 +189,7 @@
       height: 437px;
       flex-shrink: 0;
       will-change: transform;
+      clip-path: inset(0 0 0% 0);
     }
 
     .image-bg {
@@ -204,15 +205,6 @@
       width: 400px;
       height: 370.558px;
       object-fit: cover;
-    }
-
-    /* White wash that dissolves the image into the background on exit */
-    .image-mask {
-      position: absolute;
-      inset: 0;
-      background: #fff;
-      opacity: 0;
-      pointer-events: none;
     }
 
     /* ── Slider area ────────────────────────────── */
@@ -394,7 +386,6 @@
             src="https://www.figma.com/api/mcp/asset/7a707c93-73ac-4cfd-9678-e4d28da1b16f"
             alt="Ilham"
           />
-          <div class="image-mask"></div>
         </div>
       </section>
     </div>
@@ -591,7 +582,7 @@
       // Initial (Section 02 hidden) states
       gsap.set('.byond-phone', { y: PHONE_START_Y, scale: 0.9, opacity: 0, transformOrigin: '50% 50%' });
       gsap.set('.byond-text .line', { yPercent: 120, opacity: 0 });
-      gsap.set('.image-block', { transformOrigin: '50% 50%' });
+
 
       // Master timeline: Section 01 → Section 02
       var tl = gsap.timeline({
@@ -611,10 +602,9 @@
             y: -32, opacity: 0, duration: 0.38, ease: 'expo.in'
           }, 0)
         .to('.image-block', {
-            y: -320, scale: 0.78, opacity: 0, duration: 0.65, ease: 'expo.in'
-          }, 0)
-        .to('.image-mask', {
-            opacity: 1, duration: 0.55, ease: 'power2.in'
+            clipPath: 'inset(0 0 100% 0)',
+            duration: 0.75,
+            ease: 'expo.in'
           }, 0)
 
       // 2 — iPhone enters only after Flynn has cleared the stage (offset 0.45).
