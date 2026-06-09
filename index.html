@@ -521,7 +521,7 @@
       // ── Per-section exit / enter ───────────────────────
       function heroExit(tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to('.hero-title .char', { yPercent: -50*d, opacity: 0, filter: 'blur(4px)', duration: 0.4, ease: 'expo.in', stagger: { each: 0.015, ease: 'power2.in', from: 'end' } }, at)
+        tl.to('.hero-title .char', { yPercent: 50*d, opacity: 0, filter: 'blur(4px)', duration: 0.5, ease: 'expo.in', stagger: { each: 0.015, ease: 'power2.in', from: 'end' } }, at)
           .to('.hero-subtitle',    { y: 32*d,         opacity: 0, duration: 0.38, ease: 'expo.in' }, at)
           .to('.image-block',      { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',       { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
@@ -533,7 +533,7 @@
         gsap.set('.image-block',      { y: 80*d, opacity: 0 });
         gsap.set('.image-mask',       { opacity: 0 });
         tl.to('.image-block',      { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
-          .to('.hero-title .char', { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'expo.out', stagger: { each: 0.022, ease: 'power2.out' } }, at + 0.08)
+          .to('.hero-title .char', { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, ease: 'expo.out', stagger: { each: 0.032, ease: 'power2.out' } }, at + 0.08)
           .to('.hero-subtitle',    { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, at + 0.12);
       }
 
