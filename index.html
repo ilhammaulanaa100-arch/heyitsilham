@@ -501,7 +501,7 @@
         var d = up ? -1 : 1;
         tl.to('.hero-title .char',    { yPercent: 45*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.012, ease: 'power1.in', from: 'end' } }, at)
           .to('.hero-subtitle .char', { yPercent: 45*d, opacity: 0, duration: 0.4, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
-          .to('.image-block',         { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
+          .to('.page-hero .image-block', { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.hero-peek',           { y: 120*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',          { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
       }
@@ -509,10 +509,10 @@
         var d = fromBelow ? 1 : -1;
         gsap.set('.hero-title .char',    { yPercent: 55*d, opacity: 0 });
         gsap.set('.hero-subtitle .char', { yPercent: 55*d, opacity: 0 });
-        gsap.set('.image-block',         { y: 80*d, opacity: 0 });
-        gsap.set('.hero-peek',           { y: 60*d, opacity: 0 });
-        gsap.set('.image-mask',          { opacity: 0 });
-        tl.to('.image-block',         { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
+        gsap.set('.page-hero .image-block', { y: 80*d, opacity: 0 });
+        gsap.set('.hero-peek',             { y: 60*d, opacity: 0 });
+        gsap.set('.image-mask',            { opacity: 0 });
+        tl.to('.page-hero .image-block', { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
           .to('.hero-peek',           { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
           .to('.hero-title .char',    { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.028, ease: 'power1.inOut' } }, at + 0.08)
           .to('.hero-subtitle .char', { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, ease: 'power1.inOut' } }, at + 0.18);
