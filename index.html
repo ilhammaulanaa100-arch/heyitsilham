@@ -88,6 +88,7 @@
       padding-block: 0.14em; margin-block: -0.14em;
     }
     .line-mask .line { display: block; white-space: nowrap; will-change: transform; }
+    .char { display: inline-block; will-change: transform, opacity, filter; }
 
     /* ── Image block (Hero) ── */
     .image-block {
@@ -357,6 +358,21 @@
     updateTime();
     setInterval(updateTime, 1000);
 
+    // ── Character split for hero title ────────────────────
+    function splitChars() {
+      document.querySelectorAll('.hero-title .line').forEach(function(line) {
+        var text = line.textContent;
+        line.textContent = '';
+        text.split('').forEach(function(ch) {
+          var s = document.createElement('span');
+          s.className = 'char';
+          s.textContent = ch === ' ' ? ' ' : ch;
+          line.appendChild(s);
+        });
+      });
+    }
+    splitChars();
+
     // ── Slider SVG ─────────────────────────────────────────
     var SVG_NS       = 'http://www.w3.org/2000/svg';
     var svgCurve     = document.getElementById('slider-curve');
@@ -505,19 +521,19 @@
       // ── Per-section exit / enter ───────────────────────
       function heroExit(tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to('.hero-title .line', { yPercent: 110*d, duration: 0.55, ease: 'expo.in', stagger: { each: 0.05, ease: 'power2.in' } }, at)
+        tl.to('.hero-title .char', { yPercent: -50*d, opacity: 0, filter: 'blur(4px)', duration: 0.4, ease: 'expo.in', stagger: { each: 0.015, ease: 'power2.in', from: 'end' } }, at)
           .to('.hero-subtitle',    { y: 32*d,         opacity: 0, duration: 0.38, ease: 'expo.in' }, at)
           .to('.image-block',      { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',       { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
       }
       function heroEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
-        gsap.set('.hero-title .line', { yPercent: 105*d });
+        gsap.set('.hero-title .char', { yPercent: 60*d, opacity: 0, filter: 'blur(6px)' });
         gsap.set('.hero-subtitle',    { y: 24*d, opacity: 0 });
         gsap.set('.image-block',      { y: 80*d, opacity: 0 });
         gsap.set('.image-mask',       { opacity: 0 });
         tl.to('.image-block',      { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
-          .to('.hero-title .line', { yPercent: 0, duration: 0.85, ease: 'expo.out', stagger: { each: 0.08, ease: 'power2.inOut' } }, at + 0.08)
+          .to('.hero-title .char', { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, ease: 'expo.out', stagger: { each: 0.022, ease: 'power2.out' } }, at + 0.08)
           .to('.hero-subtitle',    { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, at + 0.12);
       }
 
