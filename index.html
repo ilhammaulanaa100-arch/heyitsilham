@@ -394,9 +394,9 @@
     function renderSlider(apexY, vel) {
       var r = LINE_REST_X;
       var speed = Math.min(Math.abs(vel) / 16, 1);      // 0…1 normalised speed
-      var BULGE = 1 + speed * 0.85;                      // sideways swell
-      var lead  = 1 + speed * 0.35;                      // leading tail (short)
-      var trail = 1 + speed * 1.70;                      // trailing tail (long)
+      var BULGE = 1 + speed * 0.65;                      // sideways swell
+      var lead  = 1 + speed * 0.30;                      // leading tail (short)
+      var trail = 1 + speed * 1.30;                      // trailing tail (long)
       var SUP = vel > 0 ? trail : lead;                  // moving down → top trails
       var SDN = vel > 0 ? lead  : trail;
       var bx = 17.970 * BULGE;
@@ -431,8 +431,8 @@
     var dragVel     = 0;
     var dragging    = false;
 
-    var APEX_STIFF = 0.14, APEX_DAMP = 0.76;   // underdamped → liquid bounce
-    var DRAG_STIFF = 0.18, DRAG_DAMP = 0.70;   // springy release
+    var APEX_STIFF = 0.16, APEX_DAMP = 0.66;   // lightly damped → subtle settle
+    var DRAG_STIFF = 0.18, DRAG_DAMP = 0.60;   // gentle snap-back
 
     function animateSlider() {
       // When released, the thumb springs back to its section anchor with a bounce.
@@ -577,7 +577,7 @@
         // Slider thumb glides to the new section with an elastic overshoot;
         // animateSlider() reads sliderState.top each frame and the curve
         // springs along behind it. (Curve/thumb position now live in the rAF loop.)
-        tl.to(sliderState, { top: thumbY(current), duration: 0.8, ease: 'back.out(1.5)' }, 0);
+        tl.to(sliderState, { top: thumbY(current), duration: 0.7, ease: 'back.out(1.1)' }, 0);
 
         // Number counter fade-swap
         var numStr   = String(current + 1).padStart(2, '0');
@@ -609,13 +609,13 @@
       // Pull the thumb and the curve stretches elastically after it; release
       // past the trigger to commit a section change, otherwise it snaps back.
       var dragStartY = null, dragRaw = 0;
-      var DRAG_TRIGGER = 46;   // px past which the gesture commits
-      var DRAG_LIMIT   = 80;   // elastic ceiling — resistance grows toward this
+      var DRAG_STEP  = 52;   // drag distance that advances one point
+      var DRAG_LIMIT = 60;   // elastic ceiling between points
 
-      // Asymptotic rubber-band: thumb follows the finger but never runs away.
+      // Asymptotic rubber-band: thumb follows the finger but resists past a point.
       function rubber(d) {
         var s = d < 0 ? -1 : 1, ad = Math.abs(d);
-        return s * DRAG_LIMIT * (1 - 1 / (ad / DRAG_LIMIT * 0.6 + 1));
+        return s * DRAG_LIMIT * (1 - 1 / (ad / DRAG_LIMIT * 0.7 + 1));
       }
 
       controlsEl.addEventListener('pointerdown', function (e) {
@@ -629,16 +629,20 @@
       controlsEl.addEventListener('pointermove', function (e) {
         if (dragStartY === null) return;
         dragRaw = e.clientY - dragStartY;
-        dragOffset = rubber(dragRaw);     // the rAF loop renders the stretch
+        dragOffset = rubber(dragRaw);     // elastic pull toward the next point
+
+        // Ratchet point-by-point: each full step snaps to the next section
+        // anchor, then re-baselines so the next step advances again.
+        if (!animating) {
+          if (dragRaw >= DRAG_STEP)       { go(1);  dragStartY = e.clientY; dragRaw = 0; dragOffset = 0; }
+          else if (dragRaw <= -DRAG_STEP) { go(-1); dragStartY = e.clientY; dragRaw = 0; dragOffset = 0; }
+        }
       });
       function endDrag() {
         if (dragStartY === null) return;
-        var raw = dragRaw;
         dragStartY = null;
-        dragging = false;                 // hands dragOffset back to the spring
+        dragging = false;                 // dragOffset springs back to the point
         controlsEl.classList.remove('is-dragging');
-        if (raw > DRAG_TRIGGER)       go(1);
-        else if (raw < -DRAG_TRIGGER) go(-1);
       }
       controlsEl.addEventListener('pointerup',     endDrag);
       controlsEl.addEventListener('pointercancel', endDrag);
