@@ -56,6 +56,16 @@
     }
     .hero-peek-bottom img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
+    /* ── Ellipse overlay (Figma: elipse overlay 61:6389) ──
+       Radial vignette to white over the 1440x900 canvas — sits above the
+       images/peeks but below the hero text (z:4) and chrome. */
+    .ellipse-overlay {
+      position: absolute; inset: 0; z-index: 3; pointer-events: none;
+      background: radial-gradient(circle 720px at 50% 50%,
+        rgba(255,255,255,0) 40%,
+        #fff 65.09%);
+    }
+
     /* ── Navbar ── */
     .navbar {
       position: fixed; top: 0; left: 0; right: 0;
@@ -85,7 +95,7 @@
     .hero-text {
       position: absolute; left: 56px; top: 316px; height: 270px;
       display: flex; flex-direction: column; gap: 8px; justify-content: center;
-      width: 480px; padding: 8px 0;
+      width: 480px; padding: 8px 0; z-index: 4;
     }
     .hero-subtitle {
       font-family: 'Recoleta', Georgia, serif; font-weight: 300;
@@ -254,6 +264,8 @@
       <div class="hero-peek hero-peek-bottom">
         <img src="assets/images/phone-byond.png" alt="" />
       </div>
+      <!-- Ellipse overlay (Figma: elipse overlay) — vignette over images/peeks -->
+      <div class="ellipse-overlay"></div>
     </div>
   </div>
 
