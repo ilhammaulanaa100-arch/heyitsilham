@@ -25,7 +25,7 @@
     body { background: #fff; overflow: hidden; }
 
     .porto { position: fixed; inset: 0; overflow: hidden; background: #fff; }
-    .page-section { position: absolute; inset: 0; }
+    .page-section { position: absolute; inset: 0; pointer-events: none; }
 
     .section-inner {
       position: absolute;
@@ -540,7 +540,7 @@
         current     = (current + dir + TOTAL) % TOTAL;
         var forward = dir > 0;
 
-        var tl = gsap.timeline({ onComplete: function () { animating = false; } });
+        var tl = gsap.timeline({ onComplete: function () { animating = false; syncClickable(); } });
         doExit(prev, tl, 0, forward);
         doEnter(current, tl, 0.2, forward);
 
@@ -597,29 +597,37 @@
       controlsEl.addEventListener('pointercancel', endDrag);
 
       // ── Image click → case study ───────────────────────
-      function exitToProject(idx) {
-        gsap.to('.porto', {
-          opacity: 0, duration: 0.35, ease: 'power2.in',
-          onComplete: function() {
-            window.location.href = 'case-study.html?p=' + (idx + 1);
-          }
-        });
-      }
-
-      var clickTargets = [
-        { el: document.querySelector('.image-block'), idx: 0 },
-        { el: document.querySelector('.byond-phone'),  idx: 1 }
+      // page-section has pointer-events:none (CSS), so only the element we
+      // explicitly mark 'auto' can receive clicks — preventing the topmost
+      // stacked section from swallowing events meant for the active one.
+      var imgEls = [
+        document.querySelector('.image-block'),
+        document.querySelector('.byond-phone')
       ];
-      placeholders.forEach(function(ph, i) {
-        var img = ph.querySelector('.ph-image');
-        if (img) clickTargets.push({ el: img, idx: i + 2 });
+      placeholders.forEach(function(ph) {
+        imgEls.push(ph ? ph.querySelector('.ph-image') : null);
       });
-      clickTargets.forEach(function(item) {
-        if (!item.el) return;
-        item.el.style.cursor = 'pointer';
-        item.el.addEventListener('click', function() {
-          if (animating || current !== item.idx) return;
-          exitToProject(item.idx);
+
+      var syncClickable = function() {
+        imgEls.forEach(function(el, idx) {
+          if (!el) return;
+          var on = (idx === current);
+          el.style.pointerEvents = on ? 'auto' : 'none';
+          el.style.cursor        = on ? 'pointer' : 'default';
+        });
+      };
+      syncClickable();
+
+      imgEls.forEach(function(el, idx) {
+        if (!el) return;
+        el.addEventListener('click', function() {
+          if (animating) return;
+          gsap.to('.porto', {
+            opacity: 0, duration: 0.35, ease: 'power2.in',
+            onComplete: function() {
+              window.location.href = 'case-study.html?p=' + (idx + 1);
+            }
+          });
         });
       });
 
