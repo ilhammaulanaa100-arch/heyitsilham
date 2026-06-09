@@ -505,33 +505,33 @@
       // ── Per-section exit / enter ───────────────────────
       function heroExit(tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to('.hero-title .line', { yPercent: 130*d, opacity: 0, duration: 0.5, ease: 'expo.in', stagger: { each: 0.06, ease: 'power2.in' } }, at)
+        tl.to('.hero-title .line', { yPercent: -110*d, duration: 0.55, ease: 'expo.in', stagger: { each: 0.05, ease: 'power2.in' } }, at)
           .to('.hero-subtitle',    { y: 32*d,         opacity: 0, duration: 0.38, ease: 'expo.in' }, at)
           .to('.image-block',      { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',       { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
       }
       function heroEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
-        gsap.set('.hero-title .line', { yPercent: 110*d, opacity: 0 });
+        gsap.set('.hero-title .line', { yPercent: 105*d });
         gsap.set('.hero-subtitle',    { y: 24*d, opacity: 0 });
         gsap.set('.image-block',      { y: 80*d, opacity: 0 });
         gsap.set('.image-mask',       { opacity: 0 });
         tl.to('.image-block',      { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
-          .to('.hero-title .line', { yPercent: 0, opacity: 1, duration: 0.75, ease: 'expo.out', stagger: { each: 0.07, ease: 'power3.out' } }, at + 0.1)
+          .to('.hero-title .line', { yPercent: 0, duration: 0.85, ease: 'expo.out', stagger: { each: 0.08, ease: 'power2.inOut' } }, at + 0.08)
           .to('.hero-subtitle',    { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, at + 0.12);
       }
 
       function byondExit(tl, at, up) {
         var d = up ? -1 : 1;
         tl.to('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0, duration: 0.65, ease: 'expo.in' }, at)
-          .to('.byond-text .line', { yPercent: 120*d, opacity: 0, duration: 0.5, ease: 'expo.in', stagger: 0.05 }, at);
+          .to('.byond-text .line', { yPercent: -110*d, duration: 0.55, ease: 'expo.in', stagger: { each: 0.05, ease: 'power2.in' } }, at);
       }
       function byondEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
         gsap.set('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0 });
-        gsap.set('.byond-text .line', { yPercent: 120*d, opacity: 0 });
+        gsap.set('.byond-text .line', { yPercent: 105*d });
         tl.to('.byond-phone',      { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
-          .to('.byond-text .line', { yPercent: 0, opacity: 1, duration: 0.75, ease: 'expo.out', stagger: { each: 0.07, ease: 'power3.out' } }, at + 0.35);
+          .to('.byond-text .line', { yPercent: 0, duration: 0.85, ease: 'expo.out', stagger: { each: 0.08, ease: 'power2.inOut' } }, at + 0.35);
       }
 
       function phExit(ph, tl, at, up) {
