@@ -57,20 +57,23 @@
     .hero-peek-bottom img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
     /* ── Ellipse overlay (Figma: elipse overlay 61:6389) ──
-       Radial vignette to white over the 1440x900 canvas — sits above the
-       images/peeks but below the hero text (z:4) and chrome. */
+       Radial vignette to white. Sits above images/peeks (z:2) but below
+       hero text (z:4). Uses ellipse sized to container so it reaches all 4 edges. */
     .ellipse-overlay {
       position: absolute; inset: 0; z-index: 3; pointer-events: none;
-      background: radial-gradient(circle 720px at 50% 50%,
-        rgba(255,255,255,0) 40%,
-        #fff 65.09%);
+      background: radial-gradient(ellipse 65% 65% at 50% 50%,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0) 30%,
+        rgba(255,255,255,0.55) 58%,
+        rgba(255,255,255,0.92) 78%,
+        #fff 92%);
     }
 
     /* ── Navbar ── */
     .navbar {
       position: fixed; top: 0; left: 0; right: 0;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 24px 56px; backdrop-filter: blur(6px); z-index: 1000;
+      padding: 24px 56px; z-index: 1000;
     }
     .logo { position: relative; width: 72px; height: 58px; flex-shrink: 0; }
     .logo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
