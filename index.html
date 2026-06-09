@@ -505,7 +505,7 @@
       // ── Per-section exit / enter ───────────────────────
       function heroExit(tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to('.hero-title .line', { yPercent: 130*d, opacity: 0, duration: 0.55, ease: 'expo.in', stagger: 0.08 }, at)
+        tl.to('.hero-title .line', { yPercent: 130*d, opacity: 0, duration: 0.5, ease: 'expo.in', stagger: { each: 0.06, ease: 'power2.in' } }, at)
           .to('.hero-subtitle',    { y: 32*d,         opacity: 0, duration: 0.38, ease: 'expo.in' }, at)
           .to('.image-block',      { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',       { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
@@ -517,7 +517,7 @@
         gsap.set('.image-block',      { y: 80*d, opacity: 0 });
         gsap.set('.image-mask',       { opacity: 0 });
         tl.to('.image-block',      { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
-          .to('.hero-title .line', { yPercent: 0, opacity: 1, duration: 0.7, ease: 'expo.out', stagger: 0.08 }, at + 0.1)
+          .to('.hero-title .line', { yPercent: 0, opacity: 1, duration: 0.75, ease: 'expo.out', stagger: { each: 0.07, ease: 'power3.out' } }, at + 0.1)
           .to('.hero-subtitle',    { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, at + 0.12);
       }
 
@@ -531,7 +531,7 @@
         gsap.set('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0 });
         gsap.set('.byond-text .line', { yPercent: 120*d, opacity: 0 });
         tl.to('.byond-phone',      { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
-          .to('.byond-text .line', { yPercent: 0, opacity: 1, duration: 0.75, ease: 'expo.out', stagger: 0.06 }, at + 0.35);
+          .to('.byond-text .line', { yPercent: 0, opacity: 1, duration: 0.75, ease: 'expo.out', stagger: { each: 0.07, ease: 'power3.out' } }, at + 0.35);
       }
 
       function phExit(ph, tl, at, up) {
