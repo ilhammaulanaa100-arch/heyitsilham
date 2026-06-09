@@ -105,6 +105,22 @@
       opacity: 0; pointer-events: none;
     }
 
+    /* ── Camera viewfinder brackets (from Figma 55:5795) ── */
+    .viewfinder {
+      position: absolute; inset: 0;
+      display: inline-block;
+      pointer-events: none;
+    }
+    .viewfinder span {
+      position: absolute;
+      width: 24px; height: 24px;
+      border: 0 solid #FF3ECF;
+    }
+    .vf-tl { top: -16px;    left: -16px;  border-top-width: 6px;    border-left-width: 6px;   border-top-left-radius: 2px; }
+    .vf-tr { top: -16px;    right: -16px; border-top-width: 6px;    border-right-width: 6px;  border-top-right-radius: 2px; }
+    .vf-bl { bottom: -16px; left: -16px;  border-bottom-width: 6px; border-left-width: 6px;   border-bottom-left-radius: 2px; }
+    .vf-br { bottom: -16px; right: -16px; border-bottom-width: 6px; border-right-width: 6px;  border-bottom-right-radius: 2px; }
+
     /* ── Slider ── */
     .slider-area {
       position: fixed; right: 0; top: 0;
@@ -211,6 +227,12 @@
           <img class="image-photo"
             src="assets/images/image-placeholder.png"
             alt="Ilham" />
+          <div class="viewfinder">
+            <span class="vf-tl"></span>
+            <span class="vf-tr"></span>
+            <span class="vf-bl"></span>
+            <span class="vf-br"></span>
+          </div>
           <div class="image-mask"></div>
         </div>
       </section>
