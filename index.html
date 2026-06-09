@@ -47,6 +47,31 @@
 
     /* ── Neighbouring section previews (hero first fold) ── */
     .hero-peek { position: absolute; z-index: 2; will-change: transform, opacity; }
+
+    /* ── Neighbouring section previews (BYOND fold) ── */
+    .byond-peek {
+      position: absolute;
+      left: 508px;
+      width: 424px;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+    .byond-peek-top {
+      height: 160px;
+      top: -160px;
+    }
+    .byond-peek-top img {
+      width: 100%; height: 460px;
+      object-fit: cover; object-position: top;
+      display: block;
+    }
+    .byond-peek-bottom {
+      height: 160px;
+      bottom: -160px;
+      background: linear-gradient(160deg, #e05c45, #a03020);
+    }
     .hero-peek-top {
       left: 523px; top: -285px; width: 406px; height: 460px;
       background: #732323;
@@ -282,6 +307,10 @@
       <div class="byond-phone">
         <img src="assets/images/phone-byond.png" alt="BYOND by BSI app" />
       </div>
+      <div class="byond-peek byond-peek-top">
+        <img src="assets/images/image-placeholder.png" alt="" />
+      </div>
+      <div class="byond-peek byond-peek-bottom"></div>
     </div>
   </div>
 
@@ -521,14 +550,17 @@
       function byondExit(tl, at, up) {
         var d = up ? -1 : 1;
         tl.to('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0, duration: 0.65, ease: 'expo.in' }, at)
-          .to('.byond-text .char', { yPercent: 110*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at);
+          .to('.byond-text .char', { yPercent: 110*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
+          .to('.byond-peek',       { y: 120*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at);
       }
       function byondEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
         gsap.set('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0 });
         gsap.set('.byond-text .line', { opacity: 1 });
         gsap.set('.byond-text .char', { yPercent: 110*d, opacity: 0 });
+        gsap.set('.byond-peek',       { y: 60*d, opacity: 0 });
         tl.to('.byond-phone',      { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
+          .to('.byond-peek',       { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
           .to('.byond-text .char', { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.018, ease: 'power1.inOut' } }, at + 0.3);
       }
 
