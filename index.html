@@ -49,28 +49,32 @@
     .hero-peek { position: absolute; z-index: 2; will-change: transform, opacity; }
 
     /* ── Neighbouring section previews (BYOND fold) ── */
+    /* Figma: top=66:6883 x=523 y=-284 424×460, bottom=61:5837 x=452 y=783 548×456 */
     .byond-peek {
       position: absolute;
-      left: 508px;
-      width: 424px;
       overflow: hidden;
       pointer-events: none;
-      /* opacity controlled by GSAP */
       will-change: transform, opacity;
     }
     .byond-peek-top {
-      height: 160px;
-      top: -160px;
+      left: 523px; top: -284px;
+      width: 424px; height: 460px;
+    }
+    /* Replicates hero image-block — purple bg + photo at same offsets */
+    .byond-peek-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, #9f4bed, #7b49a9);
     }
     .byond-peek-top img {
-      width: 100%; height: 460px;
-      object-fit: cover; object-position: top;
-      display: block;
+      position: absolute;
+      top: 77px; left: 11px;
+      width: 413px; height: 383px;
+      object-fit: cover; display: block;
     }
     .byond-peek-bottom {
-      height: 160px;
-      bottom: -160px;
-      background: linear-gradient(160deg, #e05c45, #a03020);
+      left: 452px; top: 783px;
+      width: 548px; height: 456px;
+      background: #2DB6C0;
     }
     .hero-peek-top {
       left: 523px; top: -285px; width: 406px; height: 460px;
@@ -308,6 +312,7 @@
         <img src="assets/images/phone-byond.png" alt="BYOND by BSI app" />
       </div>
       <div class="byond-peek byond-peek-top">
+        <div class="byond-peek-bg"></div>
         <img src="assets/images/image-placeholder.png" alt="" />
       </div>
       <div class="byond-peek byond-peek-bottom"></div>
