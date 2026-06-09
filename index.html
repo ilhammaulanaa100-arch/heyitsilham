@@ -360,14 +360,23 @@
 
     // ── Character split for hero title ────────────────────
     function splitChars() {
-      document.querySelectorAll('.hero-title .line').forEach(function(line) {
-        var text = line.textContent;
-        line.textContent = '';
-        text.split('').forEach(function(ch) {
-          var s = document.createElement('span');
-          s.className = 'char';
-          s.textContent = ch === ' ' ? ' ' : ch;
-          line.appendChild(s);
+      var sels = [
+        '.hero-title .line',
+        '.hero-subtitle',
+        '.byond-text .line',
+        '.ph-label',
+        '.ph-title .line'
+      ];
+      sels.forEach(function(sel) {
+        document.querySelectorAll(sel).forEach(function(el) {
+          var text = el.textContent;
+          el.textContent = '';
+          text.split('').forEach(function(ch) {
+            var s = document.createElement('span');
+            s.className = 'char';
+            s.textContent = ch === ' ' ? ' ' : ch;
+            el.appendChild(s);
+          });
         });
       });
     }
@@ -505,12 +514,13 @@
 
       // ── Initial hidden states ──
       gsap.set('.byond-phone',      { y: 160, scale: 0.9, opacity: 0 });
-      gsap.set('.byond-text .line', { yPercent: 120, opacity: 0 });
+      gsap.set('.byond-text .char', { yPercent: 120, opacity: 0 });
       gsap.set('.image-block',      { transformOrigin: '50% 50%' });
 
       var placeholders = document.querySelectorAll('.page-placeholder');
       placeholders.forEach(function(ph) {
-        gsap.set(ph.querySelectorAll('.ph-label, .ph-title .line'), { opacity: 0, yPercent: 110 });
+        gsap.set(ph.querySelectorAll('.ph-label, .ph-title .line'), { opacity: 1 });
+        gsap.set(ph.querySelectorAll('.ph-label .char, .ph-title .char'), { opacity: 0, yPercent: 110 });
         gsap.set(ph.querySelector('.ph-image'), { opacity: 0, y: 60, scale: 0.95 });
       });
 
@@ -521,50 +531,52 @@
       // ── Per-section exit / enter ───────────────────────
       function heroExit(tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to('.hero-title .char', { yPercent: 45*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.012, ease: 'power1.in', from: 'end' } }, at)
-          .to('.hero-subtitle',    { y: 32*d,         opacity: 0, duration: 0.38, ease: 'expo.in' }, at)
-          .to('.image-block',      { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
-          .to('.image-mask',       { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
+        tl.to('.hero-title .char',    { yPercent: 45*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.012, ease: 'power1.in', from: 'end' } }, at)
+          .to('.hero-subtitle .char', { yPercent: 45*d, opacity: 0, duration: 0.4, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
+          .to('.image-block',         { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
+          .to('.image-mask',          { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
       }
       function heroEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
-        gsap.set('.hero-title .char', { yPercent: 55*d, opacity: 0 });
-        gsap.set('.hero-subtitle',    { y: 24*d, opacity: 0 });
-        gsap.set('.image-block',      { y: 80*d, opacity: 0 });
-        gsap.set('.image-mask',       { opacity: 0 });
-        tl.to('.image-block',      { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
-          .to('.hero-title .char', { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.028, ease: 'power1.inOut' } }, at + 0.08)
-          .to('.hero-subtitle',    { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, at + 0.12);
+        gsap.set('.hero-title .char',    { yPercent: 55*d, opacity: 0 });
+        gsap.set('.hero-subtitle .char', { yPercent: 55*d, opacity: 0 });
+        gsap.set('.image-block',         { y: 80*d, opacity: 0 });
+        gsap.set('.image-mask',          { opacity: 0 });
+        tl.to('.image-block',         { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
+          .to('.hero-title .char',    { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.028, ease: 'power1.inOut' } }, at + 0.08)
+          .to('.hero-subtitle .char', { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, ease: 'power1.inOut' } }, at + 0.18);
       }
 
       function byondExit(tl, at, up) {
         var d = up ? -1 : 1;
         tl.to('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0, duration: 0.65, ease: 'expo.in' }, at)
-          .to('.byond-text .line', { yPercent: 110*d, duration: 0.55, ease: 'expo.in', stagger: { each: 0.05, ease: 'power2.in' } }, at);
+          .to('.byond-text .char', { yPercent: 110*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at);
       }
       function byondEnter(tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
         gsap.set('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0 });
-        gsap.set('.byond-text .line', { yPercent: 105*d });
+        gsap.set('.byond-text .line', { opacity: 1 });
+        gsap.set('.byond-text .char', { yPercent: 110*d, opacity: 0 });
         tl.to('.byond-phone',      { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
-          .to('.byond-text .line', { yPercent: 0, opacity: 1, duration: 0.85, ease: 'expo.out', stagger: { each: 0.08, ease: 'power2.inOut' } }, at + 0.35);
+          .to('.byond-text .char', { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.018, ease: 'power1.inOut' } }, at + 0.3);
       }
 
       function phExit(ph, tl, at, up) {
         var d = up ? -1 : 1;
-        tl.to(ph.querySelectorAll('.ph-label, .ph-title .line'),
-              { yPercent: 110*d, opacity: 0, duration: 0.5, ease: 'expo.in', stagger: 0.05 }, at)
+        tl.to(ph.querySelectorAll('.ph-label .char, .ph-title .char'),
+              { yPercent: 110*d, opacity: 0, duration: 0.4, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
           .to(ph.querySelector('.ph-image'),
               { y: 60*d, scale: 0.88, opacity: 0, duration: 0.55, ease: 'expo.in' }, at);
       }
       function phEnter(ph, tl, at, fromBelow) {
         var d = fromBelow ? 1 : -1;
-        gsap.set(ph.querySelectorAll('.ph-label, .ph-title .line'), { yPercent: 110*d, opacity: 0 });
-        gsap.set(ph.querySelector('.ph-image'),                      { y: 60*d, scale: 0.95, opacity: 0 });
+        gsap.set(ph.querySelectorAll('.ph-label, .ph-title .line'),      { opacity: 1 });
+        gsap.set(ph.querySelectorAll('.ph-label .char, .ph-title .char'), { yPercent: 110*d, opacity: 0 });
+        gsap.set(ph.querySelector('.ph-image'),                           { y: 60*d, scale: 0.95, opacity: 0 });
         tl.to(ph.querySelector('.ph-image'),
               { y: 0, scale: 1, opacity: 1, duration: 0.85, ease: 'expo.out' }, at)
-          .to(ph.querySelectorAll('.ph-label, .ph-title .line'),
-              { yPercent: 0, opacity: 1, duration: 0.7, ease: 'expo.out', stagger: 0.06 }, at + 0.1);
+          .to(ph.querySelectorAll('.ph-label .char, .ph-title .char'),
+              { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.018, ease: 'power1.inOut' } }, at + 0.1);
       }
 
       function doExit(idx, tl, at, forward) {
