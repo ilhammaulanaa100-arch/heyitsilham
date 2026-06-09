@@ -55,7 +55,7 @@
       width: 424px;
       overflow: hidden;
       pointer-events: none;
-      opacity: 0;
+      /* opacity controlled by GSAP */
       will-change: transform, opacity;
     }
     .byond-peek-top {
@@ -517,6 +517,7 @@
       gsap.set('.byond-phone',      { y: 160, scale: 0.9, opacity: 0 });
       gsap.set('.byond-text .char', { yPercent: 120, opacity: 0 });
       gsap.set('.image-block',      { transformOrigin: '50% 50%' });
+      gsap.set('.byond-peek',       { opacity: 0 });
 
       var placeholders = document.querySelectorAll('.page-placeholder');
       placeholders.forEach(function(ph) {
