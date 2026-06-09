@@ -57,8 +57,9 @@
       will-change: transform, opacity;
     }
     .byond-peek-top {
-      left: 523px; top: -284px;
+      left: 523px; top: -172px;
       width: 424px; height: 460px;
+      transform: scale(0.7); transform-origin: 50% 0%;
     }
     /* Replicates hero image-block — purple bg + photo at same offsets */
     .byond-peek-bg {
@@ -72,9 +73,10 @@
       object-fit: cover; display: block;
     }
     .byond-peek-bottom {
-      left: 452px; top: 783px;
+      left: 452px; top: 816px;
       width: 548px; height: 456px;
       background: #2DB6C0;
+      transform: scale(0.7); transform-origin: 50% 100%;
     }
     .hero-peek-top {
       left: 523px; top: -285px; width: 406px; height: 460px;
@@ -519,10 +521,12 @@
       var animating = false;
 
       // ── Initial hidden states ──
-      gsap.set('.byond-phone',      { y: 160, scale: 0.9, opacity: 0 });
-      gsap.set('.byond-text .char', { yPercent: 120, opacity: 0 });
-      gsap.set('.image-block',      { transformOrigin: '50% 50%' });
-      gsap.set('.byond-peek',       { opacity: 0 });
+      gsap.set('.byond-phone',             { y: 160, scale: 0.9, opacity: 0 });
+      gsap.set('.byond-text .char',        { yPercent: 120, opacity: 0 });
+      gsap.set('.page-hero .image-block',  { y: 0, scale: 1, opacity: 1, transformOrigin: '50% 50%' });
+      gsap.set('.hero-peek',               { opacity: 0 });
+      gsap.set('.byond-peek-top',          { opacity: 0 });
+      gsap.set('.byond-peek-bottom',       { opacity: 0 });
 
       var placeholders = document.querySelectorAll('.page-placeholder');
       placeholders.forEach(function(ph) {
@@ -536,12 +540,15 @@
         var d = forward ? 1 : -1;
         tl.to('.hero-title .char',    { yPercent: 45*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.012, ease: 'power1.in', from: 'end' } }, at)
           .to('.hero-subtitle .char', { yPercent: 45*d, opacity: 0, duration: 0.4, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
-          .to('.page-hero .image-block', { y: 280*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
+          .to('.page-hero .image-block', forward
+            ? { y: -120, scale: 0.82, opacity: 0, duration: 0.6, ease: 'power2.in' }
+            : { y: 200,  scale: 1.05, opacity: 0, duration: 0.6, ease: 'expo.in'   }, at)
           .to('.hero-peek',           { y: 120*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
           .to('.image-mask',          { opacity: 1, duration: 0.55, ease: 'power2.in' }, at);
       }
       function heroEnter(tl, at, fromBelow) {
-        tl.to('.page-hero .image-block', { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at)
+        tl.to('.page-hero .image-block', { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at)
+          .to('.image-mask',             { opacity: 0, duration: 0.3, ease: 'power2.out' }, at)
           .to('.hero-peek',           { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
           .to('.hero-title .char',    { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.028, ease: 'power1.inOut' } }, at + 0.08)
           .to('.hero-subtitle .char', { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, ease: 'power1.inOut' } }, at + 0.18);
@@ -549,14 +556,16 @@
 
       function byondExit(tl, at, forward) {
         var d = forward ? 1 : -1;
-        tl.to('.byond-phone',      { y: 160*d, scale: 0.9, opacity: 0, duration: 0.65, ease: 'expo.in' }, at)
-          .to('.byond-text .char', { yPercent: 110*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
-          .to('.byond-peek',       { y: 120*d, opacity: 0, duration: 0.5, ease: 'expo.in' }, at);
+        tl.to('.byond-phone',       { y: 160*d, scale: 0.9, opacity: 0, duration: 0.65, ease: 'expo.in' }, at)
+          .to('.byond-text .char',  { yPercent: 110*d, opacity: 0, duration: 0.45, ease: 'power3.in', stagger: { each: 0.01, ease: 'power1.in', from: 'end' } }, at)
+          .to('.byond-peek-top',    { y: forward ? -60 : 60,  opacity: 0, duration: 0.5, ease: 'expo.in' }, at)
+          .to('.byond-peek-bottom', { y: forward ?  60 : -60, opacity: 0, duration: 0.5, ease: 'expo.in' }, at);
       }
       function byondEnter(tl, at, fromBelow) {
-        tl.to('.byond-phone',      { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
-          .to('.byond-peek',       { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
-          .to('.byond-text .char', { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.018, ease: 'power1.inOut' } }, at + 0.3);
+        tl.to('.byond-phone',       { y: 0, scale: 1, opacity: 1, duration: 0.95, ease: 'expo.out' }, at + 0.15)
+          .to('.byond-peek-top',    { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
+          .to('.byond-peek-bottom', { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, at + 0.05)
+          .to('.byond-text .char',  { yPercent: 0, opacity: 1, duration: 0.85, ease: 'power3.out', stagger: { each: 0.018, ease: 'power1.inOut' } }, at + 0.3);
       }
 
       function phExit(ph, tl, at, up) {
@@ -597,15 +606,16 @@
           var dHero = forward ? 1 : -1;
           gsap.set('.hero-title .char',       { yPercent: 55*dHero, opacity: 0 });
           gsap.set('.hero-subtitle .char',    { yPercent: 55*dHero, opacity: 0 });
-          gsap.set('.page-hero .image-block', { y: 80*dHero, opacity: 0 });
+          gsap.set('.page-hero .image-block', { y: forward ? -100 : 120, scale: forward ? 0.85 : 1.05, opacity: 0 });
           gsap.set('.hero-peek',              { y: 60*dHero, opacity: 0 });
           gsap.set('.image-mask',             { opacity: 0 });
         } else if (current === 1) {
           var dByond = forward ? 1 : -1;
-          gsap.set('.byond-phone',      { y: 160*dByond, scale: 0.9, opacity: 0 });
-          gsap.set('.byond-text .line', { opacity: 1 });
-          gsap.set('.byond-text .char', { yPercent: 110*dByond, opacity: 0 });
-          gsap.set('.byond-peek',       { y: 60*dByond, opacity: 0 });
+          gsap.set('.byond-phone',       { y: 160*dByond, scale: 0.9, opacity: 0 });
+          gsap.set('.byond-text .line',  { opacity: 1 });
+          gsap.set('.byond-text .char',  { yPercent: 110*dByond, opacity: 0 });
+          gsap.set('.byond-peek-top',    { y: forward ? -60 : 60,  opacity: 0 });
+          gsap.set('.byond-peek-bottom', { y: forward ?  60 : -60, opacity: 0 });
         } else {
           var ph = placeholders[current - 2];
           var dPh = forward ? 1 : -1;
