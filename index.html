@@ -103,8 +103,8 @@
       display: block; overflow: hidden;
       padding-block: 0.14em; margin-block: -0.14em;
     }
-    .line-mask .line { display: block; white-space: nowrap; will-change: transform; }
-    .char { display: inline-block; will-change: transform, opacity; }
+    .line-mask .line { display: block; white-space: nowrap; }
+    .char { display: inline-block; }
 
     /* ── Image block (Hero) ── */
     .image-block {
@@ -176,7 +176,7 @@
     }
     .byond-phone {
       position: absolute; left: 612px; top: 110px;
-      width: 338px; height: 679px; will-change: transform; background: transparent;
+      width: 338px; height: 679px; background: transparent;
     }
     .byond-phone img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
@@ -200,7 +200,7 @@
     }
     .ph-image {
       position: relative; width: 418px; height: 437px;
-      flex-shrink: 0; will-change: transform;
+      flex-shrink: 0;
       display: flex; align-items: flex-end; justify-content: flex-start; padding: 20px 24px;
     }
     .ph-image-label {
@@ -209,9 +209,6 @@
       color: rgba(255,255,255,0.4);
     }
 
-    .image-block,
-    .byond-phone,
-    .ph-image { will-change: transform; }
 
     /* ── Pre-GSAP hide (prevents flash before load) ── */
     .byond-text .line,
@@ -514,8 +511,17 @@
         current  = Math.max(0, Math.min(TOTAL - 1, current + dir));
         if (current === prev) { animating = false; return; }
 
+        imgFlynn.style.willChange = 'transform';
+        imgByond.style.willChange = 'transform';
+        imgPh.forEach(function(el) { el.style.willChange = 'transform'; });
+
         var tl = gsap.timeline({
-          onComplete: function() { animating = false; }
+          onComplete: function() {
+            animating = false;
+            imgFlynn.style.willChange = 'auto';
+            imgByond.style.willChange = 'auto';
+            imgPh.forEach(function(el) { el.style.willChange = 'auto'; });
+          }
         });
 
         // Flynn: center on section 0, exit up on all others
