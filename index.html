@@ -24,8 +24,8 @@
     html, body { height: 100%; }
     body { background: #fff; overflow: hidden; }
 
-    .porto { position: fixed; inset: 0; overflow: hidden; background: #fff; }
-    .page-section { position: absolute; inset: 0; overflow: hidden; }
+    .porto { position: fixed; inset: 0; overflow: hidden; background: #fff; opacity: 0; }
+    .page-section { position: absolute; inset: 0; overflow: visible; }
 
     .section-inner {
       position: absolute;
@@ -47,16 +47,16 @@
 
 
     /* ── Ellipse overlay (Figma: elipse overlay 61:6389) ──
-       Radial vignette to white. Sits above images/peeks (z:2) but below
-       hero text (z:4). Uses ellipse sized to container so it reaches all 4 edges. */
+       Fixed vignette above all section image layers (max dynamic z:30) but
+       below text layers (z:60) and persistent UI. */
     .ellipse-overlay {
-      position: absolute; inset: 0; z-index: 3; pointer-events: none;
-      background: radial-gradient(ellipse 65% 65% at 50% 50%,
+      position: fixed; inset: 0; z-index: 50; pointer-events: none;
+      background: radial-gradient(ellipse 80% 85% at 50% 50%,
         rgba(255,255,255,0) 0%,
-        rgba(255,255,255,0) 30%,
-        rgba(255,255,255,0.55) 58%,
-        rgba(255,255,255,0.92) 78%,
-        #fff 92%);
+        rgba(255,255,255,0) 55%,
+        rgba(255,255,255,0.45) 72%,
+        rgba(255,255,255,0.88) 86%,
+        #fff 96%);
     }
 
     /* ── Navbar ── */
@@ -88,7 +88,7 @@
     .hero-text {
       position: absolute; left: 56px; top: 316px; height: 270px;
       display: flex; flex-direction: column; gap: 8px; justify-content: center;
-      width: 480px; padding: 8px 0; z-index: 4;
+      width: 480px; padding: 8px 0; z-index: 60;
     }
     .hero-subtitle {
       font-family: 'Recoleta', Georgia, serif; font-weight: 300;
@@ -110,7 +110,6 @@
     .image-block {
       position: absolute; left: 508px; top: 239px;
       width: 424px; height: 460px;
-      will-change: transform;
     }
     .image-bg { position: absolute; inset: 0; background: linear-gradient(to bottom, #9f4bed, #7b49a9); }
     .image-photo {
@@ -139,7 +138,7 @@
       transform: translateY(calc(-50% - 12px));
       width: 189px; z-index: 100; user-select: none;
     }
-    .nav-inner { display: flex; flex-direction: column; gap: 24px; will-change: transform, opacity; }
+    .nav-inner { display: flex; flex-direction: column; gap: 24px; }
     .nav-row {
       display: flex; align-items: center; gap: 16px;
       position: relative; white-space: nowrap;
@@ -169,7 +168,7 @@
 
     /* ── BYOND section ── */
     .byond-text {
-      position: absolute; left: 88px; top: 253px;
+      position: absolute; left: 88px; top: 253px; z-index: 60;
       font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
       font-style: italic; font-weight: 300;
       font-size: 100px; line-height: 1.1; letter-spacing: -1px; color: #000;
@@ -186,6 +185,7 @@
       display: flex; align-items: center; gap: 74px; padding: 0 56px;
     }
     .ph-text {
+      position: relative; z-index: 60;
       display: flex; flex-direction: column; gap: 8px;
       width: 480px; padding: 8px 0; flex-shrink: 0;
     }
@@ -212,9 +212,7 @@
 
     /* ── Pre-GSAP hide (prevents flash before load) ── */
     .byond-text .line,
-    .page-placeholder .line,
-    .page-placeholder .ph-label,
-    .page-placeholder .ph-image { opacity: 0; }
+    .page-placeholder .ph-label { opacity: 0; }
   </style>
 </head>
 <body>
@@ -247,8 +245,6 @@
           </div>
         </div>
       </section>
-      <!-- Ellipse overlay (Figma: elipse overlay) — vignette over images/peeks -->
-      <div class="ellipse-overlay"></div>
     </div>
   </div>
 
@@ -336,6 +332,9 @@
       </section>
     </div>
   </div>
+
+  <!-- Ellipse overlay (Figma: elipse overlay) — fixed vignette above all sections -->
+  <div class="ellipse-overlay"></div>
 
   <!-- ── Persistent UI ── -->
   <nav class="navbar">
@@ -441,6 +440,7 @@
     function noGsapFallback() {
       document.body.style.overflow = 'auto';
       var porto = document.querySelector('.porto');
+      porto.style.opacity = '1';
       porto.style.position = 'static';
       porto.style.overflow = 'visible';
       document.querySelectorAll('.page-section').forEach(function(s) {
@@ -459,110 +459,109 @@
       if (!window.gsap || !window.Observer) { noGsapFallback(); return; }
       gsap.registerPlugin(Observer);
 
-      // ── Initial hidden states ──
-      gsap.set('.image-photo',             { y: 0 });
-      gsap.set('.byond-phone',             { y: 0, opacity: 1 });
-      gsap.set('.byond-text .line',        { opacity: 1 });
-      gsap.set('.byond-text .char',        { yPercent: 40, opacity: 0 });
-
+      // ── Char group caches ──
+      var heroTitle    = document.querySelectorAll('.hero-title .char');
+      var heroSubtitle = document.querySelectorAll('.hero-subtitle .char');
+      var byondChars   = document.querySelectorAll('.byond-text .char');
       var placeholders = document.querySelectorAll('.page-placeholder');
-      placeholders.forEach(function(ph) {
-        gsap.set(ph.querySelectorAll('.ph-label, .ph-title .line'), { opacity: 1 });
-        gsap.set(ph.querySelectorAll('.ph-label .char, .ph-title .char'), { opacity: 0, yPercent: 110 });
-        gsap.set(ph.querySelector('.ph-image'), { y: 0, opacity: 1 });
-      });
 
+      // ── Initial hidden states ──
+      gsap.set('.image-photo', { y: 0 });
+      gsap.set('.byond-text .line', { opacity: 1 });
+      gsap.set(heroTitle,    { yPercent: 0,  opacity: 1 });
+      gsap.set(heroSubtitle, { yPercent: 0,  opacity: 1 });
+      gsap.set(byondChars,   { yPercent: 40, opacity: 0 });
+      placeholders.forEach(function(ph) {
+        gsap.set(ph.querySelector('.ph-label'), { opacity: 1 });
+        gsap.set(ph.querySelectorAll('.ph-label .char, .ph-title .char'), { yPercent: 40, opacity: 0 });
+      });
 
       // ── Image click → case study ───────────────────────
       // page-section has pointer-events:none (CSS), so only the element we
       // explicitly mark 'auto' can receive clicks — preventing the topmost
       // stacked section from swallowing events meant for the active one.
-      var imgEls = [
-        document.querySelector('.image-block'),
-        document.querySelector('.byond-phone')
-      ];
-      placeholders.forEach(function(ph) {
-        imgEls.push(ph ? ph.querySelector('.ph-image') : null);
-      });
-
-
       // ── Scroll Parallax System ──────────────────────
       var TOTAL    = 6;
       var current  = 0;
       var animating = false;
       var VH = window.innerHeight;
 
-      var imgFlynn = document.querySelector('.image-block');
-      var imgByond = document.querySelector('.byond-phone');
-      var imgPh    = document.querySelectorAll('.ph-image');
+      var PEEK = 0.78;
+      var EXIT = -0.8;
+      var PARK = 1.5;
 
-      // Initial positions: Flynn center, BYOND below, placeholders further below
-      gsap.set(imgFlynn, { y: 0 });
-      gsap.set(imgByond, { y: VH });
-      imgPh.forEach(function(el, i) {
-        gsap.set(el, { y: VH * (1.5 + i * 0.3) });
+      var images = [ document.querySelector('.image-block'), document.querySelector('.byond-phone') ];
+      document.querySelectorAll('.ph-image').forEach(function(el) { images.push(el); });
+
+      var sections = images.map(function(el){ return el.closest('.page-section'); });
+
+      function imgY(i, cur) {
+        var fd = (i - cur + TOTAL) % TOTAL;
+        if (fd === 0)         return 0;
+        if (fd === 1)         return VH * PEEK;
+        if (fd === TOTAL - 1) return VH * EXIT;
+        return VH * PARK;
+      }
+
+      function imgZ(fd) {
+        if (fd === 1)         return 30;  // next / peek — on top
+        if (fd === 0)         return 20;  // active, centered
+        if (fd === TOTAL - 1) return 5;   // previous, exiting — bottom
+        return 10;                        // parked off-screen
+      }
+
+      images.forEach(function(el, i) {
+        gsap.set(el, { y: imgY(i, 0) });
+        sections[i].style.zIndex = imgZ((i - 0 + TOTAL) % TOTAL);
       });
+
+      function sectionText(idx) {
+        if (idx === 0) return { small: heroSubtitle, big: heroTitle };
+        if (idx === 1) return { small: null,         big: byondChars };
+        var ph = placeholders[idx - 2];
+        return { small: ph.querySelectorAll('.ph-label .char'), big: ph.querySelectorAll('.ph-title .char') };
+      }
+
+      function revealText(tl, t) {
+        if (t.big   && t.big.length)   tl.fromTo(t.big,   { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, from: 'start' } }, 0.25);
+        if (t.small && t.small.length) tl.fromTo(t.small, { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: 'power3.out', stagger: { each: 0.016 } }, 0.35);
+      }
+
+      function hideText(tl, t) {
+        if (t.big   && t.big.length)   tl.to(t.big,   { yPercent: -40, opacity: 0, duration: 0.35, ease: 'power3.in', stagger: { each: 0.008, from: 'end' } }, 0);
+        if (t.small && t.small.length) tl.to(t.small, { yPercent: -40, opacity: 0, duration: 0.3,  ease: 'power3.in' }, 0);
+      }
 
       function go(dir) {
         if (animating) return;
         animating = true;
 
         var prev = current;
-        current  = Math.max(0, Math.min(TOTAL - 1, current + dir));
-        if (current === prev) { animating = false; return; }
+        current = (prev + dir + TOTAL) % TOTAL;
 
-        imgFlynn.style.willChange = 'transform';
-        imgByond.style.willChange = 'transform';
-        imgPh.forEach(function(el) { el.style.willChange = 'transform'; });
+        images.forEach(function(el) { el.style.willChange = 'transform'; });
 
         var tl = gsap.timeline({
           onComplete: function() {
             animating = false;
-            imgFlynn.style.willChange = 'auto';
-            imgByond.style.willChange = 'auto';
-            imgPh.forEach(function(el) { el.style.willChange = 'auto'; });
+            images.forEach(function(el) { el.style.willChange = 'auto'; });
           }
         });
 
-        // Flynn: center on section 0, exit up on all others
-        tl.to(imgFlynn, { y: current === 0 ? 0 : -VH * 0.8, duration: 1.0, ease: 'expo.inOut' }, 0);
-
-        // BYOND: below on section 0, center on section 1, exit up on section 2+
-        var byondY = current === 0 ? VH : current === 1 ? 0 : -VH * 0.8;
-        tl.to(imgByond, { y: byondY, duration: 1.1, ease: 'expo.inOut' }, ">-1.06");
-
-        // Placeholders: each enters center when it's the active section
-        imgPh.forEach(function(el, i) {
-          var sectionIdx = i + 2;
-          var phY, phDur, phEase;
-          if (current < sectionIdx) {
-            phY = VH * (1 + (sectionIdx - current) * 0.4);
-            phDur = 1.05; phEase = 'expo.inOut';
-          } else if (current === sectionIdx) {
-            phY = 0;
-            phDur = 1.05; phEase = 'expo.out';
+        images.forEach(function(el, i) {
+          var fdNew = (i - current + TOTAL) % TOTAL;
+          var fdOld = (i - prev    + TOTAL) % TOTAL;
+          sections[i].style.zIndex = imgZ(fdNew);
+          if (fdNew === 0 || fdNew === 1 || fdOld === 0 || fdOld === 1) {
+            tl.to(el, { y: imgY(i, current), duration: 1.1, ease: 'expo.inOut' }, 0);
           } else {
-            phY = -VH * 0.8;
-            phDur = 0.9; phEase = 'expo.in';
+            gsap.set(el, { y: imgY(i, current) });
           }
-          tl.to(el, { y: phY, duration: phDur, ease: phEase }, 0);
         });
 
-        // Hero text
-        if (current === 0) {
-          tl.to('.hero-title .char',    { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, from: 'start' } }, 0.25);
-          tl.to('.hero-subtitle .char', { yPercent: 0, opacity: 1, duration: 0.6, ease: 'power3.out', stagger: { each: 0.016 } }, 0.35);
-        } else {
-          tl.to('.hero-title .char',    { yPercent: -40, opacity: 0, duration: 0.35, ease: 'power3.in', stagger: { each: 0.008, from: 'end' } }, 0);
-          tl.to('.hero-subtitle .char', { yPercent: -40, opacity: 0, duration: 0.3,  ease: 'power3.in' }, 0);
-        }
-
-        // BYOND text
-        if (current === 1) {
-          tl.to('.byond-text .char', { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.018, from: 'start' } }, 0.3);
-        } else if (prev === 1) {
-          tl.to('.byond-text .char', { yPercent: -40, opacity: 0, duration: 0.35, ease: 'power3.in', stagger: { each: 0.008, from: 'end' } }, 0);
-        }
+        // Text reveal / exit
+        if (prev !== current) hideText(tl, sectionText(prev));
+        revealText(tl, sectionText(current));
 
         // Nav update
         tl.to(navInner, {
@@ -575,9 +574,6 @@
         .to(navInner, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.3);
       }
 
-      gsap.set('.hero-title .char',    { yPercent: 0, opacity: 1 });
-      gsap.set('.hero-subtitle .char', { yPercent: 0, opacity: 1 });
-
       Observer.create({
         type: 'wheel,touch',
         onDown: function() { go(1);  },
@@ -588,16 +584,7 @@
 
       window.addEventListener('resize', function() {
         VH = window.innerHeight;
-        gsap.set(imgFlynn, { y: current === 0 ? 0 : -VH * 0.8 });
-        gsap.set(imgByond, { y: current === 0 ? VH : current === 1 ? 0 : -VH * 0.8 });
-        imgPh.forEach(function(el, i) {
-          var sectionIdx = i + 2;
-          var phY;
-          if (current < sectionIdx)        phY = VH * (1 + (sectionIdx - current) * 0.4);
-          else if (current === sectionIdx) phY = 0;
-          else                             phY = -VH * 0.8;
-          gsap.set(el, { y: phY });
-        });
+        images.forEach(function(el, i) { gsap.set(el, { y: imgY(i, current) }); });
       });
 
       window.addEventListener('keydown', function(e) {
@@ -608,7 +595,7 @@
       navRows[0].addEventListener('click', function() { if (!animating) go(-1); });
       navRows[2].addEventListener('click', function() { if (!animating) go(1);  });
 
-      gsap.from('.porto', { opacity: 0, duration: 0.45, ease: 'power2.out' });
+      gsap.to('.porto', { opacity: 1, duration: 0.45, ease: 'power2.out' });
     });
   </script>
 </body>
