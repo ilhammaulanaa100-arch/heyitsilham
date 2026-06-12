@@ -25,7 +25,8 @@
     body { background: #fff; overflow: hidden; }
 
     .porto { position: fixed; inset: 0; overflow: hidden; background: #fff; opacity: 0; }
-    .page-section { position: absolute; inset: 0; overflow: visible; }
+    .page-section { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+    .page-section.is-active { pointer-events: auto; }
 
     .section-inner {
       position: absolute;
@@ -46,17 +47,16 @@
     }
 
 
-    /* ── Ellipse overlay (Figma: elipse overlay 61:6389) ──
-       Fixed vignette above all section image layers (max dynamic z:30) but
-       below text layers (z:60) and persistent UI. */
-    .ellipse-overlay {
-      position: fixed; inset: 0; z-index: 50; pointer-events: none;
-      background: radial-gradient(ellipse 80% 85% at 50% 50%,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,0) 55%,
-        rgba(255,255,255,0.45) 72%,
-        rgba(255,255,255,0.88) 86%,
-        #fff 96%);
+    .vignette-radial {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
     }
 
     /* ── Navbar ── */
@@ -82,13 +82,10 @@
     .nav-item:hover:not(.active) { background: rgba(255,255,255,0.55); }
 
     /* ── Hero ── */
-    .hero {
-      position: absolute; top: 0; left: 0; width: 1440px; height: 900px;
-    }
     .hero-text {
-      position: absolute; left: 56px; top: 316px; height: 270px;
       display: flex; flex-direction: column; gap: 8px; justify-content: center;
       width: 480px; padding: 8px 0; z-index: 60;
+      flex-shrink: 0;
     }
     .hero-subtitle {
       font-family: 'Recoleta', Georgia, serif; font-weight: 300;
@@ -97,7 +94,7 @@
     .hero-title {
       font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
       font-style: italic; font-weight: 300;
-      font-size: 100px; line-height: 1.1; letter-spacing: -1px; color: #000;
+      font-size: 80px; line-height: 1.1; letter-spacing: -1px; color: #000;
     }
     .line-mask {
       display: block; overflow: hidden;
@@ -106,15 +103,22 @@
     .line-mask .line { display: block; white-space: nowrap; }
     .char { display: inline-block; }
 
-    /* ── Image block (Hero) ── */
-    .image-block {
-      position: absolute; left: 508px; top: 239px;
-      width: 424px; height: 460px;
+    /* ── Project card ── */
+    .proj-card {
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
     }
-    .image-bg { position: absolute; inset: 0; background: linear-gradient(to bottom, #9f4bed, #7b49a9); }
-    .image-photo {
-      position: absolute; top: 77px; left: 11px;
-      width: 413px; height: 383px; object-fit: cover;
+    .proj-card.is-portrait  { width: 440px; height: 600px; }
+    .proj-card.is-landscape { width: 580px; height: 420px; }
+    .proj-card.is-square    { width: 480px; height: 480px; }
+    .proj-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     /* ── Camera viewfinder brackets (from Figma 55:5795) ── */
@@ -134,9 +138,9 @@
 
     /* ── Section navigator (right) ── */
     .section-nav {
-      position: fixed; left: 1128px; top: 50%;
+      position: fixed; left: 1144px; top: 50%;
       transform: translateY(calc(-50% - 12px));
-      width: 189px; z-index: 100; user-select: none;
+      width: 240px; z-index: 100; user-select: none;
     }
     .nav-inner { display: flex; flex-direction: column; gap: 24px; }
     .nav-row {
@@ -168,27 +172,26 @@
 
     /* ── BYOND section ── */
     .byond-text {
-      position: absolute; left: 88px; top: 253px; z-index: 60;
+      position: relative; left: auto; top: auto; z-index: 60;
       font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
       font-style: italic; font-weight: 300;
-      font-size: 100px; line-height: 1.1; letter-spacing: -1px; color: #000;
+      font-size: 80px; line-height: 1.1; letter-spacing: -1px; color: #000;
+      max-width: 400px; white-space: normal; word-break: break-word;
     }
-    .byond-phone {
-      position: absolute; left: 612px; top: 110px;
-      width: 338px; height: 679px; background: transparent;
-    }
-    .byond-phone img { width: 100%; height: 100%; object-fit: contain; display: block; }
-
     /* ── Placeholder sections ── */
     .ph-layout {
       position: absolute; top: 181px; left: 0; width: 1440px;
-      display: flex; align-items: center; gap: 74px; padding: 0 56px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 56px;
     }
+
     .ph-text {
       position: relative; z-index: 60;
       display: flex; flex-direction: column; gap: 8px;
-      width: 480px; padding: 8px 0; flex-shrink: 0;
+      width: 400px; padding: 8px 0; flex-shrink: 0;
     }
+    .ph-spacer { width: 240px; flex-shrink: 0; }
     .ph-label {
       font-family: 'Recoleta', Georgia, serif; font-weight: 300;
       font-size: 20px; line-height: 1.3; letter-spacing: -0.2px; color: #000; width: 229px;
@@ -196,47 +199,140 @@
     .ph-title {
       font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
       font-style: italic; font-weight: 300;
-      font-size: 100px; line-height: 1.1; letter-spacing: -1px; color: #000;
+      font-size: 80px; line-height: 1.1; letter-spacing: -1px; color: #000;
     }
-    .ph-image {
-      position: relative; width: 418px; height: 437px;
-      flex-shrink: 0;
-      display: flex; align-items: flex-end; justify-content: flex-start; padding: 20px 24px;
-    }
-    .ph-image-label {
-      font-family: 'Recoleta', Georgia, serif; font-weight: 300;
-      font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
-      color: rgba(255,255,255,0.4);
-    }
-
-
     /* ── Pre-GSAP hide (prevents flash before load) ── */
     .byond-text .line,
     .page-placeholder .ph-label { opacity: 0; }
+
+    /* ── Splash Screen ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .splash-grid {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(to right,  rgba(34,32,32,0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(34,32,32,0.06) 1px, transparent 1px);
+      background-size: 80.68px 80.68px;
+    }
+    .splash-vignette {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+        linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
+    }
+    .splash-inner {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; gap: 40px;
+    }
+    .splash-name {
+      font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
+      font-style: italic; font-weight: 300;
+      font-size: 96px; line-height: 1.1; letter-spacing: -1px; color: #000;
+      overflow: hidden; padding-block: 0.14em;
+    }
+    .splash-name .char {
+      display: inline-block;
+      opacity: 0; transform: translateY(60%);
+      animation: splashCharIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes splashCharIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .splash-bottom {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .splash-bar-track {
+      width: 200px; height: 1px; background: rgba(0,0,0,0.1);
+      position: relative; overflow: hidden;
+    }
+    .splash-bar-fill {
+      position: absolute; left: 0; top: 0; height: 100%;
+      width: 0%; background: #FF3ECF;
+    }
+    .splash-counter {
+      font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+      font-size: 14px; letter-spacing: -0.14px; color: rgba(0,0,0,0.35);
+    }
   </style>
 </head>
 <body>
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="splash-grid"></div>
+    <div class="splash-vignette"></div>
+    <div class="splash-inner">
+      <div class="splash-name" id="splash-name">Ilham.</div>
+      <div class="splash-bottom">
+        <div class="splash-bar-track">
+          <div class="splash-bar-fill" id="splash-bar"></div>
+        </div>
+        <div class="splash-counter" id="splash-counter">00</div>
+      </div>
+    </div>
+  </div>
+
   <div class="porto">
 
   <!-- Background grid (Figma: Grid layers - v1) -->
   <div class="grid-bg"></div>
 
-  <!-- Section 1: heyitsilham -->
+  <!-- Section 1: BYOND by BSI -->
+  <div class="page-section page-byond">
+    <div class="section-inner">
+      <section class="ph-layout">
+        <div class="ph-text">
+          <div class="byond-text">
+            <span class="line-mask"><span class="line">Connecting</span></span>
+            <span class="line-mask"><span class="line">Faith to Your</span></span>
+            <span class="line-mask"><span class="line">Every Step.</span></span>
+          </div>
+        </div>
+        <div class="proj-card is-square">
+          <img src="assets/images/byond.png" alt="BYOND by BSI" />
+        </div>
+        <div class="ph-spacer"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Section 2: Qita by BRI -->
+  <div class="page-section page-placeholder">
+    <div class="section-inner">
+      <section class="ph-layout">
+        <div class="ph-text">
+          <p class="ph-label">Qita by BRI</p>
+          <div class="ph-title">
+            <span class="line-mask"><span class="line">The Nation's</span></span>
+            <span class="line-mask"><span class="line">New Horizon</span></span>
+          </div>
+        </div>
+        <div class="proj-card is-square">
+          <img src="assets/images/QITA.png" alt="Qita by BRI" />
+        </div>
+        <div class="ph-spacer"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Section 3: Ilham's Profile -->
   <div class="page-section page-hero">
     <div class="section-inner">
-      <section class="hero">
-        <div class="hero-text">
+      <section class="ph-layout">
+        <div class="ph-text hero-text">
           <p class="hero-subtitle" id="hero-subtitle">Welcome to my house.</p>
           <div class="hero-title">
             <span class="line-mask"><span class="line">Heyy,</span></span>
             <span class="line-mask"><span class="line">its Ilham</span></span>
           </div>
         </div>
-        <div class="image-block">
-          <div class="image-bg"></div>
-          <img class="image-photo"
-            src="assets/images/image-placeholder.png"
-            alt="Ilham" />
+        <div class="proj-card is-square">
+          <img src="assets/images/image-placeholder.png" alt="Ilham" />
           <div class="viewfinder">
             <span class="vf-tl"></span>
             <span class="vf-tr"></span>
@@ -244,24 +340,12 @@
             <span class="vf-br"></span>
           </div>
         </div>
+        <div class="ph-spacer"></div>
       </section>
     </div>
   </div>
 
-  <!-- Section 2: BYOND by BSI -->
-  <div class="page-section page-byond">
-    <div class="section-inner">
-      <div class="byond-text">
-        <span class="line-mask"><span class="line">BYOND</span></span>
-        <span class="line-mask"><span class="line">by BSI</span></span>
-      </div>
-      <div class="byond-phone">
-        <img src="assets/images/phone-byond.png" alt="BYOND by BSI app" />
-      </div>
-    </div>
-  </div>
-
-  <!-- Section 3: Placeholder 03 -->
+  <!-- Section 4: Placeholder 03 -->
   <div class="page-section page-placeholder">
     <div class="section-inner">
       <section class="ph-layout">
@@ -272,14 +356,15 @@
             <span class="line-mask"><span class="line">03.</span></span>
           </div>
         </div>
-        <div class="ph-image" style="background: linear-gradient(160deg,#e05c45,#a03020);">
-          <span class="ph-image-label">Image</span>
+        <div class="proj-card is-landscape">
+          <img src="assets/images/placeholder-03.png" alt="Project 03" />
         </div>
+        <div class="ph-spacer"></div>
       </section>
     </div>
   </div>
 
-  <!-- Section 4: Placeholder 04 -->
+  <!-- Section 5: Placeholder 04 -->
   <div class="page-section page-placeholder">
     <div class="section-inner">
       <section class="ph-layout">
@@ -290,14 +375,15 @@
             <span class="line-mask"><span class="line">04.</span></span>
           </div>
         </div>
-        <div class="ph-image" style="background: linear-gradient(160deg,#2db8a3,#1a7a6e);">
-          <span class="ph-image-label">Image</span>
+        <div class="proj-card is-landscape">
+          <img src="assets/images/placeholder-04.png" alt="Project 04" />
         </div>
+        <div class="ph-spacer"></div>
       </section>
     </div>
   </div>
 
-  <!-- Section 5: Placeholder 05 -->
+  <!-- Section 6: Placeholder 05 -->
   <div class="page-section page-placeholder">
     <div class="section-inner">
       <section class="ph-layout">
@@ -308,33 +394,15 @@
             <span class="line-mask"><span class="line">05.</span></span>
           </div>
         </div>
-        <div class="ph-image" style="background: linear-gradient(160deg,#4b63e8,#2a3db0);">
-          <span class="ph-image-label">Image</span>
+        <div class="proj-card is-landscape">
+          <img src="assets/images/placeholder-05.png" alt="Project 05" />
         </div>
+        <div class="ph-spacer"></div>
       </section>
     </div>
   </div>
 
-  <!-- Section 6: Placeholder 06 -->
-  <div class="page-section page-placeholder">
-    <div class="section-inner">
-      <section class="ph-layout">
-        <div class="ph-text">
-          <p class="ph-label">Placeholder</p>
-          <div class="ph-title">
-            <span class="line-mask"><span class="line">Project</span></span>
-            <span class="line-mask"><span class="line">06.</span></span>
-          </div>
-        </div>
-        <div class="ph-image" style="background: linear-gradient(160deg,#e8a52b,#b07815);">
-          <span class="ph-image-label">Image</span>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <!-- Ellipse overlay (Figma: elipse overlay) — fixed vignette above all sections -->
-  <div class="ellipse-overlay"></div>
+  <div class="vignette-radial"></div>
 
   <!-- ── Persistent UI ── -->
   <nav class="navbar">
@@ -413,10 +481,46 @@
     }
     splitChars();
 
+    // ── Splash name: char split with CSS stagger ──────────
+    (function() {
+      var el = document.getElementById('splash-name');
+      if (!el) return;
+      var text = el.textContent;
+      el.textContent = '';
+      text.split('').forEach(function(ch, i) {
+        var s = document.createElement('span');
+        s.className = 'char';
+        s.textContent = ch === ' ' ? ' ' : ch;
+        s.style.animationDelay = (0.1 + i * 0.065) + 's';
+        el.appendChild(s);
+      });
+    })();
+
+    // ── Splash counter & progress bar ─────────────────────
+    var splashProgress    = 0;
+    var splashCounterDone = false;
+    var doExitSplash      = null;
+    var splashBarEl       = document.getElementById('splash-bar');
+    var splashCounterEl   = document.getElementById('splash-counter');
+
+    function tickCounter() {
+      var step = splashProgress < 70 ? 3 : splashProgress < 90 ? 1 : 0.5;
+      splashProgress = Math.min(100, splashProgress + step);
+      if (splashBarEl)     splashBarEl.style.width = splashProgress + '%';
+      if (splashCounterEl) splashCounterEl.textContent = String(Math.floor(splashProgress)).padStart(2, '0');
+      if (splashProgress >= 100) {
+        splashCounterDone = true;
+        if (doExitSplash) doExitSplash();
+        return;
+      }
+      setTimeout(tickCounter, 30);
+    }
+    setTimeout(tickCounter, 60);
+
     // ── Section navigator ──────────────────────────────────
     var SECTION_NAMES = [
-      "Ilham's Profile", "BYOND by BSI", "Project 03",
-      "Project 04", "Project 05", "Qita by BRI"
+      "BYOND by BSI", "Qita by BRI", "Ilham's Profile",
+      "Project 03", "Project 04", "Project 05"
     ];
     var NAV_TOTAL = SECTION_NAMES.length;
     var navInner  = document.getElementById('nav-inner');
@@ -438,6 +542,8 @@
 
     // ── No-GSAP fallback ───────────────────────────────────
     function noGsapFallback() {
+      var splashEl = document.getElementById('splash');
+      if (splashEl) splashEl.style.display = 'none';
       document.body.style.overflow = 'auto';
       var porto = document.querySelector('.porto');
       porto.style.opacity = '1';
@@ -450,7 +556,7 @@
         s.style.transform = 'none'; s.style.top = '0';
       });
       document.querySelectorAll(
-        '.byond-text .line,.byond-phone,.page-placeholder .line,.ph-label,.ph-image'
+        '.byond-text .line,.proj-card,.page-placeholder .line,.ph-label'
       ).forEach(function(el) { el.style.opacity = '1'; el.style.transform = 'none'; });
     }
 
@@ -466,11 +572,10 @@
       var placeholders = document.querySelectorAll('.page-placeholder');
 
       // ── Initial hidden states ──
-      gsap.set('.image-photo', { y: 0 });
       gsap.set('.byond-text .line', { opacity: 1 });
-      gsap.set(heroTitle,    { yPercent: 0,  opacity: 1 });
-      gsap.set(heroSubtitle, { yPercent: 0,  opacity: 1 });
       gsap.set(byondChars,   { yPercent: 40, opacity: 0 });
+      gsap.set(heroTitle,    { yPercent: 40, opacity: 0 });
+      gsap.set(heroSubtitle, { yPercent: 40, opacity: 0 });
       placeholders.forEach(function(ph) {
         gsap.set(ph.querySelector('.ph-label'), { opacity: 1 });
         gsap.set(ph.querySelectorAll('.ph-label .char, .ph-title .char'), { yPercent: 40, opacity: 0 });
@@ -486,40 +591,51 @@
       var animating = false;
       var VH = window.innerHeight;
 
-      var PEEK = 0.78;
-      var EXIT = -0.8;
-      var PARK = 1.5;
+      var PEEK_BELOW = 0.64;   // next section peeking from the bottom
+      var PEEK_ABOVE = -0.58;  // previous section peeking from the top
+      var PARK_BELOW = 1.5;    // parked just below the viewport
+      var PARK_ABOVE = -1.5;   // parked just above the viewport
 
-      var images = [ document.querySelector('.image-block'), document.querySelector('.byond-phone') ];
-      document.querySelectorAll('.ph-image').forEach(function(el) { images.push(el); });
-
-      var sections = images.map(function(el){ return el.closest('.page-section'); });
+      var sections = Array.from(document.querySelectorAll('.page-section'));
+      var images = sections; // animate the whole section, not just the card
 
       function imgY(i, cur) {
         var fd = (i - cur + TOTAL) % TOTAL;
         if (fd === 0)         return 0;
-        if (fd === 1)         return VH * PEEK;
-        if (fd === TOTAL - 1) return VH * EXIT;
-        return VH * PARK;
+        if (fd === 1)         return VH * PEEK_BELOW;
+        if (fd === TOTAL - 1) return VH * PEEK_ABOVE;
+        if (fd === 2)         return VH * PARK_BELOW;
+        if (fd === TOTAL - 2) return VH * PARK_ABOVE;
+        return VH * PARK_BELOW;
       }
 
       function imgZ(fd) {
-        if (fd === 1)         return 30;  // next / peek — on top
-        if (fd === 0)         return 20;  // active, centered
-        if (fd === TOTAL - 1) return 5;   // previous, exiting — bottom
-        return 10;                        // parked off-screen
+        if (fd === 1)         return 30;
+        if (fd === 0)         return 20;
+        if (fd === TOTAL - 1) return 25;
+        return 10;
+      }
+
+      // on-screen slots must animate, not snap
+      function onScreen(fd) {
+        return fd === 0 || fd === 1 || fd === TOTAL - 1;
       }
 
       images.forEach(function(el, i) {
         gsap.set(el, { y: imgY(i, 0) });
         sections[i].style.zIndex = imgZ((i - 0 + TOTAL) % TOTAL);
       });
+      sections[0].classList.add('is-active');
 
       function sectionText(idx) {
-        if (idx === 0) return { small: heroSubtitle, big: heroTitle };
-        if (idx === 1) return { small: null,         big: byondChars };
-        var ph = placeholders[idx - 2];
-        return { small: ph.querySelectorAll('.ph-label .char'), big: ph.querySelectorAll('.ph-title .char') };
+        if (idx === 0) return { small: null,         big: byondChars };
+        if (idx === 2) return { small: heroSubtitle, big: heroTitle };
+        var ph = placeholders[idx === 1 ? 0 : idx - 2];
+        if (!ph) return { small: null, big: null };
+        return {
+          small: ph.querySelectorAll('.ph-label .char'),
+          big:   ph.querySelectorAll('.ph-title .char')
+        };
       }
 
       function revealText(tl, t) {
@@ -537,7 +653,15 @@
         animating = true;
 
         var prev = current;
+
+        // Kill any running tweens on the outgoing section to prevent conflicts
+        var outgoing = sectionText(prev);
+        if (outgoing.big)   gsap.killTweensOf(outgoing.big);
+        if (outgoing.small) gsap.killTweensOf(outgoing.small);
         current = (prev + dir + TOTAL) % TOTAL;
+
+        sections.forEach(function(s) { s.classList.remove('is-active'); });
+        sections[current].classList.add('is-active');
 
         images.forEach(function(el) { el.style.willChange = 'transform'; });
 
@@ -545,6 +669,7 @@
           onComplete: function() {
             animating = false;
             images.forEach(function(el) { el.style.willChange = 'auto'; });
+            sections[current].style.zIndex = imgZ(0); // restore resting layer
           }
         });
 
@@ -552,15 +677,25 @@
           var fdNew = (i - current + TOTAL) % TOTAL;
           var fdOld = (i - prev    + TOTAL) % TOTAL;
           sections[i].style.zIndex = imgZ(fdNew);
-          if (fdNew === 0 || fdNew === 1 || fdOld === 0 || fdOld === 1) {
+          if (onScreen(fdNew) || onScreen(fdOld)) {
             tl.to(el, { y: imgY(i, current), duration: 1.1, ease: 'expo.inOut' }, 0);
           } else {
             gsap.set(el, { y: imgY(i, current) });
           }
         });
 
+        // lift incoming section above all while it travels to centre,
+        // so the outgoing card can't cover it (the scroll-up collision)
+        sections[current].style.zIndex = 50;
+
         // Text reveal / exit
         if (prev !== current) hideText(tl, sectionText(prev));
+
+        // Hard-reset incoming section chars before reveal (prevents stale positions)
+        var incoming = sectionText(current);
+        if (incoming.big   && incoming.big.length)   gsap.set(incoming.big,   { yPercent: 40, opacity: 0 });
+        if (incoming.small && incoming.small.length) gsap.set(incoming.small, { yPercent: 40, opacity: 0 });
+
         revealText(tl, sectionText(current));
 
         // Nav update
@@ -595,7 +730,22 @@
       navRows[0].addEventListener('click', function() { if (!animating) go(-1); });
       navRows[2].addEventListener('click', function() { if (!animating) go(1);  });
 
-      gsap.to('.porto', { opacity: 1, duration: 0.45, ease: 'power2.out' });
+      // ── Splash exit → intro ────────────────────────────
+      var splashExited = false;
+      animating = true;
+
+      doExitSplash = function() {
+        if (splashExited) return;
+        splashExited = true;
+        var splashEl = document.getElementById('splash');
+        var introTl = gsap.timeline({ onComplete: function() { animating = false; } });
+        introTl
+          .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)
+          .to('.porto',  { opacity: 1,    duration: 0.5,  ease: 'power2.out' }, 0.3);
+        revealText(introTl, sectionText(0));
+      };
+
+      if (splashCounterDone) doExitSplash();
     });
   </script>
 </body>
