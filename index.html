@@ -271,14 +271,6 @@
    .proj-card { perspective: 650px; }
    .proj-card img { transition: none; transform-style: preserve-3d; will-change: auto; }
 
-  #page-wipe {
-    position: fixed; inset: 0; z-index: 100000;
-    background: #fff;
-    transform: translateX(100%);
-    will-change: transform;
-    pointer-events: none;
-  }
-
   /* Neutralise case-study.css html.lenis rule — homepage must keep html at 100% */
   html.lenis { height: 100%; }
 
@@ -289,7 +281,6 @@
   </style>
 </head>
 <body>
-  <div id="page-wipe"></div>
   <div id="proj-cursor">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M4 16L16 4M16 4H7M16 4V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -364,12 +355,12 @@
   <div class="cs-overlay" id="cs-overlay" aria-hidden="true">
     <div class="cs-shell" id="cs-shell">
       <div class="cs-left" id="cs-left">
-        <a class="cs-close" id="cs-close" href="#">← Close</a>
+        <a class="cs-close" id="cs-close" href="javascript:void(0)">← Close</a>
         <div class="cs-slider" id="cs-slider"></div>
       </div>
       <div class="cs-right" id="cs-right">
         <div id="cs-right-content">
-          <a class="cs-source" id="cs-source" href="" target="_blank" rel="noopener noreferrer">Source ↗</a>
+          <a class="cs-source" id="cs-source" href="javascript:void(0)" target="_blank" rel="noopener noreferrer">Source ↗</a>
           <div class="cs-detail" id="cs-detail"></div>
         </div>
       </div>
@@ -847,24 +838,6 @@
               _currentSlug = null;
               if (convObserver) convObserver.enable();
             }
-          }
-          // Fallback: original page-wipe navigation (kept until SPA is proven)
-          var imgEl = card.querySelector('img');
-          if (imgEl && window.gsap) gsap.set(imgEl, {rotateX:0,rotateY:0,scale:1});
-          var rect = card.getBoundingClientRect();
-          var src = imgEl ? (imgEl.currentSrc || imgEl.src) : '';
-          try {
-            sessionStorage.setItem('cs-wipe', '1');
-            sessionStorage.setItem('cs-flip', JSON.stringify({ src: src, x: rect.left, y: rect.top, w: rect.width, h: rect.height, slug: slug }));
-          } catch (e) {}
-          var wipe = document.getElementById('page-wipe');
-          if (window.gsap && wipe) {
-            gsap.set(wipe, { xPercent: 100 });
-            gsap.to(wipe, { xPercent: 0, duration: 0.7, ease: 'expo.inOut',
-              onComplete: function () { window.location.href = 'case-study.html?p=' + slug; }
-            });
-          } else {
-            window.location.href = 'case-study.html?p=' + slug;
           }
         });
       });
