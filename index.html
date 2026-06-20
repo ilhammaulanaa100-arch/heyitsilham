@@ -1125,30 +1125,47 @@
 
    // ── proj-card 3D tilt ────────────────────────────────
    (function() {
-     document.addEventListener('mousemove', function(e) {
+     var activeCard = null;
+     var activeImg  = null;
+     var rect       = null;
+     var lastX = 0, lastY = 0;
+     var rafId = null;
 
+     function onFrame() {
+       rafId = null;
+       if (!activeCard || !activeImg || !rect) return;
+       var nx = (lastX - rect.left) / rect.width;
+       var ny = (lastY - rect.top)  / rect.height;
+       var rotateX = ((ny - 0.5) * 2) * -10;
+       var rotateY = ((nx - 0.5) * 2) *  10;
+       gsap.to(activeImg, { rotateX: rotateX, rotateY: rotateY, scale: 1.04, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
+     }
+
+     document.addEventListener('mouseover', function(e) {
        var card = e.target.closest('.proj-card');
-       if (!card) return;
-       var img = card.querySelector('img');
-       if (!img) return;
-       var rect = card.getBoundingClientRect();
-       var nx = (e.clientX - rect.left) / rect.width;
-       var ny = (e.clientY - rect.top) / rect.height;
-       var rx = (nx - 0.5) * 2;
-       var ry = (ny - 0.5) * 2;
-       var rotateX = ry * -10;
-       var rotateY = rx * 10;
-       gsap.to(img, { rotateX: rotateX, rotateY: rotateY, scale: 1.04, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
+       if (!card || card === activeCard) return;
+       activeCard = card;
+       activeImg  = card.querySelector('img');
+       rect       = card.getBoundingClientRect();
      });
+
+     document.addEventListener('mousemove', function(e) {
+       if (!activeCard) return;
+       lastX = e.clientX;
+       lastY = e.clientY;
+       if (rafId === null) rafId = requestAnimationFrame(onFrame);
+     }, { passive: true });
 
      document.addEventListener('mouseout', function(e) {
        var card = e.target.closest('.proj-card');
        if (!card) return;
        var related = e.relatedTarget;
        if (related && related.closest('.proj-card')) return;
-       var img = card.querySelector('img');
-       if (!img) return;
-       gsap.to(img, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+       if (activeImg) {
+         gsap.to(activeImg, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+       }
+       activeCard = null; activeImg = null; rect = null;
+       if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
      });
    })();
   })(); /* end outer IIFE */
