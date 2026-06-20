@@ -829,9 +829,6 @@
         if (!slug) return;
         card.addEventListener('click', function() {
           if (animating) return;
-          if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            window.location.href = 'case-study.html?p=' + slug; return;
-          }
           // Try in-place overlay; fall back to full-page navigation if unavailable
           if (window.CaseStudy && PROJECTS[i]) {
             var imgEl = card.querySelector('img');
