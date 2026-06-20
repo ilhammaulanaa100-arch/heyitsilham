@@ -558,6 +558,7 @@
     var _entranceTl    = null;
     var _entranceClone = null;
     var _sourceCard    = null;
+    var _exitTl        = null;
 
     function navigateFromOverlay(href) {
       var match = href && href.match(/[?&]p=([^&]+)/);
@@ -695,30 +696,99 @@
     }
 
     function hideOverlay() {
-      // Kill any in-flight entrance and remove its clone
+      // Kill any in-flight entrance/exit and remove entrance clone
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
         if (_entranceClone.parentNode) _entranceClone.parentNode.removeChild(_entranceClone);
         _entranceClone = null;
       }
+      if (_exitTl) { _exitTl.kill(); _exitTl = null; }
 
-      CaseStudy.teardown();
-      var overlay = document.getElementById('cs-overlay');
-      var shell   = document.getElementById('cs-shell');
-      overlay.classList.remove('is-open');
-      overlay.setAttribute('aria-hidden', 'true');
-      if (shell) shell.style.opacity = '0';
-      if (convObserver) convObserver.enable();
-      isOverlayOpen = false;
-      _currentSlug = null;
+      var D    = 0.72;
+      var EASE = 'power3.inOut';
+      var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
 
-      // Restore homepage and reset overlay sub-elements for the next open
-      if (window.gsap) {
-        gsap.set('.porto', { opacity: 1 });
-        gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
-        gsap.set('#cs-right', { xPercent: 0 });
-        if (_sourceCard) { gsap.set(_sourceCard, { opacity: 1 }); _sourceCard = null; }
+      if (!canAnimate) {
+        // ── Instant fallback (no gsap, reduced-motion, or no source card) ──
+        CaseStudy.teardown();
+        var overlay = document.getElementById('cs-overlay');
+        var shell   = document.getElementById('cs-shell');
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+        if (shell) shell.style.opacity = '0';
+        if (window.gsap) {
+          gsap.set('.porto', { opacity: 1 });
+          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+          gsap.set('#cs-right', { xPercent: 0 });
+          if (_sourceCard) { gsap.set(_sourceCard, { opacity: 1 }); }
+        } else {
+          var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '1';
+        }
+        _sourceCard = null;
+        if (convObserver) convObserver.enable();
+        isOverlayOpen = false;
+        _currentSlug  = null;
+        return;
       }
+
+      // ── Animated reverse close ────────────────────────────────
+      var realCardEl = document.querySelector('.cs-slide[data-index="0"] .proj-card');
+      var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
+      var destRect   = _sourceCard.getBoundingClientRect();
+      var imgEl      = realCardEl ? realCardEl.querySelector('img') : null;
+
+      var clone = document.createElement('img');
+      clone.src = imgEl ? (imgEl.currentSrc || imgEl.src) : '';
+      if (startRect) {
+        clone.style.cssText =
+          'position:fixed;left:'  + startRect.left   + 'px;' +
+          'top:'                  + startRect.top    + 'px;' +
+          'width:'                + startRect.width  + 'px;' +
+          'height:'               + startRect.height + 'px;' +
+          'object-fit:cover;z-index:9999;pointer-events:none;will-change:transform;' +
+          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
+      }
+      document.body.appendChild(clone);
+
+      // Hide real left card so only the clone is visible during the glide
+      if (realCardEl) gsap.set(realCardEl, { opacity: 0 });
+
+      var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
+
+      _exitTl = gsap.timeline({
+        onComplete: function() {
+          gsap.set(capturedSourceCard, { opacity: 1 });
+          if (clone.parentNode) clone.parentNode.removeChild(clone);
+          CaseStudy.teardown();
+          var overlay = document.getElementById('cs-overlay');
+          var shell   = document.getElementById('cs-shell');
+          overlay.classList.remove('is-open');
+          overlay.setAttribute('aria-hidden', 'true');
+          if (shell) shell.style.opacity = '0';
+          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+          gsap.set('#cs-right', { xPercent: 0 });
+          if (convObserver) convObserver.enable();
+          isOverlayOpen = false;
+          _currentSlug  = null;
+          _sourceCard   = null;
+          _exitTl       = null;
+        }
+      });
+
+      if (startRect) {
+        _exitTl.to(clone, {
+          x: destRect.left - startRect.left,
+          y: destRect.top  - startRect.top,
+          width:  destRect.width,
+          height: destRect.height,
+          duration: D, ease: EASE
+        }, 0);
+      }
+
+      _exitTl.to('#cs-right', { xPercent: 100,  duration: D,       ease: EASE }, 0);
+      _exitTl.to('.porto',    { opacity:  1,     duration: D * 0.7, ease: EASE }, 0);
+      _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2               }, 0);
     }
 
     // ── Main ───────────────────────────────────────────────
