@@ -623,6 +623,7 @@
         // Instant reveal — hide homepage so it doesn't bleed through the transparent overlay
         if (window.gsap) { gsap.set('.porto', { opacity: 0 }); }
         else { var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '0'; }
+        _sourceCard = null; // no source card for this open → close must be instant, not a mismatched glide
         document.dispatchEvent(new Event('cs-entered'));
         return;
       }
