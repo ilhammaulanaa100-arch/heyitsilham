@@ -267,6 +267,9 @@
      color: #ffffff;
      white-space: nowrap;
    }
+   #proj-cursor svg[data-cursor-icon="close"] { display: none; }
+   #proj-cursor.is-close svg[data-cursor-icon="explore"] { display: none; }
+   #proj-cursor.is-close svg[data-cursor-icon="close"] { display: block; }
 
    .proj-card { perspective: 650px; }
    .proj-card img { transition: none; transform-style: preserve-3d; will-change: auto; }
@@ -282,8 +285,11 @@
 </head>
 <body>
   <div id="proj-cursor">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg data-cursor-icon="explore" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M4 16L16 4M16 4H7M16 4V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg data-cursor-icon="close" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 2L14 14M14 2L2 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
     </svg>
     <span>[EXPLORE]</span>
   </div>
@@ -605,8 +611,8 @@
       if (csRight) csRight.scrollTop   = 0;
       _currentSlug = project.slug;
 
-      var D    = 0.72;
-      var EASE = 'power3.inOut';
+      var D    = 1.05;
+      var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var useAnim = !!(fromCard && window.gsap && !prefersReduced);
 
@@ -696,8 +702,8 @@
       }
       if (_exitTl) { _exitTl.kill(); _exitTl = null; }
 
-      var D    = 0.72;
-      var EASE = 'power3.inOut';
+      var D    = 0.9;
+      var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
 
@@ -721,6 +727,7 @@
         if (convObserver) convObserver.enable();
         isOverlayOpen = false;
         _currentSlug  = null;
+        if (window._resetCursorExplore) window._resetCursorExplore();
         return;
       }
 
@@ -765,6 +772,7 @@
           _currentSlug  = null;
           _sourceCard   = null;
           _exitTl       = null;
+          if (window._resetCursorExplore) window._resetCursorExplore();
         }
       });
 
@@ -1055,6 +1063,49 @@
            cursor.classList.remove('is-visible');
            document.body.style.cursor = '';
          }
+       }
+     });
+
+     var cursorLabel = cursor.querySelector('span');
+
+     function _setCursorClose() {
+       cursor.classList.add('is-close');
+       if (cursorLabel) cursorLabel.textContent = 'CLOSE';
+     }
+     function _resetCursorExplore() {
+       cursor.classList.remove('is-close');
+       if (cursorLabel) cursorLabel.textContent = '[EXPLORE]';
+     }
+
+     // Expose reset so hideOverlay can call it
+     window._resetCursorExplore = _resetCursorExplore;
+
+     document.addEventListener('mouseover', function(e) {
+       if (!isOverlayOpen) return;
+       if (e.target.closest('#cs-left')) {
+         _setCursorClose();
+         cursor.classList.add('is-visible');
+         document.body.style.cursor = 'none';
+       }
+     });
+
+     document.addEventListener('mouseout', function(e) {
+       if (!isOverlayOpen) return;
+       if (e.target.closest('#cs-left')) {
+         var related = e.relatedTarget;
+         if (!related || !related.closest('#cs-left')) {
+           _resetCursorExplore();
+           cursor.classList.remove('is-visible');
+           document.body.style.cursor = '';
+         }
+       }
+     });
+
+     document.addEventListener('click', function(e) {
+       if (!isOverlayOpen) return;
+       if (e.target.closest('#cs-close')) return;
+       if (e.target.closest('#cs-left')) {
+         history.back();
        }
      });
    })();
