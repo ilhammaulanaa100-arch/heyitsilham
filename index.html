@@ -611,7 +611,7 @@
       if (csRight) csRight.scrollTop   = 0;
       _currentSlug = project.slug;
 
-      var D    = 1.05;
+      var D    = 1.2;
       var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var useAnim = !!(fromCard && window.gsap && !prefersReduced);
@@ -702,7 +702,7 @@
       }
       if (_exitTl) { _exitTl.kill(); _exitTl = null; }
 
-      var D    = 0.9;
+      var D    = 1.0;
       var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
