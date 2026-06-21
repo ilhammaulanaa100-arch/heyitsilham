@@ -555,6 +555,12 @@ html.lenis { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 
+/* Headline container must be visible — char animation handles the reveal */
+.cs-headline.cs-reveal {
+  opacity: 1;
+  transform: none;
+}
+
 /* Entrance: headline chars start hidden (animated via GSAP) */
 .cs-headline .cs-char {
   display: inline-block;
