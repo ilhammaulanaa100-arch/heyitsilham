@@ -35,7 +35,6 @@
   top: 0;
   height: 100vh;
   overflow: hidden;
-  border-right: 1px solid var(--divider);
 }
 
 /* "← Close" link — mono, top-left */
@@ -74,6 +73,7 @@
   flex-direction: column;
   /* Hide scrollbar visually, keep scroll functional */
   scrollbar-width: none;
+  border-left: 1px solid var(--divider);
 }
 .cs-right::-webkit-scrollbar { display: none; }
 #cs-right-content {
@@ -122,6 +122,7 @@
   .cs-right {
     width: 100%;
     padding: 0;
+    border-left: none;
   }
   #cs-right-content { padding: 24px 24px 80px; }
 }
@@ -189,6 +190,11 @@
 
 /* Caption — mono, below the card */
 .cs-slide-caption {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 400;
@@ -196,7 +202,6 @@
   text-transform: uppercase;
   color: rgba(0,0,0,0.4);
   line-height: 1.4;
-  padding-top: 4px;
   user-select: none;
 }
 
