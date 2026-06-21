@@ -592,7 +592,11 @@
     function trapOverlayFocus() {
       var overlay = document.getElementById('cs-overlay');
       if (!overlay) return;
-      _prevFocus = document.activeElement;
+      // Idempotent: a What's-Next navigation re-opens the overlay without closing it.
+      // Drop any existing trap before installing a new one, and pin _prevFocus to the
+      // ORIGINAL opener so focus restores correctly on the final close.
+      if (_trapHandler) { document.removeEventListener('keydown', _trapHandler, true); _trapHandler = null; }
+      if (!_prevFocus) _prevFocus = document.activeElement;
       var porto = document.querySelector('.porto');
       if (porto) porto.setAttribute('aria-hidden', 'true');
       var closeBtn = document.getElementById('cs-close');
