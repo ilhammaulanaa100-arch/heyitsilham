@@ -3,7 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ilham — Porto</title>
+
+  <title>Ilham — Product Designer</title>
+  <meta name="description" content="Ilham — product designer crafting editorial, cinematic digital experiences. Selected work and case studies." />
+  <meta name="author" content="Ilham" />
+  <link rel="canonical" href="https://heyitsilham.vercel.app/" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Ilham — Product Designer" />
+  <meta property="og:description" content="Editorial, cinematic digital experiences. Selected work and case studies." />
+  <meta property="og:url" content="https://heyitsilham.vercel.app/" />
+  <meta property="og:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Ilham — Product Designer" />
+  <meta name="twitter:description" content="Editorial, cinematic digital experiences. Selected work and case studies." />
+  <meta name="twitter:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -97,6 +122,10 @@
       position: relative;
       overflow: hidden;
       flex-shrink: 0;
+    }
+    .proj-card:focus-visible {
+      outline: 2px solid #FF3ECF;
+      outline-offset: 4px;
     }
     .proj-card.is-landscape { width: 580px; height: 420px; }
     .proj-card.is-square    { width: 480px; height: 480px; }
@@ -283,7 +312,7 @@
   </style>
 </head>
 <body>
-  <div id="proj-cursor">
+  <div id="proj-cursor" aria-hidden="true">
     <div class="proj-cursor-inner">
       <svg data-cursor-icon="explore" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 16L16 4M16 4H7M16 4V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -359,7 +388,7 @@
   </div><!-- end .porto -->
 
   <!-- Case-study overlay (SPA, in-place) -->
-  <div class="cs-overlay" id="cs-overlay" aria-hidden="true">
+  <div class="cs-overlay" id="cs-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Case study">
     <div class="cs-shell" id="cs-shell">
       <div class="cs-left" id="cs-left">
         <a class="cs-close" id="cs-close" href="javascript:void(0)">← Close</a>
@@ -414,7 +443,7 @@
                   '<span class="line-mask"><span class="line">' + esc(proj.title) + '</span></span>' +
                 '</div>' +
               '</div>' +
-              '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';">' +
+              '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.title) + '">' +
                 imgTag +
               '</div>' +
               '<div class="ph-spacer"></div>' +
@@ -557,6 +586,40 @@
     var _entranceClone = null;
     var _sourceCard    = null;
     var _exitTl        = null;
+    var _prevFocus   = null;
+    var _trapHandler = null;
+
+    function trapOverlayFocus() {
+      var overlay = document.getElementById('cs-overlay');
+      if (!overlay) return;
+      _prevFocus = document.activeElement;
+      var porto = document.querySelector('.porto');
+      if (porto) porto.setAttribute('aria-hidden', 'true');
+      var closeBtn = document.getElementById('cs-close');
+      if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
+      _trapHandler = function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); history.back(); return; }
+        if (e.key !== 'Tab') return;
+        var nodes = overlay.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        var list = Array.prototype.filter.call(nodes, function (el) { return el.offsetParent !== null; });
+        if (!list.length) return;
+        var first = list[0], last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      };
+      document.addEventListener('keydown', _trapHandler, true);
+    }
+
+    function releaseOverlayFocus() {
+      if (_trapHandler) { document.removeEventListener('keydown', _trapHandler, true); _trapHandler = null; }
+      var porto = document.querySelector('.porto');
+      if (porto) porto.removeAttribute('aria-hidden');
+      if (_prevFocus && typeof _prevFocus.focus === 'function') {
+        try { _prevFocus.focus({ preventScroll: true }); } catch (e) { _prevFocus.focus(); }
+      }
+      _prevFocus = null;
+    }
+
 
     function navigateFromOverlay(href) {
       var match = href && href.match(/[?&]p=([^&]+)/);
@@ -607,6 +670,7 @@
       var shell   = document.getElementById('cs-shell');
       var csRight = document.getElementById('cs-right');
       overlay.classList.add('is-open');
+      trapOverlayFocus();
       overlay.setAttribute('aria-hidden', 'false');
       if (shell)   shell.style.opacity = '1';
       if (csRight) csRight.scrollTop   = 0;
@@ -615,13 +679,25 @@
       var D    = 1.2;
       var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var useAnim = !!(fromCard && window.gsap && !prefersReduced);
+      var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
+      // Mobile: split layout collapses to stacked, so the glide + panel sweep don't apply.
+      var useAnim = !!(fromCard && window.gsap && !prefersReduced && !isMobile);
 
       if (!useAnim) {
-        // Instant reveal — hide homepage so it doesn't bleed through the transparent overlay
-        if (window.gsap) { gsap.set('.porto', { opacity: 0 }); }
-        else { var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '0'; }
-        _sourceCard = null; // no source card for this open → close must be instant, not a mismatched glide
+        _sourceCard = null; // no source card → close stays instant/crossfade, not a mismatched glide
+
+        if (isMobile && window.gsap && !prefersReduced) {
+          // ── Simple mobile crossfade (opacity only) ──
+          gsap.set('#cs-right', { xPercent: 0 });
+          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+          gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+          gsap.to('.porto', { opacity: 0, duration: 0.3, ease: 'power2.out' });
+        } else if (window.gsap) {
+          gsap.set('.porto', { opacity: 0 });
+        } else {
+          var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '0';
+        }
+
         document.dispatchEvent(new Event('cs-entered'));
         return;
       }
@@ -695,6 +771,7 @@
     }
 
     function hideOverlay() {
+      releaseOverlayFocus();
       // Kill any in-flight entrance/exit and remove entrance clone
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
@@ -709,26 +786,37 @@
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
 
       if (!canAnimate) {
-        // ── Instant fallback (no gsap, reduced-motion, or no source card) ──
-        CaseStudy.teardown();
-        var overlay = document.getElementById('cs-overlay');
-        var shell   = document.getElementById('cs-shell');
-        overlay.classList.remove('is-open');
-        overlay.setAttribute('aria-hidden', 'true');
-        if (shell) shell.style.opacity = '0';
-        if (window.gsap) {
-          gsap.set('.porto', { opacity: 1 });
-          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
-          gsap.set('#cs-right', { xPercent: 0 });
-          if (_sourceCard) { gsap.set(_sourceCard, { opacity: 1 }); }
+        var isMobile = window.matchMedia && matchMedia('(max-width: 900px)').matches;
+        var overlay  = document.getElementById('cs-overlay');
+        var shell    = document.getElementById('cs-shell');
+
+        var finishClose = function () {
+          CaseStudy.teardown();
+          overlay.classList.remove('is-open');
+          overlay.setAttribute('aria-hidden', 'true');
+          if (shell) shell.style.opacity = '0';
+          if (window.gsap) {
+            gsap.set('.porto', { opacity: 1 });
+            gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+            gsap.set('#cs-right', { xPercent: 0 });
+            if (_sourceCard) { gsap.set(_sourceCard, { opacity: 1 }); }
+          } else {
+            var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '1';
+          }
+          _sourceCard = null;
+          if (convObserver) convObserver.enable();
+          isOverlayOpen = false;
+          _currentSlug  = null;
+          if (window._resetCursorExplore) window._resetCursorExplore();
+        };
+
+        if (isMobile && window.gsap && !prefersReduced) {
+          // ── Simple mobile crossfade close (opacity only) ──
+          gsap.to(shell, { opacity: 0, duration: 0.28, ease: 'power2.out' });
+          gsap.fromTo('.porto', { opacity: 0 }, { opacity: 1, duration: 0.28, ease: 'power2.out', onComplete: finishClose });
         } else {
-          var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '1';
+          finishClose();
         }
-        _sourceCard = null;
-        if (convObserver) convObserver.enable();
-        isOverlayOpen = false;
-        _currentSlug  = null;
-        if (window._resetCursorExplore) window._resetCursorExplore();
         return;
       }
 
@@ -849,6 +937,13 @@
             }
           }
         });
+
+        card.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            card.click();
+          }
+        });
       });
 
       function imgY(i, cur) {
@@ -878,6 +973,15 @@
         sections[i].style.zIndex = imgZ((i - 0 + TOTAL) % TOTAL);
       });
       sections[0].classList.add('is-active');
+
+      function syncActiveCardTab() {
+        sections.forEach(function (s) {
+          var c = s.querySelector('.proj-card');
+          if (!c) return;
+          c.setAttribute('tabindex', s.classList.contains('is-active') ? '0' : '-1');
+        });
+      }
+      syncActiveCardTab();
 
       function sectionText(idx) {
         var sec = sections[idx];
@@ -912,6 +1016,7 @@
 
         sections.forEach(function(s) { s.classList.remove('is-active'); });
         sections[current].classList.add('is-active');
+        syncActiveCardTab();
 
         images.forEach(function(el) { el.style.willChange = 'transform'; });
 

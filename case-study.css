@@ -555,3 +555,11 @@ html.lenis { height: auto; }
   opacity: 0;
   transform: translateY(40%);
 }
+
+.cs-close:focus-visible,
+.cs-source:focus-visible,
+.cs-next-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  opacity: 1;
+}
