@@ -579,15 +579,16 @@
     }, 6000);
 
     // ── Overlay state ──────────────────────────────────────
-    var isOverlayOpen  = false;
-    var _currentSlug   = null;
-    var convObserver   = null;
-    var _entranceTl    = null;
-    var _entranceClone = null;
-    var _sourceCard    = null;
-    var _exitTl        = null;
-    var _prevFocus   = null;
-    var _trapHandler = null;
+    var isOverlayOpen    = false;
+    var _currentSlug     = null;
+    var convObserver     = null;
+    var _entranceTl      = null;
+    var _entranceClone   = null;
+    var _sourceCard      = null;
+    var _exitTl          = null;
+    var _prevFocus       = null;
+    var _trapHandler     = null;
+    var _replayHeroReveal = null; // assigned inside load handler once revealText/sectionText/current are live
 
     function trapOverlayFocus() {
       var overlay = document.getElementById('cs-overlay');
@@ -812,6 +813,7 @@
           isOverlayOpen = false;
           _currentSlug  = null;
           if (window._resetCursorExplore) window._resetCursorExplore();
+          if (!isMobile && _replayHeroReveal) _replayHeroReveal();
         };
 
         if (isMobile && window.gsap && !prefersReduced) {
@@ -882,6 +884,9 @@
       _exitTl.to('#cs-right', { xPercent: 100,  duration: D,       ease: EASE }, 0);
       _exitTl.to('.porto',    { opacity:  1,     duration: 0.26, ease: 'power2.out' }, 0);
       _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2               }, 0);
+      // Fire hero headline reveal as the white panel nears the end of its retract (~65% through),
+      // so the text animates in while the panel is still sliding rather than after a dead pause.
+      _exitTl.add(function() { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.65);
     }
 
     // ── Main ───────────────────────────────────────────────
@@ -1005,6 +1010,16 @@
         if (t.big   && t.big.length)   tl.to(t.big,   { yPercent: -40, opacity: 0, duration: 0.35, ease: 'power3.in', stagger: { each: 0.008, from: 'end' } }, 0);
         if (t.small && t.small.length) tl.to(t.small, { yPercent: -40, opacity: 0, duration: 0.3,  ease: 'power3.in' }, 0);
       }
+
+      // Expose hero reveal so hideOverlay (outer scope) can replay it on close.
+      // Kills any in-flight tween, hard-resets to the pre-reveal state, then animates in.
+      _replayHeroReveal = function() {
+        if (!window.gsap) return;
+        var t = sectionText(current);
+        if (t.big   && t.big.length)   { gsap.killTweensOf(t.big);   gsap.set(t.big,   { yPercent: 40, opacity: 0 }); }
+        if (t.small && t.small.length) { gsap.killTweensOf(t.small); gsap.set(t.small, { yPercent: 40, opacity: 0 }); }
+        revealText(gsap.timeline(), t);
+      };
 
       function go(dir) {
         if (animating) return;
