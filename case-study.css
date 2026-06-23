@@ -78,6 +78,7 @@
   /* Hide scrollbar visually, keep scroll functional */
   scrollbar-width: none;
   border-left: 1px solid var(--divider);
+  background: #fff;
 }
 
 .cs-right::-webkit-scrollbar {
