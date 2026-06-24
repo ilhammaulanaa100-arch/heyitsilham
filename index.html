@@ -584,7 +584,8 @@
     var convObserver     = null;
     var _entranceTl      = null;
     var _entranceClone   = null;
-    var _sourceCard      = null;
+    var _sourceCard         = null;
+    var _sourceProjectIndex = -1;
     var _exitTl          = null;
     var _prevFocus       = null;
     var _trapHandler     = null;
@@ -604,7 +605,7 @@
       var closeBtn = document.getElementById('cs-close');
       if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
       _trapHandler = function (e) {
-        if (e.key === 'Escape') { e.preventDefault(); history.back(); return; }
+        if (e.key === 'Escape') { e.preventDefault(); closeOverlay(); return; }
         if (e.key !== 'Tab') return;
         var nodes = overlay.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
         var list = Array.prototype.filter.call(nodes, function (el) { return el.offsetParent !== null; });
@@ -676,6 +677,11 @@
       var shell   = document.getElementById('cs-shell');
       var csRight = document.getElementById('cs-right');
       overlay.classList.add('is-open');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (window.CaseStudy && CaseStudy.relayout) CaseStudy.relayout();
+        });
+      });
       trapOverlayFocus();
       overlay.setAttribute('aria-hidden', 'false');
       if (shell)   shell.style.opacity = '1';
@@ -690,12 +696,12 @@
       var useAnim = !!(fromCard && window.gsap && !prefersReduced && !isMobile);
 
       if (!useAnim) {
-        _sourceCard = null; // no source card → close stays instant/crossfade, not a mismatched glide
+        _sourceCard = null; _sourceProjectIndex = -1; // no source card → close stays instant/crossfade, not a mismatched glide
 
         if (isMobile && window.gsap && !prefersReduced) {
           // ── Simple mobile crossfade (opacity only) ──
           gsap.set('#cs-right', { xPercent: 0 });
-          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+          gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
           gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' });
           gsap.to('.porto', { opacity: 0, duration: 0.3, ease: 'power2.out' });
         } else if (window.gsap) {
@@ -710,7 +716,7 @@
 
       // ── Animated entrance ──────────────────────────────────
       gsap.set('#cs-right',  { xPercent: 100 });
-      gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 0 });
+      gsap.set('.cs-slide.is-active .proj-card', { opacity: 0 });
       gsap.set('#cs-close',  { opacity: 0 });
 
       var clone = document.createElement('img');
@@ -727,10 +733,11 @@
 
       // Hide the whole source card so only the clone is visible during the glide
       gsap.set(fromCard.card, { opacity: 0 });
-      _sourceCard = fromCard.card;
+      _sourceCard         = fromCard.card;
+      _sourceProjectIndex = PROJECTS.indexOf(project);
 
       function runEntrance() {
-        var destEl   = document.querySelector('.cs-slide[data-index="0"] .proj-card');
+        var destEl   = document.querySelector('.cs-slide.is-active .proj-card');
         var destRect = destEl ? destEl.getBoundingClientRect() : null;
 
         // Compute translation offsets so position is animated via transform (GPU path)
@@ -739,7 +746,7 @@
 
         _entranceTl = gsap.timeline({
           onComplete: function() {
-            gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+            gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
             gsap.set('#cs-right', { xPercent: 0 });
             if (clone.parentNode) clone.parentNode.removeChild(clone);
             _entranceTl = null; _entranceClone = null;
@@ -776,6 +783,11 @@
       }
     }
 
+    function closeOverlay() {
+      hideOverlay();
+      history.replaceState({ csOverlay: null }, '', location.pathname.replace(/case-study\.html.*$/, '') || 'index.html');
+    }
+
     function hideOverlay() {
       releaseOverlayFocus();
       // Kill any in-flight entrance/exit and remove entrance clone
@@ -803,7 +815,7 @@
           if (shell) shell.style.opacity = '0';
           if (window.gsap) {
             gsap.set('.porto', { opacity: 1 });
-            gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+            gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
             gsap.set('#cs-right', { xPercent: 0 });
             if (_sourceCard) { gsap.set(_sourceCard, { opacity: 1 }); }
           } else {
@@ -827,8 +839,18 @@
         return;
       }
 
+      // ── Mismatch guard: if the user navigated to a different project, skip glide ──
+      var activeSlideEl   = document.querySelector('.cs-slide.is-active');
+      var activeDataIndex = activeSlideEl ? parseInt(activeSlideEl.getAttribute('data-index'), 10) : -1;
+      if (activeDataIndex !== _sourceProjectIndex) {
+        // Active project changed — fall back to plain close to avoid a wrong-card glide.
+        _sourceCard = null;
+        hideOverlay();
+        return;
+      }
+
       // ── Animated reverse close ────────────────────────────────
-      var realCardEl = document.querySelector('.cs-slide[data-index="0"] .proj-card');
+      var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
       var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
       var destRect   = _sourceCard.getBoundingClientRect();
       var imgEl      = realCardEl ? realCardEl.querySelector('img') : null;
@@ -865,13 +887,14 @@
           overlay.classList.remove('is-open');
           overlay.setAttribute('aria-hidden', 'true');
           if (shell) shell.style.opacity = '0';
-          gsap.set('.cs-slide[data-index="0"] .proj-card', { opacity: 1 });
+          gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
           gsap.set('#cs-right', { xPercent: 0 });
           if (convObserver) convObserver.enable();
           isOverlayOpen = false;
-          _currentSlug  = null;
-          _sourceCard   = null;
-          _exitTl       = null;
+          _currentSlug        = null;
+          _sourceCard         = null;
+          _sourceProjectIndex = -1;
+          _exitTl             = null;
           if (window._resetCursorExplore) window._resetCursorExplore();
         }
       });
@@ -1122,7 +1145,7 @@
       if (csCloseBtn) {
         csCloseBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          history.back();
+          closeOverlay();
         });
       }
 
@@ -1199,16 +1222,16 @@
 
      // Use event delegation on document to catch all .proj-card hovers
      document.addEventListener('mouseover', function(e) {
-       if (e.target.closest('.proj-card')) {
+       if (e.target.closest('.page-section .proj-card')) {
          cursor.classList.add('is-visible');
          document.body.style.cursor = 'none';
        }
      });
 
      document.addEventListener('mouseout', function(e) {
-       if (e.target.closest('.proj-card')) {
+       if (e.target.closest('.page-section .proj-card')) {
          var related = e.relatedTarget;
-         if (!related || !related.closest('.proj-card')) {
+         if (!related || !related.closest('.page-section .proj-card')) {
            cursor.classList.remove('is-visible');
            document.body.style.cursor = '';
          }
@@ -1231,7 +1254,7 @@
 
      document.addEventListener('mouseover', function(e) {
        if (!isOverlayOpen) return;
-       if (e.target.closest('#cs-left')) {
+       if (e.target.closest('.cs-slide .proj-card')) {
          _setCursorClose();
          cursor.classList.add('is-visible');
          document.body.style.cursor = 'none';
@@ -1240,9 +1263,9 @@
 
      document.addEventListener('mouseout', function(e) {
        if (!isOverlayOpen) return;
-       if (e.target.closest('#cs-left')) {
+       if (e.target.closest('.cs-slide .proj-card')) {
          var related = e.relatedTarget;
-         if (!related || !related.closest('#cs-left')) {
+         if (!related || !related.closest('.cs-slide .proj-card')) {
            _resetCursorExplore();
            cursor.classList.remove('is-visible');
            document.body.style.cursor = '';
@@ -1253,8 +1276,9 @@
      document.addEventListener('click', function(e) {
        if (!isOverlayOpen) return;
        if (e.target.closest('#cs-close')) return;
+       if (e.target.closest('.cs-slider-prev, .cs-slider-next, .cs-slider-dot, .cs-slider-dots')) return;
        if (e.target.closest('#cs-left')) {
-         history.back();
+         closeOverlay();
        }
      });
    })();
