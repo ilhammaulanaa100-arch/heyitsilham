@@ -13,6 +13,15 @@
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
   var _onSliderTouchEnd    = null;
+  var _onWheelLeft         = null;
+  var _leftPanelEl         = null;
+  var _scrollWrapper       = null;
+  var _contentEl           = null;
+  var _exitFn              = null;
+
+  function slugOf(project, index) {
+    return project.slug || String(index + 1);
+  }
 
   // ── resolveProject ────────────────────────────────────────────────────────
   // Given the ?p= value, return the matching project (slug → numeric → first).
@@ -54,10 +63,15 @@
     var contentEl     = opts.contentEl     || document.getElementById('cs-right-content');
     var exitFn        = opts.exitFn        || function (href) { window.location.href = href; };
 
-    _sliderEl = sliderEl;
-    _detailEl = detailEl;
+    _sliderEl      = sliderEl;
+    _detailEl      = detailEl;
+    _scrollWrapper = scrollWrapper;
+    _contentEl     = contentEl;
+    _exitFn        = exitFn;
 
-    buildSlider(project, sliderEl);
+    var activeIndex = (typeof PROJECTS !== 'undefined') ? PROJECTS.indexOf(project) : 0;
+    if (activeIndex < 0) activeIndex = 0;
+    buildSlider(project, sliderEl, activeIndex);
     buildDetail(project, detailEl, exitFn);
     initScrollAndReveals(scrollWrapper, contentEl);
 
@@ -70,10 +84,12 @@
     if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
     if (_onSliderKeydown)     { document.removeEventListener('keydown',    _onSliderKeydown);      _onSliderKeydown     = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
-    if (_onSliderTouchStart && _sliderEl) { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
-    if (_onSliderTouchEnd   && _sliderEl) { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
+    if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
+    if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
+    if (_onWheelLeft        && _leftPanelEl) { _leftPanelEl.removeEventListener('wheel',   _onWheelLeft);        _onWheelLeft        = null; }
+    _leftPanelEl = null;
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
-    if (_lenis)    { _lenis.destroy(); _lenis = null; }
+    if (_lenis)    { _lenis.destroy(); _lenis = null; if (_scrollWrapper) _scrollWrapper.style.overflowY = ''; }
     if (_observer) { _observer.disconnect(); _observer = null; }
     if (window.gsap) {
       _slideEls.forEach(function (el) { gsap.killTweensOf(el); });
@@ -90,36 +106,23 @@
   }
 
   // ── buildSlider ───────────────────────────────────────────────────────────
-  function buildSlider(p_data, sliderEl) {
-    // ── Assemble slide data ─────────────────────────────
-    // Build an array of { src, caption, isVideo, color } from media fields.
-    var slides = [];
+  function buildSlider(p_data, sliderEl, activeIndex) {
+    // ── Assemble slide data from PROJECTS (one slide per project) ──────────
+    var allProjects = (typeof PROJECTS !== 'undefined' && PROJECTS && PROJECTS.length) ? PROJECTS : [p_data];
+    activeIndex = (activeIndex >= 0 && activeIndex < allProjects.length) ? activeIndex : 0;
 
-    // Hero image — caption uses subtitle + role
-    if (p_data.media && p_data.media.hero) {
-      slides.push({
-        src:     p_data.media.hero,
-        caption: (p_data.subtitle || '') + ' — ' + (p_data.meta && p_data.meta.role ? p_data.meta.role : ''),
-        isVideo: false,
-        color:   p_data.color
-      });
-    }
-
-    // Grid images (support both string[] and {src,caption}[] shapes)
-    var grid = (p_data.media && p_data.media.grid) ? p_data.media.grid : [];
-    grid.forEach(function (item) {
-      var src     = (typeof item === 'string') ? item : (item.src     || '');
-      var caption = (typeof item === 'string') ? ''   : (item.caption || '');
-      slides.push({ src: src, caption: caption, isVideo: false, color: p_data.color });
+    var slides = allProjects.map(function (pr, i) {
+      var src = (pr.media && pr.media.hero) ? pr.media.hero : '';
+      var cat = pr.category || '';
+      var per = pr.period   || (pr.meta && pr.meta.year) || '';
+      var caption = (cat || per)
+        ? (cat + (per ? ' (' + per + ')' : ''))
+        : (pr.subtitle || '');
+      return { src: src, caption: caption, color: pr.color, num: String(i + 1).padStart(2, '0') };
     });
 
-    // If no media at all, add one gradient placeholder
-    if (slides.length === 0) {
-      slides.push({ src: '', caption: p_data.subtitle || '', isVideo: false, color: p_data.color });
-    }
-
     var TOTAL     = slides.length;
-    var current   = 0;
+    var current   = activeIndex;
     var animating = false;
 
     if (!sliderEl) return;
@@ -130,13 +133,13 @@
 
     slides.forEach(function (slide, i) {
       var wrapper = document.createElement('div');
-      wrapper.className = 'cs-slide';
+      wrapper.className = 'cs-slide' + (i === activeIndex ? ' is-active' : '');
       wrapper.setAttribute('data-index', i);
 
-      // Zero-padded slide number above card
+      // Zero-padded project number above card
       var numEl = document.createElement('span');
       numEl.className = 'cs-slide-num';
-      numEl.textContent = String(i + 1).padStart(2, '0');
+      numEl.textContent = slide.num;
       wrapper.appendChild(numEl);
 
       // Card
@@ -149,8 +152,8 @@
       ph.style.background = slide.color || '#f0f0f0';
       card.appendChild(ph);
 
-      // Image (if src exists)
-      if (slide.src && !slide.isVideo) {
+      // Cover image (if src exists)
+      if (slide.src) {
         var img = document.createElement('img');
         img.src = slide.src;
         img.alt = slide.caption || '';
@@ -180,7 +183,7 @@
       dotsEl.className = 'cs-slider-dots';
       slides.forEach(function (_, i) {
         var dot = document.createElement('div');
-        dot.className = 'cs-slider-dot' + (i === 0 ? ' is-active' : '');
+        dot.className = 'cs-slider-dot' + (i === activeIndex ? ' is-active' : '');
         dot.addEventListener('click', function () { if (!animating) goTo(i); });
         dotsEl.appendChild(dot);
         dotEls.push(dot);
@@ -212,21 +215,21 @@
       var W  = sliderEl.offsetWidth;
       var fd = (idx - cur + TOTAL) % TOTAL;
       if (fd === 0)         return 0;
-      if (fd === 1)         return  W * 0.78;
-      if (fd === TOTAL - 1) return -W * 0.78;
-      if (fd === 2)         return  W * 1.6;
-      if (fd === TOTAL - 2) return -W * 1.6;
-      return fd < TOTAL / 2 ? W * 1.6 : -W * 1.6;
+      if (fd === 1)         return  W * 0.61;
+      if (fd === TOTAL - 1) return -W * 0.61;
+      if (fd === 2)         return  W * 1.3;
+      if (fd === TOTAL - 2) return -W * 1.3;
+      return fd < TOTAL / 2 ? W * 1.3 : -W * 1.3;
     }
 
     function scaleFor(idx, cur) {
-      return ((idx - cur + TOTAL) % TOTAL === 0) ? 1 : 0.82;
+      return ((idx - cur + TOTAL) % TOTAL === 0) ? 1 : 0.7;
     }
 
     function opacityFor(idx, cur) {
       var fd = (idx - cur + TOTAL) % TOTAL;
       if (fd === 0)                     return 1;
-      if (fd === 1 || fd === TOTAL - 1) return 0.45;
+      if (fd === 1 || fd === TOTAL - 1) return 0.65;
       return 0;
     }
 
@@ -234,14 +237,14 @@
     slideEls.forEach(function (el, i) {
       if (window.gsap) {
         gsap.set(el, {
-          x:               xFor(i, 0),
-          scale:           scaleFor(i, 0),
-          opacity:         opacityFor(i, 0),
+          x:               xFor(i, activeIndex),
+          scale:           scaleFor(i, activeIndex),
+          opacity:         opacityFor(i, activeIndex),
           transformOrigin: 'center center'
         });
       } else {
-        el.style.transform = 'translate(calc(-50% + ' + xFor(i, 0) + 'px), -50%)';
-        el.style.opacity   = String(opacityFor(i, 0));
+        el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
+        el.style.opacity   = String(opacityFor(i, activeIndex));
       }
     });
 
@@ -251,10 +254,16 @@
       animating = true;
       current   = next;
 
-      // Update dots
+      // Update dots and active slide
       dotEls.forEach(function (d, i) {
         d.classList.toggle('is-active', i === current);
       });
+      slideEls.forEach(function (el, i) {
+        el.classList.toggle('is-active', i === current);
+      });
+
+      // Crossfade right panel to new project
+      setActiveProject(current);
 
       if (!window.gsap) {
         slideEls.forEach(function (el, i) {
@@ -290,6 +299,19 @@
       if (e.key === 'ArrowRight') { e.preventDefault(); if (!animating) goTo((current + 1) % TOTAL); }
     };
     document.addEventListener('keydown', _onSliderKeydown);
+
+    // ── Wheel on left panel → carousel nav (debounced by time) ──
+    _leftPanelEl = leftPanel;
+    var _lastWheelNav = 0;
+    _onWheelLeft = function (e) {
+      if (animating || TOTAL < 2) return;
+      var now = Date.now();
+      if (now - _lastWheelNav < 600) return;
+      if (Math.abs(e.deltaY) < 20) return;
+      _lastWheelNav = now;
+      goTo(e.deltaY > 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
+    };
+    if (_leftPanelEl) _leftPanelEl.addEventListener('wheel', _onWheelLeft, { passive: true });
 
     // ── Swipe (touch) ────────────────────────────────────
     var touchStartX = null;
@@ -361,6 +383,7 @@
       headlineEl.appendChild(wordEl);
     });
     detail.appendChild(headlineEl);
+    if (window.gsap) gsap.set(headlineEl.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
     // ── 3. Meta grid (Timeline / Role / Client / Year) ───
     var metaGrid = div('cs-meta-grid cs-reveal');
@@ -478,17 +501,18 @@
 
     // ── 9. What's Next ───────────────────────────────────
     var pIdx  = PROJECTS.indexOf(p_data);
-    var nextP = PROJECTS[(pIdx + 1) % PROJECTS.length];
+    var nextIdx = (pIdx + 1) % PROJECTS.length;
+    var nextP = PROJECTS[nextIdx];
 
     var nextBlock = div('cs-next-block cs-reveal');
     nextBlock.appendChild(span('cs-next-eyebrow', "What's Next"));
 
     var nextLink = document.createElement('a');
     nextLink.className = 'cs-next-link';
-    nextLink.href = 'case-study.html?p=' + nextP.slug;
+    nextLink.href = 'case-study.html?p=' + slugOf(nextP, nextIdx);
     nextLink.addEventListener('click', function (e) {
       e.preventDefault();
-      exitFn('case-study.html?p=' + nextP.slug);
+      exitFn('case-study.html?p=' + slugOf(nextP, nextIdx));
     });
 
     var thumb = div('cs-next-thumb');
@@ -518,13 +542,107 @@
 
   } // end buildDetail
 
+  // ── rewireReveals ─────────────────────────────────────────────────────────
+  // Tears down and re-registers the reveal observer + cs-entered listeners.
+  // Called on initial load (via initScrollAndReveals) and on each project swap.
+  function rewireReveals(sw) {
+    if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
+    if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
+    if (_observer)            { _observer.disconnect(); _observer = null; }
+
+    _onCsEnteredHeadline = function () {
+      if (!window.gsap) return;
+      var chars = document.querySelectorAll('.cs-headline .cs-char');
+      if (!chars.length) return;
+      gsap.to(chars, { opacity: 1, yPercent: 0, duration: 0.7, ease: 'power3.out', stagger: { each: 0.018, from: 'start' } });
+    };
+    document.addEventListener('cs-entered', _onCsEnteredHeadline);
+
+    if (!window.gsap) {
+      document.querySelectorAll('.cs-reveal').forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
+      _onCsEnteredTagRow = function () {};
+      document.addEventListener('cs-entered', _onCsEnteredTagRow);
+      return;
+    }
+
+    var revealEls = Array.from(document.querySelectorAll('.cs-reveal:not(.cs-headline):not(.cs-tag-row)'));
+    _observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        gsap.to(entry.target, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out', delay: 0.04 });
+        _observer.unobserve(entry.target);
+      });
+    }, { root: sw, threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(function (el) { _observer.observe(el); });
+
+    _onCsEnteredTagRow = function () {
+      if (!window.gsap) return;
+      var tagRow = document.querySelector('.cs-tag-row');
+      if (tagRow) gsap.to(tagRow, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' });
+    };
+    document.addEventListener('cs-entered', _onCsEnteredTagRow);
+  }
+
+  // ── setActiveProject ──────────────────────────────────────────────────────
+  // Crossfades right panel to the project at `index`. Does NOT move the carousel.
+  function setActiveProject(index) {
+    if (typeof PROJECTS === 'undefined' || !PROJECTS || index < 0 || index >= PROJECTS.length) return;
+    var project = PROJECTS[index];
+    if (!_detailEl) return;
+
+    var doSwap = function () {
+      var sourceLink = document.getElementById('cs-source');
+      if (sourceLink) {
+        if (project.sourceUrl && project.sourceUrl.trim()) {
+          sourceLink.href = project.sourceUrl;
+          sourceLink.removeAttribute('hidden');
+        } else {
+          sourceLink.href = '';
+          sourceLink.setAttribute('hidden', '');
+        }
+      }
+
+      document.title = (project.subtitle || project.title || 'Case Study') + ' — Ilham';
+      history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
+
+      if (window.gsap) { gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal')); gsap.killTweensOf(_detailEl.querySelectorAll('.cs-char')); }
+      _detailEl.innerHTML = '';
+      buildDetail(project, _detailEl, _exitFn);
+
+      if (_lenis) {
+        _lenis.scrollTo(0, { immediate: true });
+      } else if (_scrollWrapper) {
+        _scrollWrapper.scrollTop = 0;
+      }
+
+      rewireReveals(_scrollWrapper);
+
+      if (window.gsap) {
+        gsap.to(_detailEl, { opacity: 1, duration: 0.25, ease: 'power1.out',
+          onComplete: function () { document.dispatchEvent(new Event('cs-entered')); }
+        });
+      } else {
+        _detailEl.style.opacity = '1';
+        document.dispatchEvent(new Event('cs-entered'));
+      }
+    };
+
+    if (window.gsap) {
+      gsap.to(_detailEl, { opacity: 0, duration: 0.25, ease: 'power1.out', onComplete: doSwap });
+    } else {
+      doSwap();
+    }
+  }
+
   // ── initScrollAndReveals ─────────────────────────────────────────────────
   function initScrollAndReveals(scrollWrapper, contentEl) {
 
     // ── 1. Lenis smooth scroll ────────────────────────────
-    // Wraps only #cs-right so the sticky left panel is unaffected.
-    // Gated behind window.Lenis — page still works if CDN fails.
+    // Lenis v2 requires the wrapper to have overflow:hidden so it exclusively
+    // owns scrollTop. With overflow-y:auto Lenis intercepts wheel events but
+    // never scrolls (v2 conflict). We set it here and restore in teardown.
     if (window.Lenis) {
+      scrollWrapper.style.overflowY = 'hidden';
       _lenis = new Lenis({
         wrapper:     scrollWrapper,
         content:     contentEl,
@@ -541,77 +659,23 @@
       _lenisRafId = requestAnimationFrame(lenisRaf);
     }
 
-    // ── 2. Headline char-split entrance ──────────────────
-    _onCsEnteredHeadline = function () {
-      if (!window.gsap) return;
-      var chars = document.querySelectorAll('.cs-headline .cs-char');
-      if (!chars.length) return;
-      gsap.to(chars, {
-        opacity:  1,
-        y:        0,
-        duration: 0.7,
-        ease:     'power3.out',
-        stagger:  { each: 0.018, from: 'start' }
-      });
-    };
-    document.addEventListener('cs-entered', _onCsEnteredHeadline);
-
-    // ── 3. Scroll-triggered reveals for .cs-reveal ───────
-    // Headline skipped here — it has its own char animation above.
-    if (!window.gsap) {
-      document.querySelectorAll('.cs-reveal').forEach(function (el) {
-        el.style.opacity   = '1';
-        el.style.transform = 'none';
-      });
-      return;
-    }
-
-    var revealEls = Array.from(
-      document.querySelectorAll('.cs-reveal:not(.cs-headline):not(.cs-tag-row)')
-    );
-
-    _observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        gsap.to(entry.target, {
-          opacity:  1,
-          y:        0,
-          duration: 0.7,
-          ease:     'expo.out',
-          delay:    0.04
-        });
-        _observer.unobserve(entry.target);
-      });
-    }, {
-      root:       scrollWrapper,
-      threshold:  0.08,
-      rootMargin: '0px 0px -40px 0px'
-    });
-
-    revealEls.forEach(function (el) { _observer.observe(el); });
-
-    // ── 4. Tag row: animate immediately (above fold) ──────
-    _onCsEnteredTagRow = function () {
-      if (!window.gsap) return;
-      var tagRow = document.querySelector('.cs-tag-row');
-      if (tagRow) {
-        gsap.to(tagRow, {
-          opacity:  1,
-          y:        0,
-          duration: 0.55,
-          ease:     'power2.out'
-        });
-      }
-    };
-    document.addEventListener('cs-entered', _onCsEnteredTagRow);
+    // ── 2–4. Reveal observer + entrance events ────────────
+    rewireReveals(scrollWrapper);
 
   } // end initScrollAndReveals
+
+  // ── relayout ──────────────────────────────────────────────────────────────
+  function relayout() {
+    if (_onWindowResize) _onWindowResize();
+    if (_lenis) _lenis.resize();
+  }
 
   // ── Public API ────────────────────────────────────────────────────────────
   global.CaseStudy = {
     resolveProject: resolveProject,
     render:         render,
-    teardown:       teardown
+    teardown:       teardown,
+    relayout:       relayout
   };
 
 })(window);

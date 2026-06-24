@@ -59,7 +59,7 @@
     }
     html.cs-anim #page-wipe { transform: translateX(0); }
     html.cs-anim #cs-right  { transform: none; visibility: hidden; }
-    html.cs-anim .cs-slide[data-index="0"] .proj-card { opacity: 0; }
+    html.cs-anim .cs-slide.is-active .proj-card { opacity: 0; }
     html.cs-anim #cs-close  { opacity: 0; }
   </style>
 </head>
@@ -167,14 +167,14 @@
           if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
             if (wipe) wipe.style.display = 'none';
             root.classList.remove('cs-anim');
-            var rmCard = document.querySelector('.cs-slide[data-index="0"] .proj-card');
+            var rmCard = document.querySelector('.cs-slide.is-active .proj-card');
             if (rmCard) gsap.set(rmCard, { opacity: 1 });
             entered();
             return;
           }
 
           var D = 0.7;
-          var card = document.querySelector('.cs-slide[data-index="0"] .proj-card');
+          var card = document.querySelector('.cs-slide.is-active .proj-card');
           var t = card ? card.getBoundingClientRect() : null;
 
           gsap.set('#cs-right', { xPercent: 100, visibility: 'visible' });
