@@ -9,6 +9,7 @@
   var _slideEls            = [];
   var _onCsEnteredHeadline = null;
   var _onCsEnteredTagRow   = null;
+  var _onCsEnteredSlides   = null;
   var _onSliderKeydown     = null;
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
@@ -82,6 +83,7 @@
   function teardown() {
     if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
     if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
+    if (_onCsEnteredSlides)   { document.removeEventListener('cs-entered', _onCsEnteredSlides);   _onCsEnteredSlides   = null; }
     if (_onSliderKeydown)     { document.removeEventListener('keydown',    _onSliderKeydown);      _onSliderKeydown     = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
@@ -234,19 +236,68 @@
     }
 
     // ── Initial placement (instant, no animation) ────────
+    // Active slide: set to final immediately so FLIP can measure it.
+    // Non-active slides: set to entrance-start state (pulled in, small, invisible)
+    // and animate to final on the 'cs-entered' event.
+    var nonActiveEls = [];
     slideEls.forEach(function (el, i) {
-      if (window.gsap) {
-        gsap.set(el, {
-          x:               xFor(i, activeIndex),
-          scale:           scaleFor(i, activeIndex),
-          opacity:         opacityFor(i, activeIndex),
-          transformOrigin: 'center center'
-        });
+      if (i === activeIndex) {
+        if (window.gsap) {
+          gsap.set(el, {
+            x:               xFor(i, activeIndex),
+            scale:           scaleFor(i, activeIndex),
+            opacity:         opacityFor(i, activeIndex),
+            transformOrigin: 'center center'
+          });
+        } else {
+          el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
+          el.style.opacity   = String(opacityFor(i, activeIndex));
+        }
       } else {
-        el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
-        el.style.opacity   = String(opacityFor(i, activeIndex));
+        if (window.gsap) {
+          gsap.set(el, {
+            x:               xFor(i, activeIndex) * 0.7,
+            scale:           0.5,
+            opacity:         0,
+            transformOrigin: 'center center'
+          });
+          nonActiveEls.push({ el: el, idx: i });
+        } else {
+          el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
+          el.style.opacity   = String(opacityFor(i, activeIndex));
+        }
       }
     });
+
+    // Animate non-active slides into their peek positions once the page entrance fires.
+    if (window.gsap && nonActiveEls.length) {
+      _onCsEnteredSlides = function () {
+        document.removeEventListener('cs-entered', _onCsEnteredSlides);
+        _onCsEnteredSlides = null;
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          nonActiveEls.forEach(function (item) {
+            gsap.set(item.el, {
+              x:       xFor(item.idx, activeIndex),
+              scale:   scaleFor(item.idx, activeIndex),
+              opacity: opacityFor(item.idx, activeIndex)
+            });
+          });
+          return;
+        }
+        gsap.to(
+          nonActiveEls.map(function (item) { return item.el; }),
+          {
+            x:        function (j) { return xFor(nonActiveEls[j].idx, activeIndex); },
+            scale:    function (j) { return scaleFor(nonActiveEls[j].idx, activeIndex); },
+            opacity:  function (j) { return opacityFor(nonActiveEls[j].idx, activeIndex); },
+            duration: 0.8,
+            ease:     'expo.out',
+            stagger:  0.06
+          }
+        );
+      };
+      document.addEventListener('cs-entered', _onCsEnteredSlides);
+    }
 
     // ── Navigate ─────────────────────────────────────────
     function goTo(next) {
