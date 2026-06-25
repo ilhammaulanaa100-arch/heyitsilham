@@ -584,6 +584,8 @@
     var convObserver     = null;
     var _entranceTl      = null;
     var _entranceClone   = null;
+    var _entrancePeerClones = [];   // peer FLIP clones in flight (prev + next)
+    var _sourcePeerCards    = [];   // homepage peer cards hidden during entrance glide
     var _sourceCard         = null;
     var _sourceProjectIndex = -1;
     var _exitTl          = null;
@@ -644,12 +646,16 @@
       var project = CaseStudy.resolveProject(rawProject.slug);
       if (!project) throw new Error('resolveProject returned null');
 
-      // Kill any in-flight entrance and remove its clone
+      // Kill any in-flight entrance and remove its clone(s)
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
         if (_entranceClone.parentNode) _entranceClone.parentNode.removeChild(_entranceClone);
         _entranceClone = null;
       }
+      _entrancePeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+      _entrancePeerClones = [];
+      _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
+      _sourcePeerCards = [];
 
       CaseStudy.teardown();
       isOverlayOpen = true;
@@ -745,16 +751,38 @@
         var dx = destRect ? destRect.left - fromCard.rect.left : 0;
         var dy = destRect ? destRect.top  - fromCard.rect.top  : 0;
 
+        // ── Peer glide prep ───────────────────────────────────────────────────
+        // Places prev/next case-study slides at final geometry (opacity 0) so we
+        // can measure their destination rects and drive them via FLIP clones.
+        // Also detaches the internal cs-glide-start peek animation so it doesn't
+        // conflict with the clone-driven path.
+        var peerGlideData = null;
+        if (fromCard && fromCard.peers && fromCard.peers.length &&
+            window.CaseStudy && CaseStudy.prepPeekGlide) {
+          peerGlideData = CaseStudy.prepPeekGlide();
+        }
+
         _entranceTl = gsap.timeline({
           onComplete: function() {
             gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
             gsap.set('#cs-right', { xPercent: 0 });
             if (clone.parentNode) clone.parentNode.removeChild(clone);
+            // Safety sweep — peer clone onCompletes may have already cleared these
+            _entrancePeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+            _entrancePeerClones = [];
+            // Restore peer source cards now that .porto is opaque-zero and they're invisible
+            _sourcePeerCards.forEach(function (c) { gsap.set(c, { opacity: 1 }); });
+            _sourcePeerCards = [];
             _entranceTl = null; _entranceClone = null;
           }
         });
 
-        _entranceTl.add(function() { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
+        // cs-glide-start drives the internal peek offset-animation in case-study.js.
+        // When clone-driven peers are in use, that handler has been detached by
+        // prepPeekGlide, so we skip the dispatch to keep the code path clean.
+        if (!peerGlideData) {
+          _entranceTl.add(function() { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
+        }
         _entranceTl.to('.porto',    { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
         _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: EASE }, 0);
 
@@ -768,6 +796,53 @@
               if (clone.parentNode) clone.parentNode.removeChild(clone);
             }
           }, 0);
+        }
+
+        // ── Peer FLIP clones ─────────────────────────────────────────────────
+        // For each of prev/next: clone the homepage .proj-card, position it fixed at
+        // source coords, hide the real source card, and tween it to the case-study
+        // peek slot — all in unison with the active-card clone (position 0, same D/EASE).
+        if (peerGlideData && fromCard.peers) {
+          fromCard.peers.forEach(function (peer) {
+            var slotData = peerGlideData[peer.slot];
+            if (!slotData || !slotData.rect) return; // skip if dest couldn't be measured
+
+            var peerClone = peer.card.cloneNode(true);
+            peerClone.style.cssText =
+              'position:fixed;left:'   + peer.rect.left   + 'px;' +
+              'top:'                   + peer.rect.top    + 'px;' +
+              'width:'                 + peer.rect.width  + 'px;' +
+              'height:'                + peer.rect.height + 'px;' +
+              'overflow:hidden;z-index:9998;pointer-events:none;will-change:transform;' +
+              'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
+            document.body.appendChild(peerClone);
+            _entrancePeerClones.push(peerClone);
+
+            gsap.set(peer.card, { opacity: 0 });
+            _sourcePeerCards.push(peer.card);
+
+            var pdx = slotData.rect.left - peer.rect.left;
+            var pdy = slotData.rect.top  - peer.rect.top;
+
+            // IIFE to capture loop variables
+            (function (cc, sd) {
+              _entranceTl.to(cc, {
+                x:        pdx,
+                y:        pdy,
+                width:    sd.rect.width,
+                height:   sd.rect.height,
+                duration: D,
+                ease:     EASE,
+                onComplete: function () {
+                  // Reveal the case-study peek slide and remove the clone
+                  gsap.set(sd.slideEl, { opacity: sd.targetOpacity });
+                  if (cc.parentNode) cc.parentNode.removeChild(cc);
+                  var idx = _entrancePeerClones.indexOf(cc);
+                  if (idx !== -1) _entrancePeerClones.splice(idx, 1);
+                }
+              }, 0);
+            })(peerClone, slotData);
+          });
         }
 
         _entranceTl.add(function() { document.dispatchEvent(new Event('cs-entered')); }, D * 0.55);
@@ -792,12 +867,16 @@
 
     function hideOverlay() {
       releaseOverlayFocus();
-      // Kill any in-flight entrance/exit and remove entrance clone
+      // Kill any in-flight entrance/exit and remove entrance clone(s)
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
         if (_entranceClone.parentNode) _entranceClone.parentNode.removeChild(_entranceClone);
         _entranceClone = null;
       }
+      _entrancePeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+      _entrancePeerClones = [];
+      _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
+      _sourcePeerCards = [];
       if (_exitTl) { _exitTl.kill(); _exitTl = null; }
 
       var D    = 1.0;
@@ -964,6 +1043,30 @@
               gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 });
               fromCard = { card: card, rect: imgEl.getBoundingClientRect(), src: imgEl.currentSrc || imgEl.src };
             }
+
+            // Capture the two adjacent on-screen peek cards so all three glide together
+            if (fromCard && TOTAL >= 2) {
+              var peers = [];
+              var peerDefs = [
+                { pIdx: (i - 1 + TOTAL) % TOTAL, slot: 'prev' },
+                { pIdx: (i + 1) % TOTAL,          slot: 'next' }
+              ];
+              var seenPeer = {};
+              peerDefs.forEach(function (def) {
+                var pIdx = def.pIdx, slot = def.slot;
+                if (pIdx === i) return;              // TOTAL=1 guard
+                if (seenPeer[pIdx]) return;          // de-dupe when TOTAL=2
+                seenPeer[pIdx] = true;
+                var fd = (pIdx - i + TOTAL) % TOTAL;
+                if (!onScreen(fd)) return;           // skip parked (off-screen) cards
+                var pSection = sections[pIdx];
+                var pCard    = pSection && pSection.querySelector('.proj-card');
+                if (!pCard) return;
+                peers.push({ projectIndex: pIdx, card: pCard, rect: pCard.getBoundingClientRect(), slot: slot });
+              });
+              if (peers.length) fromCard.peers = peers;
+            }
+
             try {
               showOverlay(PROJECTS[i], fromCard);
               history.pushState({ csOverlay: slug }, '', 'case-study.html?p=' + slug);

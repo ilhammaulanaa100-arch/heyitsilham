@@ -19,6 +19,11 @@
   var _scrollWrapper       = null;
   var _contentEl           = null;
   var _exitFn              = null;
+  // Exposed for prepPeekGlide — set by buildSlider
+  var _activeIndex         = 0;
+  var _xFor                = null;
+  var _scaleFor            = null;
+  var _opacityFor          = null;
 
   function slugOf(project, index) {
     return project.slug || String(index + 1);
@@ -90,6 +95,7 @@
     if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
     if (_onWheelLeft        && _leftPanelEl) { _leftPanelEl.removeEventListener('wheel',   _onWheelLeft);        _onWheelLeft        = null; }
     _leftPanelEl = null;
+    _activeIndex = 0; _xFor = null; _scaleFor = null; _opacityFor = null;
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
     if (_lenis)    { _lenis.destroy(); _lenis = null; if (_scrollWrapper) _scrollWrapper.style.overflowY = ''; }
     if (_observer) { _observer.disconnect(); _observer = null; }
@@ -213,6 +219,7 @@
     // ── Position helpers ─────────────────────────────────
     // Returns the X offset (px) for slide at `idx` when `cur` is active.
     //   fd=0 → center; fd=1 → peek right; fd=TOTAL-1 → peek left; others → parked off-screen
+    // Expose refs at module level so prepPeekGlide can use them after buildSlider.
     function xFor(idx, cur) {
       var W  = sliderEl.offsetWidth;
       var fd = (idx - cur + TOTAL) % TOTAL;
@@ -234,6 +241,12 @@
       if (fd === 1 || fd === TOTAL - 1) return 0.65;
       return 0;
     }
+
+    // Expose helpers and active index at module level for prepPeekGlide
+    _activeIndex = activeIndex;
+    _xFor        = xFor;
+    _scaleFor    = scaleFor;
+    _opacityFor  = opacityFor;
 
     // ── Initial placement (instant, no animation) ────────
     // Active slide: set to final immediately so FLIP can measure it.
@@ -387,10 +400,12 @@
     sliderEl.addEventListener('touchend',   _onSliderTouchEnd,   { passive: true });
 
     // ── Reflow on resize ─────────────────────────────────
+    // Opacity is intentionally omitted — it is owned by entrance/exit animations and
+    // must not be clobbered by a mid-glide relayout rAF or a window resize.
     _onWindowResize = function () {
       slideEls.forEach(function (el, i) {
         if (window.gsap) {
-          gsap.set(el, { x: xFor(i, current), scale: scaleFor(i, current), opacity: opacityFor(i, current) });
+          gsap.set(el, { x: xFor(i, current), scale: scaleFor(i, current) });
         } else {
           el.style.transform = 'translate(calc(-50% + ' + xFor(i, current) + 'px), -50%)';
         }
@@ -728,12 +743,70 @@
     if (_lenis) _lenis.resize();
   }
 
+  // ── prepPeekGlide ─────────────────────────────────────────────────────────
+  // Called by showOverlay (index.html) when the trio clone-glide path is active.
+  // 1. Moves prev and next slides to their FINAL geometry at opacity 0 (invisible,
+  //    so the incoming clone can land on top and then reveal them).
+  // 2. Returns { prev, next } with { slideEl, cardEl, rect, targetOpacity } for
+  //    each slot so the caller can measure destination rects for the FLIP clones.
+  // 3. Detaches the internal _onCsEnteredSlides handler so the standalone
+  //    cs-glide-start offset-animation does NOT also run (clones drive the peeks).
+  // When this function is NOT called (standalone cold-load), _onCsEnteredSlides
+  // remains attached and the existing cs-glide-start fallback runs normally.
+  function prepPeekGlide() {
+    if (!window.gsap || !_slideEls.length || !_xFor) return null;
+
+    var TOTAL = _slideEls.length;
+    var ai    = _activeIndex;
+    var result = {};
+
+    var pairs = [
+      [(ai - 1 + TOTAL) % TOTAL, 'prev'],
+      [(ai + 1) % TOTAL,          'next']
+    ];
+
+    var seen = {};
+    pairs.forEach(function (pair) {
+      var idx = pair[0], slot = pair[1];
+      if (seen[idx]) return;          // de-dupe when TOTAL=2 (prev===next)
+      seen[idx] = true;
+      if (idx === ai) return;         // TOTAL=1 guard
+
+      var el = _slideEls[idx];
+      if (!el) return;
+
+      // Place slide at its final resting geometry, invisible
+      gsap.set(el, {
+        x:               _xFor(idx, ai),
+        scale:           _scaleFor(idx, ai),
+        opacity:         0,
+        transformOrigin: 'center center'
+      });
+
+      var cardEl        = el.querySelector('.proj-card');
+      var rect          = cardEl ? cardEl.getBoundingClientRect() : null;
+      var targetOpacity = _opacityFor(idx, ai);
+
+      result[slot] = { slideEl: el, cardEl: cardEl, rect: rect, targetOpacity: targetOpacity };
+    });
+
+    // Detach internal peek-entrance so it doesn't fight the clone-driven animation
+    if (_onCsEnteredSlides) {
+      document.removeEventListener('cs-glide-start', _onCsEnteredSlides);
+      document.removeEventListener('cs-entered',     _onCsEnteredSlides);
+      _onCsEnteredSlides = null;
+    }
+
+    return result;
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
   global.CaseStudy = {
     resolveProject: resolveProject,
     render:         render,
     teardown:       teardown,
-    relayout:       relayout
+    relayout:       relayout,
+    prepPeekGlide:  prepPeekGlide
   };
 
 })(window);
