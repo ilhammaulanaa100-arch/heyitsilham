@@ -217,15 +217,15 @@
       var W  = sliderEl.offsetWidth;
       var fd = (idx - cur + TOTAL) % TOTAL;
       if (fd === 0)         return 0;
-      if (fd === 1)         return  W * 0.61;
-      if (fd === TOTAL - 1) return -W * 0.61;
+      if (fd === 1)         return  W * 0.52;
+      if (fd === TOTAL - 1) return -W * 0.52;
       if (fd === 2)         return  W * 1.3;
       if (fd === TOTAL - 2) return -W * 1.3;
       return fd < TOTAL / 2 ? W * 1.3 : -W * 1.3;
     }
 
     function scaleFor(idx, cur) {
-      return ((idx - cur + TOTAL) % TOTAL === 0) ? 1 : 0.7;
+      return ((idx - cur + TOTAL) % TOTAL === 0) ? 1 : 0.64;
     }
 
     function opacityFor(idx, cur) {
@@ -256,7 +256,7 @@
       } else {
         if (window.gsap) {
           gsap.set(el, {
-            x:               xFor(i, activeIndex) * 0.7,
+            x:               xFor(i, activeIndex) * 0.3,
             scale:           0.5,
             opacity:         0,
             transformOrigin: 'center center'
