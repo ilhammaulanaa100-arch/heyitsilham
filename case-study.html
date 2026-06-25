@@ -169,6 +169,7 @@
             root.classList.remove('cs-anim');
             var rmCard = document.querySelector('.cs-slide.is-active .proj-card');
             if (rmCard) gsap.set(rmCard, { opacity: 1 });
+            document.dispatchEvent(new Event('cs-glide-start'));
             entered();
             return;
           }
@@ -201,7 +202,8 @@
               document.body.appendChild(clone);
               requestAnimationFrame(function() {
                 var tl = gsap.timeline({ onComplete: function() { root.classList.remove('cs-anim'); } });
-                tl.to(wipe,          { xPercent: -105, duration: D, ease: 'expo.inOut',
+                tl.add(function() { document.dispatchEvent(new Event('cs-glide-start')); }, 0)
+                  .to(wipe,          { xPercent: -105, duration: D, ease: 'expo.inOut',
                                        onComplete: function() { wipe.style.display = 'none'; } }, 0)
                   .fromTo('#cs-right', { xPercent: 100, visibility: 'visible' }, { xPercent: 0, duration: D, ease: 'expo.inOut' }, 0)
                   .to(clone,           { x: dx, y: dy, width: t.width, height: t.height, duration: D, ease: 'expo.inOut' }, 0)
@@ -221,7 +223,8 @@
 
           if (!slid) {
             var tl = gsap.timeline({ onComplete: function() { root.classList.remove('cs-anim'); } });
-            tl.to(wipe,          { xPercent: -105, duration: D, ease: 'expo.inOut',
+            tl.add(function() { document.dispatchEvent(new Event('cs-glide-start')); }, 0)
+              .to(wipe,          { xPercent: -105, duration: D, ease: 'expo.inOut',
                                    onComplete: function() { wipe.style.display = 'none'; } }, 0)
               .fromTo('#cs-right', { xPercent: 100, visibility: 'visible' }, { xPercent: 0, duration: D, ease: 'expo.inOut' }, 0)
               .add(function() { if (card) gsap.set(card, { opacity: 1 }); }, 0)
@@ -232,6 +235,7 @@
           if (shell) shell.style.opacity = '1';
           if (wipe) wipe.style.display = 'none';
           root.classList.remove('cs-anim');
+          document.dispatchEvent(new Event('cs-glide-start'));
           entered();
         }
       }

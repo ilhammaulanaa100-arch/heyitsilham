@@ -710,6 +710,7 @@
           var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '0';
         }
 
+        document.dispatchEvent(new Event('cs-glide-start'));
         document.dispatchEvent(new Event('cs-entered'));
         return;
       }
@@ -753,6 +754,7 @@
           }
         });
 
+        _entranceTl.add(function() { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
         _entranceTl.to('.porto',    { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
         _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: EASE }, 0);
 

@@ -83,7 +83,7 @@
   function teardown() {
     if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
     if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
-    if (_onCsEnteredSlides)   { document.removeEventListener('cs-entered', _onCsEnteredSlides);   _onCsEnteredSlides   = null; }
+    if (_onCsEnteredSlides)   { document.removeEventListener('cs-glide-start', _onCsEnteredSlides); document.removeEventListener('cs-entered', _onCsEnteredSlides); _onCsEnteredSlides = null; }
     if (_onSliderKeydown)     { document.removeEventListener('keydown',    _onSliderKeydown);      _onSliderKeydown     = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
@@ -256,8 +256,8 @@
       } else {
         if (window.gsap) {
           gsap.set(el, {
-            x:               xFor(i, activeIndex) * 0.3,
-            scale:           0.5,
+            x:               xFor(i, activeIndex) * 1.12,
+            scale:           0.52,
             opacity:         0,
             transformOrigin: 'center center'
           });
@@ -269,10 +269,16 @@
       }
     });
 
-    // Animate non-active slides into their peek positions once the page entrance fires.
+    // Animate non-active slides into peek positions. Fires on 'cs-glide-start'
+    // (in sync with the active card glide) or 'cs-entered' as a fallback.
+    // A boolean guard ensures it only runs once regardless of which event fires first.
     if (window.gsap && nonActiveEls.length) {
+      var _peekFired = false;
       _onCsEnteredSlides = function () {
-        document.removeEventListener('cs-entered', _onCsEnteredSlides);
+        if (_peekFired) return;
+        _peekFired = true;
+        document.removeEventListener('cs-glide-start', _onCsEnteredSlides);
+        document.removeEventListener('cs-entered',     _onCsEnteredSlides);
         _onCsEnteredSlides = null;
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
           nonActiveEls.forEach(function (item) {
@@ -290,13 +296,14 @@
             x:        function (j) { return xFor(nonActiveEls[j].idx, activeIndex); },
             scale:    function (j) { return scaleFor(nonActiveEls[j].idx, activeIndex); },
             opacity:  function (j) { return opacityFor(nonActiveEls[j].idx, activeIndex); },
-            duration: 0.8,
-            ease:     'expo.out',
-            stagger:  0.06
+            duration: 0.9,
+            ease:     'power3.out',
+            stagger:  0
           }
         );
       };
-      document.addEventListener('cs-entered', _onCsEnteredSlides);
+      document.addEventListener('cs-glide-start', _onCsEnteredSlides);
+      document.addEventListener('cs-entered',     _onCsEnteredSlides);
     }
 
     // ── Navigate ─────────────────────────────────────────
