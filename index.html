@@ -584,8 +584,10 @@
     var convObserver     = null;
     var _entranceTl      = null;
     var _entranceClone   = null;
-    var _entrancePeerClones = [];   // peer FLIP clones in flight (prev + next)
-    var _sourcePeerCards    = [];   // homepage peer cards hidden during entrance glide
+    var _entrancePeerClones = [];   // peer FLIP clones in flight during open
+    var _sourcePeerCards    = [];   // homepage peer cards hidden during open glide
+    var _exitPeerClones     = [];   // peer FLIP clones in flight during close
+    var _exitPeerDestCards  = [];   // homepage peer dest cards hidden during close glide
     var _sourceCard         = null;
     var _sourceProjectIndex = -1;
     var _exitTl          = null;
@@ -646,7 +648,7 @@
       var project = CaseStudy.resolveProject(rawProject.slug);
       if (!project) throw new Error('resolveProject returned null');
 
-      // Kill any in-flight entrance and remove its clone(s)
+      // Kill any in-flight entrance/exit and remove all clones
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
         if (_entranceClone.parentNode) _entranceClone.parentNode.removeChild(_entranceClone);
@@ -656,6 +658,11 @@
       _entrancePeerClones = [];
       _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
       _sourcePeerCards = [];
+      if (_exitTl) { _exitTl.kill(); _exitTl = null; }
+      _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+      _exitPeerClones = [];
+      _exitPeerDestCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
+      _exitPeerDestCards = [];
 
       CaseStudy.teardown();
       isOverlayOpen = true;
@@ -694,8 +701,8 @@
       if (csRight) csRight.scrollTop   = 0;
       _currentSlug = project.slug;
 
-      var D    = 1.2;
-      var EASE = 'power2.out';
+      var D    = 1.0;
+      var EASE = 'power3.inOut';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
       // Mobile: split layout collapses to stacked, so the glide + panel sweep don't apply.
@@ -878,9 +885,13 @@
       _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
       _sourcePeerCards = [];
       if (_exitTl) { _exitTl.kill(); _exitTl = null; }
+      _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+      _exitPeerClones = [];
+      _exitPeerDestCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
+      _exitPeerDestCards = [];
 
       var D    = 1.0;
-      var EASE = 'power2.out';
+      var EASE = 'power3.inOut';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
 
@@ -930,7 +941,11 @@
         return;
       }
 
-      // ── Animated reverse close ────────────────────────────────
+      // ── Animated reverse close — trio FLIP-glide ─────────────
+      var EXIT_EASE = 'power3.inOut';
+      var TOTAL_P   = (typeof PROJECTS !== 'undefined') ? PROJECTS.length : 1;
+
+      // Active card: clone the img from the case-study active slide
       var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
       var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
       var destRect   = _sourceCard.getBoundingClientRect();
@@ -949,19 +964,77 @@
       }
       document.body.appendChild(clone);
 
-      // Hide real left card so only the clone is visible during the glide
+      // Hide the case-study active card (clone replaces it)
       if (realCardEl) gsap.set(realCardEl, { opacity: 0 });
 
-      var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
+      // _sourceCard (active homepage card) is still at opacity 0 from entrance.
+      // We reveal it only when its clone lands to avoid a double-image as .porto fades in.
+      var capturedSourceCard = _sourceCard; // capture before _sourceCard is nulled in onComplete
+
+      // ── Peer close pairs ────────────────────────────────────
+      // Compute prev/next case-study slides → their homepage destination cards.
+      // Clones travel from case-study slot → homepage position, in unison with active.
+      var peerClosePairs = [];
+      if (TOTAL_P >= 2) {
+        var closePeerDefs = [
+          { pIdx: (activeDataIndex - 1 + TOTAL_P) % TOTAL_P },
+          { pIdx: (activeDataIndex + 1) % TOTAL_P }
+        ];
+        var seenClose = {};
+        closePeerDefs.forEach(function (def) {
+          var pIdx = def.pIdx;
+          if (pIdx === activeDataIndex) return;   // TOTAL_P=1 guard
+          if (seenClose[pIdx]) return;             // de-dupe when TOTAL_P=2
+          seenClose[pIdx] = true;
+          var fd = (pIdx - activeDataIndex + TOTAL_P) % TOTAL_P;
+          if (fd !== 1 && fd !== TOTAL_P - 1) return; // not a visible peek slot
+
+          // Source: case-study peek slide's .proj-card
+          var csSlide = document.querySelector('.cs-slide[data-index="' + pIdx + '"]');
+          var csCard  = csSlide && csSlide.querySelector('.proj-card');
+          var csR     = csCard  ? csCard.getBoundingClientRect() : null;
+          if (!csCard || !csR) return;
+
+          // Destination: homepage section's .proj-card
+          var homeSecs = document.querySelectorAll('.page-section');
+          var homeCard = homeSecs[pIdx] && homeSecs[pIdx].querySelector('.proj-card');
+          var homeR    = homeCard ? homeCard.getBoundingClientRect() : null;
+          if (!homeCard || !homeR) return;
+
+          peerClosePairs.push({ csCard: csCard, csR: csR, homeCard: homeCard, homeR: homeR });
+        });
+      }
+
+      // Build peer clones and hide both the CS peek card and the homepage dest card
+      // (prevents double-image as .porto fades back in over D*0.7 seconds)
+      peerClosePairs.forEach(function (pair) {
+        var pc = pair.csCard.cloneNode(true);
+        pc.style.cssText =
+          'position:fixed;left:'  + pair.csR.left   + 'px;' +
+          'top:'                  + pair.csR.top    + 'px;' +
+          'width:'                + pair.csR.width  + 'px;' +
+          'height:'               + pair.csR.height + 'px;' +
+          'overflow:hidden;z-index:9998;pointer-events:none;will-change:transform;' +
+          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
+        document.body.appendChild(pc);
+        _exitPeerClones.push(pc);
+        gsap.set(pair.csCard,   { opacity: 0 }); // hide CS peek card — clone replaces it
+        gsap.set(pair.homeCard, { opacity: 0 }); // hide homepage dest — reveal when clone lands
+        _exitPeerDestCards.push(pair.homeCard);
+        pair.clone = pc;
+      });
 
       if (_hideHeroForClose) _hideHeroForClose();
 
-      var EXIT_EASE = 'power3.inOut';
-
       _exitTl = gsap.timeline({
-        onComplete: function() {
+        onComplete: function () {
+          // Safety restore — each clone's onComplete already does this, but guard anyway
           gsap.set(capturedSourceCard, { opacity: 1 });
+          peerClosePairs.forEach(function (pair) { gsap.set(pair.homeCard, { opacity: 1 }); });
           if (clone.parentNode) clone.parentNode.removeChild(clone);
+          _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+          _exitPeerClones = [];
+          _exitPeerDestCards = [];
           CaseStudy.teardown();
           var overlay = document.getElementById('cs-overlay');
           var shell   = document.getElementById('cs-shell');
@@ -980,22 +1053,45 @@
         }
       });
 
+      // Active card clone tween (case-study center → homepage card position)
       if (startRect) {
         _exitTl.to(clone, {
-          x: destRect.left - startRect.left,
-          y: destRect.top  - startRect.top,
-          width:  destRect.width,
-          height: destRect.height,
-          duration: D, ease: EXIT_EASE
+          x:        destRect.left - startRect.left,
+          y:        destRect.top  - startRect.top,
+          width:    destRect.width,
+          height:   destRect.height,
+          duration: D, ease: EXIT_EASE,
+          onComplete: function () {
+            gsap.set(capturedSourceCard, { opacity: 1 });
+            if (clone.parentNode) clone.parentNode.removeChild(clone);
+          }
         }, 0);
       }
 
+      // Peer clone tweens (case-study peek slots → homepage peek card positions)
+      peerClosePairs.forEach(function (pair) {
+        (function (pr) {
+          _exitTl.to(pr.clone, {
+            x:        pr.homeR.left - pr.csR.left,
+            y:        pr.homeR.top  - pr.csR.top,
+            width:    pr.homeR.width,
+            height:   pr.homeR.height,
+            duration: D, ease: EXIT_EASE,
+            onComplete: function () {
+              gsap.set(pr.homeCard, { opacity: 1 });
+              if (pr.clone.parentNode) pr.clone.parentNode.removeChild(pr.clone);
+              var idx = _exitPeerClones.indexOf(pr.clone);
+              if (idx !== -1) _exitPeerClones.splice(idx, 1);
+            }
+          }, 0);
+        })(pair);
+      });
+
       _exitTl.to('#cs-right', { xPercent: 100,  duration: D,       ease: EXIT_EASE }, 0);
-      _exitTl.to('.porto',    { opacity:  1,     duration: D * 0.7, ease: 'power2.out' }, 0);
-      _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2               }, 0);
-      // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
-      // so the text animates in while the panel is still sliding rather than after a dead pause.
-      _exitTl.add(function() { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
+      _exitTl.to('.porto',    { opacity:  1,     duration: D * 0.7, ease: EXIT_EASE }, 0);
+      _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2 }, 0);
+      // Fire hero headline reveal while the panel is still retracting (~72% through)
+      _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
     }
 
     // ── Main ───────────────────────────────────────────────
