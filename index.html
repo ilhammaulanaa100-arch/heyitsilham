@@ -701,7 +701,7 @@
       if (csRight) csRight.scrollTop   = 0;
       _currentSlug = project.slug;
 
-      var D    = 1.0;
+      var D    = 0.75;
       var EASE = 'power3.inOut';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
@@ -890,7 +890,7 @@
       _exitPeerDestCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
       _exitPeerDestCards = [];
 
-      var D    = 1.0;
+      var D    = 0.75;
       var EASE = 'power3.inOut';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
