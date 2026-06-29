@@ -825,25 +825,11 @@
         // source coords, hide the real source card, and tween it to the case-study
         // peek slot — all in unison with the active-card clone (position 0, same D/EASE).
         if (peerGlideData && fromCard.peers) {
-          // Compute carousel peek-slot positions mathematically.
-          // Formula: after GSAP { x: ±panelW*0.52, scale: 0.64, transformOrigin:'center center' }
-          // the top-left of a 320×380 slide centered in the left panel lands at:
-          //   left = panelCX + (-slideW/2 ∓ peekXOffset) * scale
-          //   top  = panelCY + (-slideH/2) * scale
-          var _panelW = window.innerWidth * 0.35;
-          var _vpH    = window.innerHeight;
-          var _sW = 320, _sH = 380, _ps = 0.64;
-          var _px = _panelW * 0.52;
-          var _cx = _panelW / 2, _cy = _vpH / 2;
-          var _peekRects = {
-            prev: { left: _cx + (-_sW / 2 - _px) * _ps, top: _cy + (-_sH / 2) * _ps, width: _sW * _ps, height: _sH * _ps },
-            next: { left: _cx + (-_sW / 2 + _px) * _ps, top: _cy + (-_sH / 2) * _ps, width: _sW * _ps, height: _sH * _ps }
-          };
-
           fromCard.peers.forEach(function (peer) {
             var slotData = peerGlideData[peer.slot];
-            // Prefer mathematically computed rect; fall back to getBoundingClientRect
-            var destR = _peekRects[peer.slot] || (slotData && slotData.rect);
+            // Use the real measured rect of the destination peek slide (set to its final
+            // geometry by prepPeekGlide). This matches the active card's approach exactly.
+            var destR = slotData && slotData.rect;
             if (!destR) return;
 
             var vpH = window.innerHeight;
@@ -1189,12 +1175,6 @@
         if (!slug) return;
         card.addEventListener('click', function() {
           if (animating) return;
-          if (!section.classList.contains('is-active')) {
-            var dir = (i - current + TOTAL) % TOTAL <= TOTAL / 2 ? 1 : -1;
-            _pendingOverlayIdx = i;
-            go(dir);
-            return;
-          }
           // Try in-place overlay; fall back to full-page navigation if unavailable
           if (window.CaseStudy && PROJECTS[i]) {
             var imgEl = card.querySelector('img');
@@ -1219,7 +1199,7 @@
                 if (pIdx === i) return;              // TOTAL=1 guard
                 if (seenPeer[pIdx]) return;          // de-dupe when TOTAL=2
                 seenPeer[pIdx] = true;
-                var fd = (pIdx - i + TOTAL) % TOTAL;
+                var fd = (pIdx - current + TOTAL) % TOTAL;
                 if (!onScreen(fd)) return;           // skip parked (off-screen) cards
                 var pSection = sections[pIdx];
                 var pCard    = pSection && pSection.querySelector('.proj-card');
