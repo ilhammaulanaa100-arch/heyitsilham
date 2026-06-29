@@ -240,12 +240,21 @@
 }
 
 .cs-slider-dot {
+  border: none;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  font: inherit;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.2);
   transition: background 0.25s, transform 0.25s;
   cursor: pointer;
+}
+.cs-slider-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .cs-slider-dot.is-active {

@@ -119,13 +119,18 @@
       }
 
       function exitPage(href) {
+        var toCaseStudy = href && href.indexOf('case-study.html') !== -1;
         var wipe = document.getElementById('page-wipe');
         if (window.gsap && wipe) {
           gsap.set(wipe, { display: 'block', autoAlpha: 1, xPercent: 100 });
           gsap.to(wipe, { xPercent: 0, duration: 0.6, ease: 'power4.inOut',
-            onComplete: function () { window.location.href = href; }
+            onComplete: function () {
+              if (toCaseStudy) { try { sessionStorage.setItem('cs-wipe', '1'); } catch (e) {} }
+              window.location.href = href;
+            }
           });
         } else {
+          if (toCaseStudy) { try { sessionStorage.setItem('cs-wipe', '1'); } catch (e) {} }
           window.location.href = href;
         }
       }
