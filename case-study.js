@@ -15,10 +15,6 @@
   var _onSliderTouchStart  = null;
   var _onSliderTouchEnd    = null;
   var _onWheelLeft         = null;
-  var _onLeftEnter         = null;
-  var _onLeftLeave         = null;
-  var _onLeftFocusIn       = null;
-  var _onLeftFocusOut      = null;
   var _leftPanelEl         = null;
   var _scrollWrapper       = null;
   var _contentEl           = null;
@@ -98,10 +94,6 @@
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
     if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
     if (_onWheelLeft        && _leftPanelEl) { _leftPanelEl.removeEventListener('wheel',   _onWheelLeft);        _onWheelLeft        = null; }
-    if (_onLeftEnter        && _leftPanelEl) { _leftPanelEl.removeEventListener('mouseenter', _onLeftEnter);     _onLeftEnter        = null; }
-    if (_onLeftLeave        && _leftPanelEl) { _leftPanelEl.removeEventListener('mouseleave', _onLeftLeave);     _onLeftLeave        = null; }
-    if (_onLeftFocusIn      && _leftPanelEl) { _leftPanelEl.removeEventListener('focusin',    _onLeftFocusIn);   _onLeftFocusIn      = null; }
-    if (_onLeftFocusOut     && _leftPanelEl) { _leftPanelEl.removeEventListener('focusout',   _onLeftFocusOut);  _onLeftFocusOut     = null; }
     _leftPanelEl = null;
     _activeIndex = 0; _xFor = null; _scaleFor = null; _opacityFor = null;
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
@@ -198,10 +190,8 @@
       var dotsEl = document.createElement('div');
       dotsEl.className = 'cs-slider-dots';
       slides.forEach(function (_, i) {
-        var dot = document.createElement('button');
-        dot.type = 'button';
+        var dot = document.createElement('div');
         dot.className = 'cs-slider-dot' + (i === activeIndex ? ' is-active' : '');
-        dot.setAttribute('aria-label', 'Go to project ' + (i + 1));
         dot.addEventListener('click', function () { if (!animating) goTo(i); });
         dotsEl.appendChild(dot);
         dotEls.push(dot);
@@ -371,14 +361,8 @@
     var leftHovered = false;
     var leftPanel   = document.getElementById('cs-left');
     if (leftPanel) {
-      _onLeftEnter   = function () { leftHovered = true;  };
-      _onLeftLeave   = function () { leftHovered = false; };
-      _onLeftFocusIn  = function () { leftHovered = true;  };
-      _onLeftFocusOut = function () { leftHovered = false; };
-      leftPanel.addEventListener('mouseenter', _onLeftEnter);
-      leftPanel.addEventListener('mouseleave', _onLeftLeave);
-      leftPanel.addEventListener('focusin',    _onLeftFocusIn);
-      leftPanel.addEventListener('focusout',   _onLeftFocusOut);
+      leftPanel.addEventListener('mouseenter', function () { leftHovered = true;  });
+      leftPanel.addEventListener('mouseleave', function () { leftHovered = false; });
     }
     _onSliderKeydown = function (e) {
       if (!leftHovered || TOTAL < 2) return;

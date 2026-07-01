@@ -54,7 +54,6 @@
     .page-section { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
     .page-section.is-active { pointer-events: auto; }
     .page-section:not(.is-active) .proj-card { pointer-events: none; }
-    .page-section.is-inactive-peek .proj-card { pointer-events: auto; cursor: pointer; }
     .page-section.is-active .proj-card { pointer-events: auto; cursor: none; }
 
     .section-inner {
@@ -585,10 +584,8 @@
     var convObserver     = null;
     var _entranceTl      = null;
     var _entranceClone   = null;
-    var _entrancePeerClones = [];   // peer FLIP clones in flight during open
-    var _sourcePeerCards    = [];   // homepage peer cards hidden during open glide
-    var _exitPeerClones     = [];   // peer FLIP clones in flight during close
-    var _exitPeerDestCards  = [];   // homepage peer dest cards hidden during close glide
+    var _entrancePeerClones = [];   // peer FLIP clones in flight (prev + next)
+    var _sourcePeerCards    = [];   // homepage peer cards hidden during entrance glide
     var _sourceCard         = null;
     var _sourceProjectIndex = -1;
     var _exitTl          = null;
@@ -596,7 +593,6 @@
     var _trapHandler     = null;
     var _replayHeroReveal = null; // assigned inside load handler once revealText/sectionText/current are live
     var _hideHeroForClose = null;
-    var _pendingOverlayIdx = -1;
 
     function trapOverlayFocus() {
       var overlay = document.getElementById('cs-overlay');
@@ -650,7 +646,7 @@
       var project = CaseStudy.resolveProject(rawProject.slug);
       if (!project) throw new Error('resolveProject returned null');
 
-      // Kill any in-flight entrance/exit and remove all clones
+      // Kill any in-flight entrance and remove its clone(s)
       if (_entranceTl)    { _entranceTl.kill(); _entranceTl = null; }
       if (_entranceClone) {
         if (_entranceClone.parentNode) _entranceClone.parentNode.removeChild(_entranceClone);
@@ -660,11 +656,6 @@
       _entrancePeerClones = [];
       _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
       _sourcePeerCards = [];
-      if (_exitTl) { _exitTl.kill(); _exitTl = null; }
-      _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
-      _exitPeerClones = [];
-      _exitPeerDestCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
-      _exitPeerDestCards = [];
 
       CaseStudy.teardown();
       isOverlayOpen = true;
@@ -703,8 +694,8 @@
       if (csRight) csRight.scrollTop   = 0;
       _currentSlug = project.slug;
 
-      var D    = 0.75;
-      var EASE = 'power3.inOut';
+      var D    = 1.2;
+      var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
       // Mobile: split layout collapses to stacked, so the glide + panel sweep don't apply.
@@ -735,28 +726,15 @@
       gsap.set('.cs-slide.is-active .proj-card', { opacity: 0 });
       gsap.set('#cs-close',  { opacity: 0 });
 
-      var clone;
-      if (fromCard.src) {
-        clone = document.createElement('img');
-        clone.src = fromCard.src;
-        clone.style.cssText =
-          'position:fixed;left:'  + fromCard.rect.left   + 'px;' +
-          'top:'                  + fromCard.rect.top    + 'px;' +
-          'width:'                + fromCard.rect.width  + 'px;' +
-          'height:'               + fromCard.rect.height + 'px;' +
-          'object-fit:cover;z-index:9999;pointer-events:none;will-change:transform;' +
-          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
-      } else {
-        clone = fromCard.card.cloneNode(true);
-        clone.removeAttribute('tabindex');
-        clone.style.cssText =
-          'position:fixed;left:'  + fromCard.rect.left   + 'px;' +
-          'top:'                  + fromCard.rect.top    + 'px;' +
-          'width:'                + fromCard.rect.width  + 'px;' +
-          'height:'               + fromCard.rect.height + 'px;' +
-          'overflow:hidden;z-index:9999;pointer-events:none;will-change:transform;' +
-          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
-      }
+      var clone = document.createElement('img');
+      clone.src = fromCard.src;
+      clone.style.cssText =
+        'position:fixed;left:'  + fromCard.rect.left   + 'px;' +
+        'top:'                  + fromCard.rect.top    + 'px;' +
+        'width:'                + fromCard.rect.width  + 'px;' +
+        'height:'               + fromCard.rect.height + 'px;' +
+        'object-fit:cover;z-index:9999;pointer-events:none;will-change:transform;' +
+        'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
       document.body.appendChild(clone);
       _entranceClone = clone;
 
@@ -827,19 +805,7 @@
         if (peerGlideData && fromCard.peers) {
           fromCard.peers.forEach(function (peer) {
             var slotData = peerGlideData[peer.slot];
-            // Use the real measured rect of the destination peek slide (set to its final
-            // geometry by prepPeekGlide). This matches the active card's approach exactly.
-            var destR = slotData && slotData.rect;
-            if (!destR) return;
-
-            var vpH = window.innerHeight;
-
-            // Clip peer clone to the viewport-visible portion so the animation
-            // is immediately visible from the first frame rather than starting
-            // from a mostly-off-screen strip.
-            var clipT = Math.max(0, -peer.rect.top);
-            var clipB = Math.max(0, (peer.rect.top + peer.rect.height) - vpH);
-            var initClip = 'inset(' + clipT + 'px 0px ' + clipB + 'px 0px)';
+            if (!slotData || !slotData.rect) return; // skip if dest couldn't be measured
 
             var peerClone = peer.card.cloneNode(true);
             peerClone.style.cssText =
@@ -847,7 +813,6 @@
               'top:'                   + peer.rect.top    + 'px;' +
               'width:'                 + peer.rect.width  + 'px;' +
               'height:'                + peer.rect.height + 'px;' +
-              'clip-path:'             + initClip         + ';' +
               'overflow:hidden;z-index:9998;pointer-events:none;will-change:transform;' +
               'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
             document.body.appendChild(peerClone);
@@ -856,28 +821,27 @@
             gsap.set(peer.card, { opacity: 0 });
             _sourcePeerCards.push(peer.card);
 
-            var pdx = destR.left - peer.rect.left;
-            var pdy = destR.top  - peer.rect.top;
+            var pdx = slotData.rect.left - peer.rect.left;
+            var pdy = slotData.rect.top  - peer.rect.top;
 
-            // IIFE to capture all loop variables explicitly
-            (function (cc, dx, dy, dr, sd) {
+            // IIFE to capture loop variables
+            (function (cc, sd) {
               _entranceTl.to(cc, {
-                x:        dx,
-                y:        dy,
-                width:    dr.width,
-                height:   dr.height,
-                clipPath: 'inset(0px 0px 0px 0px)',
+                x:        pdx,
+                y:        pdy,
+                width:    sd.rect.width,
+                height:   sd.rect.height,
                 duration: D,
                 ease:     EASE,
                 onComplete: function () {
                   // Reveal the case-study peek slide and remove the clone
-                  if (sd && sd.slideEl) gsap.set(sd.slideEl, { opacity: sd.targetOpacity });
+                  gsap.set(sd.slideEl, { opacity: sd.targetOpacity });
                   if (cc.parentNode) cc.parentNode.removeChild(cc);
                   var idx = _entrancePeerClones.indexOf(cc);
                   if (idx !== -1) _entrancePeerClones.splice(idx, 1);
                 }
               }, 0);
-            })(peerClone, pdx, pdy, destR, slotData);
+            })(peerClone, slotData);
           });
         }
 
@@ -886,7 +850,7 @@
         _entranceTl.to('#cs-close', { opacity: 0.5, duration: 0.4, ease: 'power2.out' }, D * 0.80);
       }
 
-      if (!fromCard.src || clone.complete) {
+      if (clone.complete) {
         runEntrance();
       } else {
         var _dec = false;
@@ -914,13 +878,9 @@
       _sourcePeerCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
       _sourcePeerCards = [];
       if (_exitTl) { _exitTl.kill(); _exitTl = null; }
-      _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
-      _exitPeerClones = [];
-      _exitPeerDestCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
-      _exitPeerDestCards = [];
 
-      var D    = 0.75;
-      var EASE = 'power3.inOut';
+      var D    = 1.0;
+      var EASE = 'power2.out';
       var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
 
@@ -970,115 +930,38 @@
         return;
       }
 
-      // ── Animated reverse close — trio FLIP-glide ─────────────
-      var EXIT_EASE = 'power3.inOut';
-      var TOTAL_P   = (typeof PROJECTS !== 'undefined') ? PROJECTS.length : 1;
+      // ── Animated reverse close ────────────────────────────────
+      var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
+      var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
+      var destRect   = _sourceCard.getBoundingClientRect();
+      var imgEl      = realCardEl ? realCardEl.querySelector('img') : null;
 
-      // Active card: clone the img from the case-study active slide
-      var realCardEl  = document.querySelector('.cs-slide.is-active .proj-card');
-      var startRect   = realCardEl ? realCardEl.getBoundingClientRect() : null;
-      var destRect    = _sourceCard.getBoundingClientRect();
-      var closeImgEl  = realCardEl ? realCardEl.querySelector('img') : null;
-      var closeImgSrc = closeImgEl ? (closeImgEl.currentSrc || closeImgEl.src) : null;
-
-      var clone;
-      if (closeImgSrc) {
-        clone = document.createElement('img');
-        clone.src = closeImgSrc;
-        if (startRect) {
-          clone.style.cssText =
-            'position:fixed;left:'  + startRect.left   + 'px;' +
-            'top:'                  + startRect.top    + 'px;' +
-            'width:'                + startRect.width  + 'px;' +
-            'height:'               + startRect.height + 'px;' +
-            'object-fit:cover;z-index:9999;pointer-events:none;will-change:transform;' +
-            'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
-        }
-      } else {
-        clone = realCardEl ? realCardEl.cloneNode(true) : document.createElement('div');
-        if (startRect) {
-          clone.style.cssText =
-            'position:fixed;left:'  + startRect.left   + 'px;' +
-            'top:'                  + startRect.top    + 'px;' +
-            'width:'                + startRect.width  + 'px;' +
-            'height:'               + startRect.height + 'px;' +
-            'overflow:hidden;z-index:9999;pointer-events:none;will-change:transform;' +
-            'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
-        }
+      var clone = document.createElement('img');
+      clone.src = imgEl ? (imgEl.currentSrc || imgEl.src) : '';
+      if (startRect) {
+        clone.style.cssText =
+          'position:fixed;left:'  + startRect.left   + 'px;' +
+          'top:'                  + startRect.top    + 'px;' +
+          'width:'                + startRect.width  + 'px;' +
+          'height:'               + startRect.height + 'px;' +
+          'object-fit:cover;z-index:9999;pointer-events:none;will-change:transform;' +
+          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
       }
       document.body.appendChild(clone);
 
-      // Hide the case-study active card (clone replaces it)
+      // Hide real left card so only the clone is visible during the glide
       if (realCardEl) gsap.set(realCardEl, { opacity: 0 });
 
-      // _sourceCard (active homepage card) is still at opacity 0 from entrance.
-      // We reveal it only when its clone lands to avoid a double-image as .porto fades in.
-      var capturedSourceCard = _sourceCard; // capture before _sourceCard is nulled in onComplete
-
-      // ── Peer close pairs ────────────────────────────────────
-      // Compute prev/next case-study slides → their homepage destination cards.
-      // Clones travel from case-study slot → homepage position, in unison with active.
-      var peerClosePairs = [];
-      if (TOTAL_P >= 2) {
-        var closePeerDefs = [
-          { pIdx: (activeDataIndex - 1 + TOTAL_P) % TOTAL_P },
-          { pIdx: (activeDataIndex + 1) % TOTAL_P }
-        ];
-        var seenClose = {};
-        closePeerDefs.forEach(function (def) {
-          var pIdx = def.pIdx;
-          if (pIdx === activeDataIndex) return;   // TOTAL_P=1 guard
-          if (seenClose[pIdx]) return;             // de-dupe when TOTAL_P=2
-          seenClose[pIdx] = true;
-          var fd = (pIdx - activeDataIndex + TOTAL_P) % TOTAL_P;
-          if (fd !== 1 && fd !== TOTAL_P - 1) return; // not a visible peek slot
-
-          // Source: case-study peek slide's .proj-card
-          var csSlide = document.querySelector('.cs-slide[data-index="' + pIdx + '"]');
-          var csCard  = csSlide && csSlide.querySelector('.proj-card');
-          var csR     = csCard  ? csCard.getBoundingClientRect() : null;
-          if (!csCard || !csR) return;
-
-          // Destination: homepage section's .proj-card
-          var homeSecs = document.querySelectorAll('.page-section');
-          var homeCard = homeSecs[pIdx] && homeSecs[pIdx].querySelector('.proj-card');
-          var homeR    = homeCard ? homeCard.getBoundingClientRect() : null;
-          if (!homeCard || !homeR) return;
-
-          peerClosePairs.push({ csCard: csCard, csR: csR, homeCard: homeCard, homeR: homeR });
-        });
-      }
-
-      // Build peer clones and hide both the CS peek card and the homepage dest card
-      // (prevents double-image as .porto fades back in over D*0.7 seconds)
-      peerClosePairs.forEach(function (pair) {
-        var pc = pair.csCard.cloneNode(true);
-        pc.style.cssText =
-          'position:fixed;left:'  + pair.csR.left   + 'px;' +
-          'top:'                  + pair.csR.top    + 'px;' +
-          'width:'                + pair.csR.width  + 'px;' +
-          'height:'               + pair.csR.height + 'px;' +
-          'overflow:hidden;z-index:9998;pointer-events:none;will-change:transform;' +
-          'backface-visibility:hidden;margin:0;padding:0;border:none;display:block;';
-        document.body.appendChild(pc);
-        _exitPeerClones.push(pc);
-        gsap.set(pair.csCard,   { opacity: 0 }); // hide CS peek card — clone replaces it
-        gsap.set(pair.homeCard, { opacity: 0 }); // hide homepage dest — reveal when clone lands
-        _exitPeerDestCards.push(pair.homeCard);
-        pair.clone = pc;
-      });
+      var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
 
       if (_hideHeroForClose) _hideHeroForClose();
 
+      var EXIT_EASE = 'power3.inOut';
+
       _exitTl = gsap.timeline({
-        onComplete: function () {
-          // Safety restore — each clone's onComplete already does this, but guard anyway
+        onComplete: function() {
           gsap.set(capturedSourceCard, { opacity: 1 });
-          peerClosePairs.forEach(function (pair) { gsap.set(pair.homeCard, { opacity: 1 }); });
           if (clone.parentNode) clone.parentNode.removeChild(clone);
-          _exitPeerClones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
-          _exitPeerClones = [];
-          _exitPeerDestCards = [];
           CaseStudy.teardown();
           var overlay = document.getElementById('cs-overlay');
           var shell   = document.getElementById('cs-shell');
@@ -1097,45 +980,22 @@
         }
       });
 
-      // Active card clone tween (case-study center → homepage card position)
       if (startRect) {
         _exitTl.to(clone, {
-          x:        destRect.left - startRect.left,
-          y:        destRect.top  - startRect.top,
-          width:    destRect.width,
-          height:   destRect.height,
-          duration: D, ease: EXIT_EASE,
-          onComplete: function () {
-            gsap.set(capturedSourceCard, { opacity: 1 });
-            if (clone.parentNode) clone.parentNode.removeChild(clone);
-          }
+          x: destRect.left - startRect.left,
+          y: destRect.top  - startRect.top,
+          width:  destRect.width,
+          height: destRect.height,
+          duration: D, ease: EXIT_EASE
         }, 0);
       }
 
-      // Peer clone tweens (case-study peek slots → homepage peek card positions)
-      peerClosePairs.forEach(function (pair) {
-        (function (pr) {
-          _exitTl.to(pr.clone, {
-            x:        pr.homeR.left - pr.csR.left,
-            y:        pr.homeR.top  - pr.csR.top,
-            width:    pr.homeR.width,
-            height:   pr.homeR.height,
-            duration: D, ease: EXIT_EASE,
-            onComplete: function () {
-              gsap.set(pr.homeCard, { opacity: 1 });
-              if (pr.clone.parentNode) pr.clone.parentNode.removeChild(pr.clone);
-              var idx = _exitPeerClones.indexOf(pr.clone);
-              if (idx !== -1) _exitPeerClones.splice(idx, 1);
-            }
-          }, 0);
-        })(pair);
-      });
-
       _exitTl.to('#cs-right', { xPercent: 100,  duration: D,       ease: EXIT_EASE }, 0);
-      _exitTl.to('.porto',    { opacity:  1,     duration: D * 0.7, ease: EXIT_EASE }, 0);
-      _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2 }, 0);
-      // Fire hero headline reveal while the panel is still retracting (~72% through)
-      _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
+      _exitTl.to('.porto',    { opacity:  1,     duration: D * 0.7, ease: 'power2.out' }, 0);
+      _exitTl.to('#cs-close', { opacity:  0,     duration: 0.2               }, 0);
+      // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
+      // so the text animates in while the panel is still sliding rather than after a dead pause.
+      _exitTl.add(function() { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
     }
 
     // ── Main ───────────────────────────────────────────────
@@ -1178,13 +1038,11 @@
           // Try in-place overlay; fall back to full-page navigation if unavailable
           if (window.CaseStudy && PROJECTS[i]) {
             var imgEl = card.querySelector('img');
-            if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 });
-            // Always create fromCard — use card rect even when there's no hero image
-            var fromCard = {
-              card: card,
-              rect: card.getBoundingClientRect(),
-              src:  imgEl ? (imgEl.currentSrc || imgEl.src) : null
-            };
+            var fromCard = null;
+            if (imgEl) {
+              gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 });
+              fromCard = { card: card, rect: imgEl.getBoundingClientRect(), src: imgEl.currentSrc || imgEl.src };
+            }
 
             // Capture the two adjacent on-screen peek cards so all three glide together
             if (fromCard && TOTAL >= 2) {
@@ -1199,7 +1057,7 @@
                 if (pIdx === i) return;              // TOTAL=1 guard
                 if (seenPeer[pIdx]) return;          // de-dupe when TOTAL=2
                 seenPeer[pIdx] = true;
-                var fd = (pIdx - current + TOTAL) % TOTAL;
+                var fd = (pIdx - i + TOTAL) % TOTAL;
                 if (!onScreen(fd)) return;           // skip parked (off-screen) cards
                 var pSection = sections[pIdx];
                 var pCard    = pSection && pSection.querySelector('.proj-card');
@@ -1257,10 +1115,6 @@
         sections[i].style.zIndex = imgZ((i - 0 + TOTAL) % TOTAL);
       });
       sections[0].classList.add('is-active');
-      sections.forEach(function(s, si) {
-        var fd = (si - 0 + TOTAL) % TOTAL;
-        if (fd === 1 || fd === TOTAL - 1) s.classList.add('is-inactive-peek');
-      });
 
       function syncActiveCardTab() {
         sections.forEach(function (s) {
@@ -1322,11 +1176,6 @@
         sections.forEach(function(s) { s.classList.remove('is-active'); });
         sections[current].classList.add('is-active');
         syncActiveCardTab();
-        sections.forEach(function(s, si) {
-          s.classList.remove('is-inactive-peek');
-          var fd = (si - current + TOTAL) % TOTAL;
-          if (fd === 1 || fd === TOTAL - 1) s.classList.add('is-inactive-peek');
-        });
 
         images.forEach(function(el) { el.style.willChange = 'transform'; });
 
@@ -1335,47 +1184,6 @@
             animating = false;
             images.forEach(function(el) { el.style.willChange = 'auto'; });
             sections[current].style.zIndex = imgZ(0); // restore resting layer
-            if (_pendingOverlayIdx !== -1) {
-              var pendingIdx = _pendingOverlayIdx;
-              _pendingOverlayIdx = -1;
-              var pendingSection = sections[pendingIdx];
-              var pendingCard = pendingSection && pendingSection.querySelector('.proj-card');
-              if (pendingCard && PROJECTS[pendingIdx]) {
-                var imgEl = pendingCard.querySelector('img');
-                if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 });
-                var fromCard = {
-                  card: pendingCard,
-                  rect: pendingCard.getBoundingClientRect(),
-                  src: imgEl ? (imgEl.currentSrc || imgEl.src) : null
-                };
-                if (TOTAL >= 2) {
-                  var peers = [];
-                  var peerDefs = [
-                    { pIdx: (pendingIdx - 1 + TOTAL) % TOTAL, slot: 'prev' },
-                    { pIdx: (pendingIdx + 1) % TOTAL,          slot: 'next' }
-                  ];
-                  var seenPeer = {};
-                  peerDefs.forEach(function (def) {
-                    var pIdx = def.pIdx, slot = def.slot;
-                    if (pIdx === pendingIdx || seenPeer[pIdx]) return;
-                    seenPeer[pIdx] = true;
-                    var fd = (pIdx - pendingIdx + TOTAL) % TOTAL;
-                    if (!onScreen(fd)) return;
-                    var pSection = sections[pIdx];
-                    var pCard = pSection && pSection.querySelector('.proj-card');
-                    if (!pCard) return;
-                    peers.push({ projectIndex: pIdx, card: pCard, rect: pCard.getBoundingClientRect(), slot: slot });
-                  });
-                  if (peers.length) fromCard.peers = peers;
-                }
-                try {
-                  showOverlay(PROJECTS[pendingIdx], fromCard);
-                  history.pushState({ csOverlay: PROJECTS[pendingIdx].slug }, '', 'case-study.html?p=' + PROJECTS[pendingIdx].slug);
-                } catch (e) {
-                  console.error('[porto] deferred showOverlay failed:', e);
-                }
-              }
-            }
           }
         });
 
