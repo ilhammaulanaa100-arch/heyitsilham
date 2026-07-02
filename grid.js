@@ -12,6 +12,8 @@ window.GridView = (function () {
   var ZOOM       = 1.12;  // camera zoom-out (1.12 ≈ view at ~90%)
   var VIGNETTE   = 0.55;  // edge darkening 0..1
   var HOLD_ZOOM  = 0.7;   // camera zoom while click is held (~30% further out)
+  var THRU_ZOOM  = 1.7;   // dolly depth for the open/close camera move — deeper blows the
+                          // 512px cell texture up blurry-huge; the fade tail hides the rest
   var HOVER_LERP = 0.16;  // hover tint ease speed
   var LERP       = 0.085; // scroll smoothing
   var FRICTION   = 0.94;  // drag momentum decay
@@ -248,6 +250,68 @@ window.GridView = (function () {
     return { left: tl.x, top: tl.y, width: br.x - tl.x, height: br.y - tl.y };
   }
 
+  // ── Zoom-through dolly (open/close camera move) ──
+  // Tweens camera.zoom zFrom→zTo while sliding sx/sy so the clicked cell's
+  // centre stays pinned on screen — the camera pushes through the cell instead
+  // of the grid dissolving. zRef = the zoom at which the CURRENT sx/sy are the
+  // truth for the pin (open: live zoom; close: the resting zoom we end on).
+  var _dollyTween = null;
+  function killDolly() {
+    if (_dollyTween) { _dollyTween.kill(); _dollyTween = null; }
+    if (window.gsap && viewEl) gsap.killTweensOf(viewEl);
+  }
+  function dolly(col, row, zFrom, zTo, zRef, duration) {
+    var gx = col * CELL_W + CELL_W / 2;
+    var gy = row * CELL_H + CELL_H / 2;
+    var cx = (gx - sx - GW / 2) * zRef;
+    var cy = (gy - sy - GH / 2) * zRef;
+    var proxy = { z: zFrom };
+    var apply = function () {
+      camera.zoom = proxy.z;
+      camera.updateProjectionMatrix();
+      sx = tx = gx - GW / 2 - cx / proxy.z;
+      sy = ty = gy - GH / 2 - cy / proxy.z;
+    };
+    apply();
+    // power2, NOT expo: expo.inOut sits nearly still for half the tween then
+    // slams the zoom in a few frames — on a fullscreen camera that reads as a
+    // glitch flash, not a push. The card can be snappy; the world cannot.
+    _dollyTween = gsap.to(proxy, {
+      z: zTo, duration: duration, ease: 'power2.inOut',
+      onUpdate: apply,
+      onComplete: function () { _dollyTween = null; }
+    });
+  }
+
+  // Open: camera dollies INTO the clicked cell while the card FLIP-glides.
+  // The tail opacity fade is cleanup (grid is committed/covered by then),
+  // not the transition itself.
+  function zoomInto(col, row, duration) {
+    if (!built || !window.gsap) return;
+    killDolly();
+    gsap.killTweensOf(camera);
+    gsap.killTweensOf(postMat.uniforms.uStrength);
+    dragging = false; vx = vy = 0;
+    dolly(col, row, camera.zoom, THRU_ZOOM, camera.zoom, duration);
+    // lens bulges as we push through it
+    gsap.to(postMat.uniforms.uStrength, { value: DISTORTION * 1.9, duration: duration, ease: 'power2.inOut' });
+    // fade rides the second half of the push, done just before the timeline ends
+    gsap.to(viewEl, { opacity: 0, duration: duration * 0.5, delay: duration * 0.4, ease: 'power1.inOut' });
+  }
+
+  // Close: reverse — start deep inside the cell, pull back to the resting view.
+  // Call AFTER showInstant() + after the close glide measured its destination
+  // rect (the rect is for the resting lens; both tweens converge on it).
+  function zoomOutFrom(col, row, duration) {
+    if (!built || !window.gsap) return;
+    killDolly();
+    gsap.killTweensOf(camera);
+    gsap.killTweensOf(postMat.uniforms.uStrength);
+    dolly(col, row, THRU_ZOOM, 1, 1, duration);
+    gsap.fromTo(postMat.uniforms.uStrength, { value: DISTORTION * 1.9 },
+      { value: DISTORTION, duration: duration, ease: 'power2.inOut' });
+  }
+
   // ── Layout / mesh pool ──
   function layout() {
     vw = window.innerWidth;
@@ -442,6 +506,7 @@ window.GridView = (function () {
     if (!window.THREE) { console.error('[porto] three.js missing — grid view disabled.'); return; }
     open = true;
     if (!built) build();
+    killDolly();
     document.body.classList.add('grid-mode');
     viewEl.style.display = 'block';
     viewEl.setAttribute('aria-hidden', 'false');
@@ -464,6 +529,7 @@ window.GridView = (function () {
     if (!window.THREE) return;
     if (!built) build();
     open = true;
+    killDolly();
     document.body.classList.add('grid-mode');
     if (window.gsap) {
       gsap.killTweensOf(viewEl);
@@ -487,8 +553,11 @@ window.GridView = (function () {
     document.body.classList.remove('grid-mode');
     window.removeEventListener('wheel', onWheel);
     dragging = false;
+    killDolly();
     if (camera) {
       if (window.gsap) gsap.killTweensOf(camera);
+      if (postMat && window.gsap) gsap.killTweensOf(postMat.uniforms.uStrength);
+      if (postMat) postMat.uniforms.uStrength.value = DISTORTION;
       camera.zoom = 1;
       camera.updateProjectionMatrix();
     }
@@ -507,6 +576,8 @@ window.GridView = (function () {
   return {
     show: show,
     showInstant: showInstant,
+    zoomInto: zoomInto,
+    zoomOutFrom: zoomOutFrom,
     cellScreenRect: cellScreenRect,
     setTheme: setTheme,
     hide: hide,

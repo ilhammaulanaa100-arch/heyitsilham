@@ -204,7 +204,10 @@
   var _hideHeroForClose = null;
 
   var GLIDE_DURATION = 0.75;
-  var GLIDE_EASE     = 'power3.inOut';
+  // Card gets its own snappier curve than the panel/fade — expo.inOut reads as
+  // one deliberate motion instead of everything easing at the same soft rate.
+  var CARD_EASE      = 'expo.inOut';
+  var PANEL_DELAY    = 0.1; // let the card commit before the panel/backdrop follow
 
   // Clones a .proj-card at a fixed position so it can glide between layouts.
   // cloneNode keeps the inline gradient background and any <img>, so projects
@@ -367,7 +370,6 @@
     // Same grammar from either view: the clicked card grows into the case-study
     // hero while the white panel sweeps in. Only the source rect differs.
     var D      = GLIDE_DURATION;
-    var EASE   = GLIDE_EASE;
     var isGrid = !!fromCard.isGrid;
 
     gsap.set('#cs-right',  { xPercent: 100 });
@@ -384,6 +386,7 @@
     if (srcEl) {
       clone = makeCardClone(srcEl, fromCard.rect, 2);
       clone.style.opacity = '1'; // destEl carries an inline opacity:0 — the clone must not
+      gsap.set(clone, { scale: 0.96, transformOrigin: '50% 50%' }); // slight pop as it commits
       _entranceClones.push(clone);
     }
     if (fromCard.card) {
@@ -409,21 +412,31 @@
       }
     });
 
+    var CARD_D = D * 0.75; // card arrives slightly ahead of the panel/backdrop
+
     _entranceTl.add(function () { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
     if (isGrid) {
       gsap.set('.porto', { opacity: 0 });
-      _entranceTl.to('#grid-view', { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
+      // Real camera move: the grid dollies THROUGH the clicked cell while the
+      // card glides — same expo.inOut, same duration, one gesture. grid.js owns
+      // the tail cleanup fade.
+      _entranceTl.add(function () {
+        if (window.GridView && GridView.zoomInto && fromCard.cell) {
+          GridView.zoomInto(fromCard.cell.col, fromCard.cell.row, D);
+        }
+      }, 0);
     } else {
-      _entranceTl.to('.porto', { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
+      _entranceTl.to('.porto', { opacity: 0, duration: D * 0.7, ease: 'power2.out' }, PANEL_DELAY);
     }
-    _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: EASE }, 0);
+    _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: 'power2.out' }, PANEL_DELAY);
 
     if (clone && destRect) {
       _entranceTl.to(clone, {
         x: destRect.left - fromCard.rect.left,
         y: destRect.top  - fromCard.rect.top,
         width: destRect.width, height: destRect.height,
-        duration: D, ease: EASE,
+        scale: 1,
+        duration: CARD_D, ease: CARD_EASE,
         onComplete: function () {
           gsap.set(destEl, { opacity: 1 });
           removeEl(clone);
@@ -431,8 +444,8 @@
       }, 0);
     }
 
-    _entranceTl.add(function () { document.dispatchEvent(new Event('cs-entered')); }, D * 0.55);
-    _entranceTl.to('#cs-close', { opacity: 0.5, duration: 0.4, ease: 'power2.out' }, D * 0.80);
+    _entranceTl.add(function () { document.dispatchEvent(new Event('cs-entered')); }, CARD_D * 0.9);
+    _entranceTl.to('#cs-close', { opacity: 0.5, duration: 0.4, ease: 'power2.out' }, PANEL_DELAY + D * 0.7);
   }
 
   function closeOverlay() {
@@ -498,7 +511,6 @@
     // ── Animated reverse close: the card glides back home ──
     // Vertical: back to the source homepage card. Grid: back to its cell on the
     // (flattened) grid canvas, which then relaxes back into the concave lens.
-    var EASE    = GLIDE_EASE;
     var wasGrid = !!_gridReturn;
     var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
     var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
@@ -528,6 +540,13 @@
 
     var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
     var exitClones = clone ? [clone] : [];
+
+    // Reverse camera move: start deep inside the cell, pull back to resting view.
+    // destRect above was measured at the resting lens — the dolly and the card
+    // share duration + ease, so both converge on it in the final frame.
+    if (wasGrid && _gridReturn.cell && window.GridView && GridView.zoomOutFrom) {
+      GridView.zoomOutFrom(_gridReturn.cell.col, _gridReturn.cell.row, D);
+    }
 
     _exitTl = gsap.timeline({
       onComplete: function () {
@@ -559,11 +578,11 @@
         y: destRect.top  - startRect.top,
         width:  destRect.width,
         height: destRect.height,
-        duration: D, ease: EASE
+        duration: D, ease: CARD_EASE
       }, 0);
     }
 
-    _exitTl.to('#cs-right', { xPercent: 100, duration: D, ease: EASE }, 0);
+    _exitTl.to('#cs-right', { xPercent: 100, duration: D, ease: 'power2.out' }, 0);
     _exitTl.to('#cs-close', { opacity:  0,   duration: 0.2 }, 0);
     if (!wasGrid) {
       _exitTl.to('.porto', { opacity: 1, duration: D * 0.7, ease: 'power2.out' }, 0);
