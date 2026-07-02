@@ -263,6 +263,36 @@ body { background: #fff; overflow: hidden; }
 #proj-cursor.is-close svg[data-cursor-icon="explore"] { display: none; }
 #proj-cursor.is-close svg[data-cursor-icon="close"] { display: block; }
 
+/* ── View tabs (Vertical / Grid) ── */
+.view-tabs {
+  position: fixed; right: 56px; bottom: 24px; z-index: 1001;
+  display: flex; gap: 28px; align-items: center;
+}
+.view-tab {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 16px; line-height: 1.3; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #000; opacity: 0.3;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.view-tab:hover { opacity: 0.7; }
+.view-tab.is-active, .view-tab.is-active:hover { opacity: 1; }
+
+/* ── Grid view (phantom.land-style infinite curved grid, WebGL) ── */
+#grid-view {
+  position: fixed; inset: 0; z-index: 900;
+  display: none; overflow: hidden;
+  background: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+html.dark #grid-view { background: #0f0e0e; }
+#grid-view .gv-canvas { display: block; width: 100%; height: 100%; }
+
+/* Grid view has no vertical sections to navigate */
+body.grid-mode .section-nav { display: none; }
+
 /* Neutralise case-study.css html.lenis rule — homepage must keep html at 100% */
 html.lenis { height: 100%; }
 
@@ -289,3 +319,37 @@ html.lenis { height: 100%; }
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
+
+/* ── Dark theme (html.dark, toggled by the navbar switcher) ── */
+html.dark body,
+html.dark .porto,
+html.dark #splash { background: #0f0e0e; }
+html.dark .grid-bg,
+html.dark .splash-grid {
+  background-image:
+    linear-gradient(to right,  rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+}
+html.dark .vignette-radial,
+html.dark .splash-vignette {
+  background:
+    linear-gradient(to bottom, rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 18%),
+    linear-gradient(to top,    rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 18%),
+    linear-gradient(to right,  rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 18%),
+    linear-gradient(to left,   rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 18%);
+}
+html.dark .navbar .logo img { filter: invert(1); }
+html.dark .nav-pill { background: #262424; }
+html.dark .nav-item { color: #fff; }
+html.dark .nav-item.active { background: #fff; color: #000; }
+html.dark .nav-item:hover:not(.active) { background: rgba(255,255,255,0.14); }
+html.dark .nav-row { color: #fff; }
+html.dark .nav-chevron svg path { stroke: #fff; }
+html.dark .bottom-location p,
+html.dark .ph-label,
+html.dark .ph-title,
+html.dark .view-tab,
+html.dark .splash-name { color: #fff; }
+html.dark .splash-bar-track { background: rgba(255,255,255,0.12); }
+html.dark .splash-counter { color: rgba(255,255,255,0.4); }
+html.dark #cs-right { background: #0f0e0e; }

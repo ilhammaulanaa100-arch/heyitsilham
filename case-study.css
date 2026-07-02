@@ -228,56 +228,47 @@
   user-select: none;
 }
 
-/* Nav dots — horizontal row at bottom of left panel */
-.cs-slider-dots {
+/* Arrow nav + counter — bottom centre of left panel */
+.cs-slider-nav {
   position: absolute;
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 18px;
   z-index: 5;
 }
 
-.cs-slider-dot {
-  border: none;
-  padding: 0;
+.cs-slider-arrow {
   -webkit-appearance: none;
   appearance: none;
-  font: inherit;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.2);
-  transition: background 0.25s, transform 0.25s;
+  background: none;
+  border: none;
+  padding: 10px 8px; /* generous hit area */
+  display: flex;
   cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.18s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.cs-slider-dot:focus-visible {
+.cs-slider-arrow svg { display: block; }
+.cs-slider-arrow:hover { opacity: 1; }
+.cs-arrow-prev:hover { transform: translateX(-4px); }
+.cs-arrow-next:hover { transform: translateX(4px); }
+.cs-slider-arrow:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
-.cs-slider-dot.is-active {
-  background: #000;
-  transform: scale(1.5);
-}
-
-/* Prev/Next arrow hit areas — invisible, left and right thirds of panel */
-.cs-slider-prev,
-.cs-slider-next {
-  position: absolute;
-  top: 0;
-  width: 33%;
-  height: 100%;
-  z-index: 4;
-}
-
-.cs-slider-prev {
-  left: 0;
-}
-
-.cs-slider-next {
-  right: 0;
+.cs-slider-counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: rgba(0, 0, 0, 0.55);
+  user-select: none;
+  min-width: 62px;
+  text-align: center;
 }
 
 /* ── Detail panel content ────────────────────────────── */
@@ -733,3 +724,35 @@ html.lenis {
   outline-offset: 4px;
   opacity: 1;
 }
+
+/* ── Dark theme (html.dark) ── */
+html.dark { --divider: rgba(255, 255, 255, 0.14); }
+html.dark .cs-right { background: #0f0e0e; }
+html.dark .cs-close,
+html.dark .cs-source,
+html.dark .cs-headline,
+html.dark .cs-meta-cell-value,
+html.dark .cs-tldr-title,
+html.dark .cs-reflections-title,
+html.dark .cs-refl-heading,
+html.dark .cs-next-name { color: #fff; }
+html.dark .cs-slide-num,
+html.dark .cs-slide-caption { color: rgba(255, 255, 255, 0.45); }
+html.dark .cs-slider-counter { color: rgba(255, 255, 255, 0.6); }
+html.dark .cs-slider-arrow svg path,
+html.dark .cs-next-arrow path { stroke: #fff; }
+html.dark .cs-tag-period,
+html.dark .cs-meta-cell-label,
+html.dark .cs-tldr-eyebrow,
+html.dark .cs-reflections-eyebrow,
+html.dark .cs-next-eyebrow { color: rgba(255, 255, 255, 0.4); }
+html.dark .cs-body-para { color: rgba(255, 255, 255, 0.82); }
+html.dark .cs-tldr-intro,
+html.dark .cs-refl-body { color: rgba(255, 255, 255, 0.6); }
+html.dark .cs-tldr-bullet {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.05);
+}
+html.dark .cs-img-inset-inner,
+html.dark .cs-next-thumb { background: #1c1b1b; }
+html.dark .cs-img-inset-num { color: rgba(255, 255, 255, 0.35); }

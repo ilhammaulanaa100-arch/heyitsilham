@@ -54,6 +54,32 @@
   updateTime();
   setInterval(updateTime, 1000);
 
+  // ── Theme switcher (Light / Dark pill in the navbar) ───
+  (function () {
+    var root  = document.documentElement;
+    var items = document.querySelectorAll('.theme-item');
+    function apply(dark) {
+      root.classList.toggle('dark', dark);
+      items.forEach(function (b) {
+        b.classList.toggle('active', (b.getAttribute('data-theme') === 'dark') === dark);
+      });
+      try { localStorage.setItem('porto-theme', dark ? 'dark' : 'light'); } catch (e) {}
+      if (window.GridView && GridView.setTheme) GridView.setTheme();
+    }
+    items.forEach(function (b) {
+      var pick = function () { apply(b.getAttribute('data-theme') === 'dark'); };
+      b.addEventListener('click', pick);
+      b.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+    });
+    // reflect the class set by the inline <head> script
+    items.forEach(function (b) {
+      b.classList.toggle('active',
+        (b.getAttribute('data-theme') === 'dark') === root.classList.contains('dark'));
+    });
+  })();
+
   // ── Character split for hero label + title ──────────────
   (function splitChars() {
     document.querySelectorAll('.ph-label, .ph-title .line').forEach(function (el) {
@@ -170,8 +196,8 @@
   var _hiddenHomeCards = [];  // homepage cards hidden during entrance glide
   var _sourceCard         = null;
   var _sourceProjectIndex = -1;
+  var _gridReturn      = null;  // { rect } — set when the overlay was opened from the grid view
   var _exitTl          = null;
-  var _exitPeerMap     = [];  // {homeCard, csCardEl, csSlideEl} captured at open; drives reverse peer glide
   var _prevFocus       = null;
   var _trapHandler     = null;
   var _replayHeroReveal = null; // assigned inside load handler once revealText/sectionText/current are live
@@ -272,8 +298,6 @@
     if (!project) throw new Error('resolveProject returned null');
 
     killGlides();
-    _exitPeerMap.forEach(function (e) { if (window.gsap && e.homeCard) gsap.set(e.homeCard, { opacity: 1 }); });
-    _exitPeerMap = [];
 
     CaseStudy.teardown();
     isOverlayOpen = true;
@@ -319,6 +343,8 @@
 
     if (!useAnim) {
       _sourceCard = null; _sourceProjectIndex = -1; // no source card → close stays instant/crossfade, not a mismatched glide
+      _gridReturn = null;
+      if (window.GridView && GridView.isOpen()) GridView.hide(true); // grid can't sit behind the transparent left panel
 
       if (isMobile && window.gsap && !prefersReduced) {
         // Simple mobile crossfade (opacity only)
@@ -337,31 +363,36 @@
       return;
     }
 
-    // ── Animated entrance: trio FLIP glide ─────────────────
-    var D    = GLIDE_DURATION;
-    var EASE = GLIDE_EASE;
+    // ── Animated entrance: single-card FLIP glide ──────────
+    // Same grammar from either view: the clicked card grows into the case-study
+    // hero while the white panel sweeps in. Only the source rect differs.
+    var D      = GLIDE_DURATION;
+    var EASE   = GLIDE_EASE;
+    var isGrid = !!fromCard.isGrid;
 
     gsap.set('#cs-right',  { xPercent: 100 });
     gsap.set('.cs-slide.is-active .proj-card', { opacity: 0 });
     gsap.set('#cs-close',  { opacity: 0 });
 
-    var clone = makeCardClone(fromCard.card, fromCard.rect, 2);
-    _entranceClones.push(clone);
-    gsap.set(fromCard.card, { opacity: 0 }); // only the clone is visible during the glide
-    _hiddenHomeCards.push(fromCard.card);
-    _sourceCard         = fromCard.card;
-    _sourceProjectIndex = PROJECTS.indexOf(project);
-
     var destEl   = document.querySelector('.cs-slide.is-active .proj-card');
     var destRect = destEl ? destEl.getBoundingClientRect() : null;
 
-    // Peer glide prep: places prev/next case-study slides at final geometry
-    // (opacity 0) so their destination rects can be measured, and detaches the
-    // internal cs-glide-start peek animation so it doesn't fight the clones.
-    var peerGlideData = null;
-    if (fromCard.peers && fromCard.peers.length && CaseStudy.prepPeekGlide) {
-      peerGlideData = CaseStudy.prepPeekGlide();
+    // Grid passes no DOM card — clone the destination card at the source rect
+    // instead (identical media: hero image / gradient placeholder).
+    var srcEl = fromCard.card || destEl;
+    var clone = null;
+    if (srcEl) {
+      clone = makeCardClone(srcEl, fromCard.rect, 2);
+      clone.style.opacity = '1'; // destEl carries an inline opacity:0 — the clone must not
+      _entranceClones.push(clone);
     }
+    if (fromCard.card) {
+      gsap.set(fromCard.card, { opacity: 0 }); // only the clone is visible during the glide
+      _hiddenHomeCards.push(fromCard.card);
+    }
+    _sourceCard         = fromCard.card || null;
+    _gridReturn         = isGrid ? { rect: fromCard.rect, cell: fromCard.cell } : null;
+    _sourceProjectIndex = PROJECTS.indexOf(project);
 
     _entranceTl = gsap.timeline({
       onComplete: function () {
@@ -374,19 +405,20 @@
         _hiddenHomeCards.forEach(function (c) { gsap.set(c, { opacity: 1 }); });
         _hiddenHomeCards = [];
         _entranceTl = null;
+        if (isGrid && window.GridView) GridView.hide(true); // fully faded — drop the canvas
       }
     });
 
-    // cs-glide-start drives the internal peek offset-animation in case-study.js.
-    // When clone-driven peers are in use, that handler has been detached by
-    // prepPeekGlide, so the dispatch is skipped.
-    if (!peerGlideData) {
-      _entranceTl.add(function () { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
+    _entranceTl.add(function () { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
+    if (isGrid) {
+      gsap.set('.porto', { opacity: 0 });
+      _entranceTl.to('#grid-view', { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
+    } else {
+      _entranceTl.to('.porto', { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
     }
-    _entranceTl.to('.porto',    { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
     _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: EASE }, 0);
 
-    if (destRect) {
+    if (clone && destRect) {
       _entranceTl.to(clone, {
         x: destRect.left - fromCard.rect.left,
         y: destRect.top  - fromCard.rect.top,
@@ -397,42 +429,6 @@
           removeEl(clone);
         }
       }, 0);
-    }
-
-    // Peer FLIP clones: prev/next homepage cards glide to their case-study
-    // peek slots in unison with the active card.
-    if (peerGlideData) {
-      fromCard.peers.forEach(function (peer) {
-        var slotData = peerGlideData[peer.slot];
-        if (!slotData || !slotData.rect) return; // skip if dest couldn't be measured
-
-        _exitPeerMap.push({
-          homeCard:  peer.card,
-          csCardEl:  slotData.cardEl,
-          csSlideEl: slotData.slideEl
-        });
-
-        var peerClone = makeCardClone(peer.card, peer.rect, 1);
-        _entranceClones.push(peerClone);
-        gsap.set(peer.card, { opacity: 0 });
-        _hiddenHomeCards.push(peer.card);
-
-        _entranceTl.to(peerClone, {
-          x: slotData.rect.left - peer.rect.left,
-          y: slotData.rect.top  - peer.rect.top,
-          width:    slotData.rect.width,
-          height:   slotData.rect.height,
-          opacity:  slotData.targetOpacity, // land at the peek slide's resting opacity
-          duration: D,
-          ease:     EASE,
-          onComplete: function () {
-            gsap.set(slotData.slideEl, { opacity: slotData.targetOpacity });
-            removeEl(peerClone);
-            var idx = _entranceClones.indexOf(peerClone);
-            if (idx !== -1) _entranceClones.splice(idx, 1);
-          }
-        }, 0);
-      });
     }
 
     _entranceTl.add(function () { document.dispatchEvent(new Event('cs-entered')); }, D * 0.55);
@@ -450,7 +446,7 @@
 
     var D = GLIDE_DURATION;
     var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
+    var canAnimate     = !!(window.gsap && !prefersReduced && (_sourceCard || _gridReturn));
 
     // Mismatch guard: if the user navigated to a different project inside the
     // overlay, a glide back to the original card would be wrong — plain close.
@@ -478,14 +474,15 @@
         overlay.classList.remove('is-open');
         overlay.setAttribute('aria-hidden', 'true');
         if (shell) shell.style.opacity = '0';
-        _exitPeerMap = [];
         _sourceCard = null;
         _sourceProjectIndex = -1;
+        _gridReturn = null;
         if (convObserver) convObserver.enable();
         isOverlayOpen = false;
         _currentSlug  = null;
         if (window._resetCursorExplore) window._resetCursorExplore();
         if (!isMobile && _replayHeroReveal) _replayHeroReveal();
+        document.dispatchEvent(new Event('cs-closed'));
       };
 
       if (isMobile && window.gsap && !prefersReduced) {
@@ -498,27 +495,43 @@
       return;
     }
 
-    // ── Animated reverse close: trio glides back home ──────
-    var EASE = GLIDE_EASE;
+    // ── Animated reverse close: the card glides back home ──
+    // Vertical: back to the source homepage card. Grid: back to its cell on the
+    // (flattened) grid canvas, which then relaxes back into the concave lens.
+    var EASE    = GLIDE_EASE;
+    var wasGrid = !!_gridReturn;
     var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
     var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
-    var destRect   = _sourceCard.getBoundingClientRect();
+
+    if (wasGrid) {
+      // Reveal the grid (resting curved lens) under the overlay so the card
+      // can land on its cell — rect recomputed below through that lens.
+      if (window.GridView) GridView.showInstant();
+      gsap.set('.porto', { opacity: 1 }); // restore silently — it sits hidden under the grid
+    } else if (_hideHeroForClose) {
+      _hideHeroForClose();
+    }
+
+    var destRect = wasGrid
+      ? (_gridReturn.cell && window.GridView
+          ? GridView.cellScreenRect(_gridReturn.cell.col, _gridReturn.cell.row)
+          : _gridReturn.rect)
+      : _sourceCard.getBoundingClientRect();
 
     var clone = null;
     if (realCardEl && startRect) {
       clone = makeCardClone(realCardEl, startRect, 2);
+      clone.style.opacity = '1';
       gsap.set(realCardEl, { opacity: 0 });  // only the clone is visible during the glide
-      gsap.set(_sourceCard, { opacity: 0 }); // hide the landing spot until the clone arrives
+      if (_sourceCard) gsap.set(_sourceCard, { opacity: 0 }); // hide the landing spot until the clone arrives
     }
 
     var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
     var exitClones = clone ? [clone] : [];
 
-    if (_hideHeroForClose) _hideHeroForClose();
-
     _exitTl = gsap.timeline({
       onComplete: function () {
-        gsap.set(capturedSourceCard, { opacity: 1 });
+        if (capturedSourceCard) gsap.set(capturedSourceCard, { opacity: 1 });
         gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
         gsap.set('#cs-right', { xPercent: 0 });
         exitClones.forEach(removeEl);
@@ -533,9 +546,10 @@
         _currentSlug        = null;
         _sourceCard         = null;
         _sourceProjectIndex = -1;
+        _gridReturn         = null;
         _exitTl             = null;
-        _exitPeerMap        = [];
         if (window._resetCursorExplore) window._resetCursorExplore();
+        document.dispatchEvent(new Event('cs-closed'));
       }
     });
 
@@ -549,43 +563,14 @@
       }, 0);
     }
 
-    _exitTl.to('#cs-right', { xPercent: 100, duration: D,       ease: EASE }, 0);
-    _exitTl.to('.porto',    { opacity:  1,   duration: D * 0.7, ease: 'power2.out' }, 0);
+    _exitTl.to('#cs-right', { xPercent: 100, duration: D, ease: EASE }, 0);
     _exitTl.to('#cs-close', { opacity:  0,   duration: 0.2 }, 0);
-    // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
-    // so the text animates in while the panel is still sliding rather than after a dead pause.
-    _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
-
-    // Reverse peer glide — mirror of the open trio glide
-    _exitPeerMap.forEach(function (entry) {
-      if (!entry.csCardEl || !entry.homeCard) return;
-      var pStart = entry.csCardEl.getBoundingClientRect();
-      var pDest  = entry.homeCard.getBoundingClientRect();
-      if (!pStart.width || !pDest.width) return;
-
-      var pClone = makeCardClone(entry.csCardEl, pStart, 1);
-      exitClones.push(pClone);
-      // Start at the peek slide's resting opacity, arrive fully opaque
-      if (entry.csSlideEl && window.getComputedStyle) {
-        pClone.style.opacity = getComputedStyle(entry.csSlideEl).opacity;
-      }
-      if (entry.csSlideEl) gsap.set(entry.csSlideEl, { opacity: 0 });
-      gsap.set(entry.homeCard, { opacity: 0 });
-
-      var homeCard = entry.homeCard;
-      _exitTl.to(pClone, {
-        x: pDest.left - pStart.left,
-        y: pDest.top  - pStart.top,
-        width:  pDest.width,
-        height: pDest.height,
-        opacity: 1,
-        duration: D, ease: EASE,
-        onComplete: function () {
-          gsap.set(homeCard, { opacity: 1 });
-          removeEl(pClone);
-        }
-      }, 0);
-    });
+    if (!wasGrid) {
+      _exitTl.to('.porto', { opacity: 1, duration: D * 0.7, ease: 'power2.out' }, 0);
+      // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
+      // so the text animates in while the panel is still sliding rather than after a dead pause.
+      _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
+    }
   }
 
   // ── Main ────────────────────────────────────────────────
@@ -647,20 +632,7 @@
 
         var imgEl = card.querySelector('img');
         if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 }); // reset hover tilt before measuring
-        var fromCard = { card: card, rect: card.getBoundingClientRect(), peers: [] };
-
-        // Capture the two adjacent on-screen peek cards so all three glide together
-        var seenPeer = {};
-        [{ pIdx: (i - 1 + TOTAL) % TOTAL, slot: 'prev' },
-         { pIdx: (i + 1) % TOTAL,          slot: 'next' }].forEach(function (def) {
-          if (def.pIdx === i) return;            // TOTAL=1 guard
-          if (seenPeer[def.pIdx]) return;        // de-dupe when TOTAL=2
-          seenPeer[def.pIdx] = true;
-          if (!onScreen((def.pIdx - i + TOTAL) % TOTAL)) return; // skip parked (off-screen) cards
-          var pCard = sections[def.pIdx] && sections[def.pIdx].querySelector('.proj-card');
-          if (!pCard) return;
-          fromCard.peers.push({ card: pCard, rect: pCard.getBoundingClientRect(), slot: def.slot });
-        });
+        var fromCard = { card: card, rect: card.getBoundingClientRect() };
 
         try {
           showOverlay(PROJECTS[i], fromCard);
@@ -804,12 +776,65 @@
 
     window.addEventListener('keydown', function (e) {
       if (isOverlayOpen) return;
+      if (window.GridView && GridView.isOpen()) return;
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { go(1);  e.preventDefault(); }
       else if (e.key === 'ArrowUp'   || e.key === 'PageUp')               { go(-1); e.preventDefault(); }
     });
 
     navRows[0].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(-1); });
     navRows[2].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(1);  });
+
+    // ── View tabs: Vertical / Grid ──
+    var viewTabs = document.querySelectorAll('.view-tab');
+    var returnToGrid = false; // overlay was opened from the grid → restore it on close
+
+    function setView(view) {
+      if (!window.GridView) return;
+      var isGrid = view === 'grid';
+      if (isGrid === GridView.isOpen()) return;
+      viewTabs.forEach(function (t) {
+        t.classList.toggle('is-active', t.getAttribute('data-view') === view);
+      });
+      if (isGrid) {
+        if (convObserver) convObserver.disable();
+        GridView.show();
+      } else {
+        GridView.hide();
+        if (convObserver && !isOverlayOpen) convObserver.enable();
+      }
+    }
+
+    viewTabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        if (!isOverlayOpen && !animating) setView(t.getAttribute('data-view'));
+      });
+    });
+
+    document.addEventListener('grid-open-project', function (e) {
+      if (isOverlayOpen) return;
+      var p = PROJECTS[e.detail.index];
+      if (!p) return;
+      returnToGrid = true;
+      try {
+        // rect = the clicked cell's media square, measured by grid.js through
+        // the curved lens — drives the same single-card FLIP as vertical
+        showOverlay(p, e.detail.rect
+          ? { card: null, rect: e.detail.rect, isGrid: true, cell: { col: e.detail.col, row: e.detail.row } }
+          : null);
+        history.pushState({ csOverlay: p.slug }, '', 'case-study.html?p=' + p.slug);
+      } catch (err) {
+        console.error('[porto] showOverlay from grid failed:', err);
+        returnToGrid = false;
+        if (!GridView.isOpen()) GridView.show(); // lens never flattened — grid is still intact
+      }
+    });
+
+    document.addEventListener('cs-closed', function () {
+      if (!returnToGrid) return;
+      returnToGrid = false;
+      if (convObserver) convObserver.disable(); // hideOverlay just re-enabled it
+      GridView.show();
+    });
 
     // ── Close button for the in-place overlay ──
     var csCloseBtn = document.getElementById('cs-close');
@@ -825,7 +850,10 @@
       var target = (e.state && e.state.csOverlay) || null;
       if (target && target !== _currentSlug) {
         var p = CaseStudy.resolveProject(target);
-        if (p) showOverlay(p);
+        if (p) {
+          if (window.GridView && GridView.isOpen()) { returnToGrid = true; GridView.hide(true); }
+          showOverlay(p);
+        }
       } else if (!target && _currentSlug) {
         hideOverlay();
       }
@@ -916,6 +944,8 @@
     }
     function resetCursorExplore() {
       cursor.classList.remove('is-close');
+      cursor.classList.remove('is-visible'); // clear stuck cursor when the hovered card vanished without a mouseout
+      document.body.style.cursor = '';
       if (cursorLabel) cursorLabel.textContent = '[EXPLORE]';
     }
 
@@ -946,7 +976,7 @@
     document.addEventListener('click', function (e) {
       if (!isOverlayOpen) return;
       if (e.target.closest('#cs-close')) return;
-      if (e.target.closest('.cs-slider-prev, .cs-slider-next, .cs-slider-dot, .cs-slider-dots')) return;
+      if (e.target.closest('.cs-slider-nav')) return;
       if (e.target.closest('#cs-left')) {
         closeOverlay();
       }

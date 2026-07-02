@@ -52,6 +52,7 @@ const PROJECTS = [
     subtitle: 'BYOND by BSI',
     title: 'Redesigning Islamic Banking for Indonesia',
     color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
+    hoverColor: '#a9dcb8', // grid-view hover tint (soft green)
     media: {
       hero: 'assets/projects/byond/byond-thumbnail.png',
       video: 'assets/projects/byond/byond-showcase.mp4',

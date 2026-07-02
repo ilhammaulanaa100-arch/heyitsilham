@@ -9,7 +9,6 @@
   var _slideEls            = [];
   var _onCsEnteredHeadline = null;
   var _onCsEnteredTagRow   = null;
-  var _onCsEnteredSlides   = null;
   var _onSliderKeydown     = null;
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
@@ -19,11 +18,6 @@
   var _scrollWrapper       = null;
   var _contentEl           = null;
   var _exitFn              = null;
-  // Exposed for prepPeekGlide — set by buildSlider
-  var _activeIndex         = 0;
-  var _xFor                = null;
-  var _scaleFor            = null;
-  var _opacityFor          = null;
 
   function slugOf(project, index) {
     return project.slug || String(index + 1);
@@ -88,14 +82,12 @@
   function teardown() {
     if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
     if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
-    if (_onCsEnteredSlides)   { document.removeEventListener('cs-glide-start', _onCsEnteredSlides); document.removeEventListener('cs-entered', _onCsEnteredSlides); _onCsEnteredSlides = null; }
     if (_onSliderKeydown)     { document.removeEventListener('keydown',    _onSliderKeydown);      _onSliderKeydown     = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
     if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
     if (_onWheelLeft        && _leftPanelEl) { _leftPanelEl.removeEventListener('wheel',   _onWheelLeft);        _onWheelLeft        = null; }
     _leftPanelEl = null;
-    _activeIndex = 0; _xFor = null; _scaleFor = null; _opacityFor = null;
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
     if (_lenis)    { _lenis.destroy(); _lenis = null; if (_scrollWrapper) _scrollWrapper.style.overflowY = ''; }
     if (_observer) { _observer.disconnect(); _observer = null; }
@@ -184,177 +176,85 @@
       slideEls.push(wrapper);
     });
 
-    // ── Dots ────────────────────────────────────────────
-    var dotEls = [];
+    // ── Arrow nav + counter (bottom centre) ──────────────
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function mkArrow(label, isPrev) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cs-slider-arrow ' + (isPrev ? 'cs-arrow-prev' : 'cs-arrow-next');
+      btn.setAttribute('aria-label', label);
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '32'); svg.setAttribute('height', '12');
+      svg.setAttribute('viewBox', '0 0 32 12'); svg.setAttribute('fill', 'none');
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', isPrev ? 'M32 6H3M3 6L8.5 1.5M3 6L8.5 10.5' : 'M0 6H29M29 6L23.5 1.5M29 6L23.5 10.5');
+      path.setAttribute('stroke', '#000');
+      path.setAttribute('stroke-width', '1.2');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(path);
+      btn.appendChild(svg);
+      return btn;
+    }
+
+    var counterEl = null;
     if (TOTAL > 1) {
-      var dotsEl = document.createElement('div');
-      dotsEl.className = 'cs-slider-dots';
-      slides.forEach(function (_, i) {
-        var dot = document.createElement('div');
-        dot.className = 'cs-slider-dot' + (i === activeIndex ? ' is-active' : '');
-        dot.addEventListener('click', function () { if (!animating) goTo(i); });
-        dotsEl.appendChild(dot);
-        dotEls.push(dot);
-      });
-      sliderEl.appendChild(dotsEl);
+      var navEl = document.createElement('div');
+      navEl.className = 'cs-slider-nav';
+      var prevBtn = mkArrow('Previous project', true);
+      var nextBtn = mkArrow('Next project', false);
+      counterEl = document.createElement('span');
+      counterEl.className = 'cs-slider-counter';
+      counterEl.textContent = pad(current + 1) + ' / ' + pad(TOTAL);
+      prevBtn.addEventListener('click', function () { if (!animating) goTo((current - 1 + TOTAL) % TOTAL, -1); });
+      nextBtn.addEventListener('click', function () { if (!animating) goTo((current + 1) % TOTAL, 1); });
+      navEl.appendChild(prevBtn);
+      navEl.appendChild(counterEl);
+      navEl.appendChild(nextBtn);
+      sliderEl.appendChild(navEl);
     }
 
-    // ── Prev/Next click zones ────────────────────────────
-    if (TOTAL > 1) {
-      var prevZone = document.createElement('div');
-      prevZone.className = 'cs-slider-prev';
-      prevZone.addEventListener('click', function () {
-        if (!animating) goTo((current - 1 + TOTAL) % TOTAL);
-      });
-      sliderEl.appendChild(prevZone);
-
-      var nextZone = document.createElement('div');
-      nextZone.className = 'cs-slider-next';
-      nextZone.addEventListener('click', function () {
-        if (!animating) goTo((current + 1) % TOTAL);
-      });
-      sliderEl.appendChild(nextZone);
-    }
-
-    // ── Position helpers ─────────────────────────────────
-    // Returns the X offset (px) for slide at `idx` when `cur` is active.
-    //   fd=0 → center; fd=1 → peek right; fd=TOTAL-1 → peek left; others → parked off-screen
-    // Expose refs at module level so prepPeekGlide can use them after buildSlider.
-    function xFor(idx, cur) {
-      var W  = sliderEl.offsetWidth;
-      var fd = (idx - cur + TOTAL) % TOTAL;
-      if (fd === 0)         return 0;
-      if (fd === 1)         return  W * 0.52;
-      if (fd === TOTAL - 1) return -W * 0.52;
-      if (fd === 2)         return  W * 1.3;
-      if (fd === TOTAL - 2) return -W * 1.3;
-      return fd < TOTAL / 2 ? W * 1.3 : -W * 1.3;
-    }
-
-    function scaleFor(idx, cur) {
-      return ((idx - cur + TOTAL) % TOTAL === 0) ? 1 : 0.64;
-    }
-
-    function opacityFor(idx, cur) {
-      var fd = (idx - cur + TOTAL) % TOTAL;
-      if (fd === 0)                     return 1;
-      if (fd === 1 || fd === TOTAL - 1) return 0.65;
-      return 0;
-    }
-
-    // Expose helpers and active index at module level for prepPeekGlide
-    _activeIndex = activeIndex;
-    _xFor        = xFor;
-    _scaleFor    = scaleFor;
-    _opacityFor  = opacityFor;
-
-    // ── Initial placement (instant, no animation) ────────
-    // Active slide: set to final immediately so FLIP can measure it.
-    // Non-active slides: set to entrance-start state (pulled in, small, invisible)
-    // and animate to final on the 'cs-entered' event.
-    var nonActiveEls = [];
+    // ── Placement: one centred card, the rest parked hidden ──
+    // Active slide sits at x:0 full-scale immediately so the FLIP glide can measure it.
+    function parkX() { return sliderEl.offsetWidth * 0.45; }
     slideEls.forEach(function (el, i) {
-      if (i === activeIndex) {
-        if (window.gsap) {
-          gsap.set(el, {
-            x:               xFor(i, activeIndex),
-            scale:           scaleFor(i, activeIndex),
-            opacity:         opacityFor(i, activeIndex),
-            transformOrigin: 'center center'
-          });
-        } else {
-          el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
-          el.style.opacity   = String(opacityFor(i, activeIndex));
-        }
+      if (window.gsap) {
+        gsap.set(el, i === activeIndex
+          ? { x: 0,       scale: 1,    opacity: 1, transformOrigin: 'center center' }
+          : { x: parkX(), scale: 0.94, opacity: 0, transformOrigin: 'center center' });
       } else {
-        if (window.gsap) {
-          gsap.set(el, {
-            x:               xFor(i, activeIndex) * 1.12,
-            scale:           0.52,
-            opacity:         0,
-            transformOrigin: 'center center'
-          });
-          nonActiveEls.push({ el: el, idx: i });
-        } else {
-          el.style.transform = 'translate(calc(-50% + ' + xFor(i, activeIndex) + 'px), -50%)';
-          el.style.opacity   = String(opacityFor(i, activeIndex));
-        }
+        el.style.opacity = i === activeIndex ? '1' : '0';
       }
     });
 
-    // Animate non-active slides into peek positions. Fires on 'cs-glide-start'
-    // (in sync with the active card glide) or 'cs-entered' as a fallback.
-    // A boolean guard ensures it only runs once regardless of which event fires first.
-    if (window.gsap && nonActiveEls.length) {
-      var _peekFired = false;
-      _onCsEnteredSlides = function () {
-        if (_peekFired) return;
-        _peekFired = true;
-        document.removeEventListener('cs-glide-start', _onCsEnteredSlides);
-        document.removeEventListener('cs-entered',     _onCsEnteredSlides);
-        _onCsEnteredSlides = null;
-        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          nonActiveEls.forEach(function (item) {
-            gsap.set(item.el, {
-              x:       xFor(item.idx, activeIndex),
-              scale:   scaleFor(item.idx, activeIndex),
-              opacity: opacityFor(item.idx, activeIndex)
-            });
-          });
-          return;
-        }
-        gsap.to(
-          nonActiveEls.map(function (item) { return item.el; }),
-          {
-            x:        function (j) { return xFor(nonActiveEls[j].idx, activeIndex); },
-            scale:    function (j) { return scaleFor(nonActiveEls[j].idx, activeIndex); },
-            opacity:  function (j) { return opacityFor(nonActiveEls[j].idx, activeIndex); },
-            duration: 0.9,
-            ease:     'power3.out',
-            stagger:  0
-          }
-        );
-      };
-      document.addEventListener('cs-glide-start', _onCsEnteredSlides);
-      document.addEventListener('cs-entered',     _onCsEnteredSlides);
-    }
-
-    // ── Navigate ─────────────────────────────────────────
-    function goTo(next) {
+    // ── Navigate: directional slide (out one way, in from the other) ──
+    function goTo(next, dir) {
       if (next === current || animating) return;
+      dir = dir || 1;
       animating = true;
+      var outEl = slideEls[current];
+      var inEl  = slideEls[next];
       current   = next;
 
-      // Update dots and active slide
-      dotEls.forEach(function (d, i) {
-        d.classList.toggle('is-active', i === current);
-      });
-      slideEls.forEach(function (el, i) {
-        el.classList.toggle('is-active', i === current);
-      });
+      slideEls.forEach(function (el, i) { el.classList.toggle('is-active', i === current); });
+      if (counterEl) counterEl.textContent = pad(current + 1) + ' / ' + pad(TOTAL);
 
       // Crossfade right panel to new project
       setActiveProject(current);
 
       if (!window.gsap) {
-        slideEls.forEach(function (el, i) {
-          el.style.transform = 'translate(calc(-50% + ' + xFor(i, current) + 'px), -50%)';
-          el.style.opacity   = String(opacityFor(i, current));
-        });
+        outEl.style.opacity = '0';
+        inEl.style.opacity  = '1';
         animating = false;
         return;
       }
 
+      var X = parkX();
+      gsap.set(inEl, { x: dir * X, scale: 0.94, opacity: 0 });
       var tl = gsap.timeline({ onComplete: function () { animating = false; } });
-      slideEls.forEach(function (el, i) {
-        tl.to(el, {
-          x:        xFor(i, current),
-          scale:    scaleFor(i, current),
-          opacity:  opacityFor(i, current),
-          duration: 0.75,
-          ease:     'expo.inOut'
-        }, 0);
-      });
+      tl.to(outEl, { x: -dir * X, scale: 0.94, opacity: 0, duration: 0.75, ease: 'expo.inOut' }, 0);
+      tl.to(inEl,  { x: 0,        scale: 1,    opacity: 1, duration: 0.75, ease: 'expo.inOut' }, 0);
     }
 
     // ── Keyboard: left/right when cursor is over the left panel ──
@@ -366,8 +266,8 @@
     }
     _onSliderKeydown = function (e) {
       if (!leftHovered || TOTAL < 2) return;
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); if (!animating) goTo((current - 1 + TOTAL) % TOTAL); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); if (!animating) goTo((current + 1) % TOTAL); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); if (!animating) goTo((current - 1 + TOTAL) % TOTAL, -1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); if (!animating) goTo((current + 1) % TOTAL, 1); }
     };
     document.addEventListener('keydown', _onSliderKeydown);
 
@@ -380,7 +280,8 @@
       if (now - _lastWheelNav < 600) return;
       if (Math.abs(e.deltaY) < 20) return;
       _lastWheelNav = now;
-      goTo(e.deltaY > 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
+      if (e.deltaY > 0) goTo((current + 1) % TOTAL, 1);
+      else              goTo((current - 1 + TOTAL) % TOTAL, -1);
     };
     if (_leftPanelEl) _leftPanelEl.addEventListener('wheel', _onWheelLeft, { passive: true });
 
@@ -394,7 +295,9 @@
       var dx = e.changedTouches[0].clientX - touchStartX;
       touchStartX = null;
       if (Math.abs(dx) < 40) return;
-      if (!animating) goTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
+      if (animating) return;
+      if (dx < 0) goTo((current + 1) % TOTAL, 1);
+      else        goTo((current - 1 + TOTAL) % TOTAL, -1);
     };
     sliderEl.addEventListener('touchstart', _onSliderTouchStart, { passive: true });
     sliderEl.addEventListener('touchend',   _onSliderTouchEnd,   { passive: true });
@@ -403,13 +306,8 @@
     // Opacity is intentionally omitted — it is owned by entrance/exit animations and
     // must not be clobbered by a mid-glide relayout rAF or a window resize.
     _onWindowResize = function () {
-      slideEls.forEach(function (el, i) {
-        if (window.gsap) {
-          gsap.set(el, { x: xFor(i, current), scale: scaleFor(i, current) });
-        } else {
-          el.style.transform = 'translate(calc(-50% + ' + xFor(i, current) + 'px), -50%)';
-        }
-      });
+      if (!window.gsap) return;
+      gsap.set(slideEls[current], { x: 0, scale: 1 });
     };
     window.addEventListener('resize', _onWindowResize);
 
@@ -743,70 +641,12 @@
     if (_lenis) _lenis.resize();
   }
 
-  // ── prepPeekGlide ─────────────────────────────────────────────────────────
-  // Called by showOverlay (index.html) when the trio clone-glide path is active.
-  // 1. Moves prev and next slides to their FINAL geometry at opacity 0 (invisible,
-  //    so the incoming clone can land on top and then reveal them).
-  // 2. Returns { prev, next } with { slideEl, cardEl, rect, targetOpacity } for
-  //    each slot so the caller can measure destination rects for the FLIP clones.
-  // 3. Detaches the internal _onCsEnteredSlides handler so the standalone
-  //    cs-glide-start offset-animation does NOT also run (clones drive the peeks).
-  // When this function is NOT called (standalone cold-load), _onCsEnteredSlides
-  // remains attached and the existing cs-glide-start fallback runs normally.
-  function prepPeekGlide() {
-    if (!window.gsap || !_slideEls.length || !_xFor) return null;
-
-    var TOTAL = _slideEls.length;
-    var ai    = _activeIndex;
-    var result = {};
-
-    var pairs = [
-      [(ai - 1 + TOTAL) % TOTAL, 'prev'],
-      [(ai + 1) % TOTAL,          'next']
-    ];
-
-    var seen = {};
-    pairs.forEach(function (pair) {
-      var idx = pair[0], slot = pair[1];
-      if (seen[idx]) return;          // de-dupe when TOTAL=2 (prev===next)
-      seen[idx] = true;
-      if (idx === ai) return;         // TOTAL=1 guard
-
-      var el = _slideEls[idx];
-      if (!el) return;
-
-      // Place slide at its final resting geometry, invisible
-      gsap.set(el, {
-        x:               _xFor(idx, ai),
-        scale:           _scaleFor(idx, ai),
-        opacity:         0,
-        transformOrigin: 'center center'
-      });
-
-      var cardEl        = el.querySelector('.proj-card');
-      var rect          = cardEl ? cardEl.getBoundingClientRect() : null;
-      var targetOpacity = _opacityFor(idx, ai);
-
-      result[slot] = { slideEl: el, cardEl: cardEl, rect: rect, targetOpacity: targetOpacity };
-    });
-
-    // Detach internal peek-entrance so it doesn't fight the clone-driven animation
-    if (_onCsEnteredSlides) {
-      document.removeEventListener('cs-glide-start', _onCsEnteredSlides);
-      document.removeEventListener('cs-entered',     _onCsEnteredSlides);
-      _onCsEnteredSlides = null;
-    }
-
-    return result;
-  }
-
   // ── Public API ────────────────────────────────────────────────────────────
   global.CaseStudy = {
     resolveProject: resolveProject,
     render:         render,
     teardown:       teardown,
-    relayout:       relayout,
-    prepPeekGlide:  prepPeekGlide
+    relayout:       relayout
   };
 
 })(window);
