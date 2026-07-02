@@ -1,0 +1,291 @@
+/* ── Local ITC Garamond (matches case-study.css) ── */
+@font-face {
+  font-family: 'ITC Garamond Std';
+  font-style: italic;
+  font-weight: 300;
+  src: local('ITC Garamond Std Light Narrow Italic'),
+       local('ITCGaramondStd-LtNarrIt'),
+       local('ITC Garamond Std Light Italic');
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: #fff; overflow: hidden; }
+
+.porto { position: fixed; inset: 0; overflow: hidden; background: #fff; opacity: 0; }
+.page-section { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.page-section.is-active { pointer-events: auto; }
+.page-section:not(.is-active) .proj-card { pointer-events: none; }
+.page-section.is-active .proj-card { pointer-events: auto; cursor: none; }
+
+.section-inner {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1440px;
+  height: 900px;
+  transform: translateY(-50%);
+}
+
+/* ── Background grid (Figma: Grid layers - v1, #222020 @ 80.68px) ── */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right,  rgba(34,32,32,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34,32,32,0.06) 1px, transparent 1px);
+  background-size: 80.68px 80.68px;
+}
+
+.vignette-radial {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
+}
+
+/* ── Navbar ── */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 56px; z-index: 1000;
+}
+.logo { position: relative; width: 72px; height: 58px; flex-shrink: 0; }
+.logo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.nav-pill {
+  display: flex; align-items: center; background: #dfdfdf;
+  border-radius: 999px; padding: 4px; flex-shrink: 0;
+}
+.nav-item {
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 24px; border-radius: 9999px;
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 20px; line-height: 1.3; letter-spacing: -0.2px;
+  color: #000; cursor: pointer; white-space: nowrap; transition: background 0.18s;
+}
+.nav-item.active { background: #fff; }
+.nav-item:hover:not(.active) { background: rgba(255,255,255,0.55); }
+
+.line-mask {
+  display: block; overflow: visible;
+  padding-block: 0.14em; margin-block: -0.14em;
+}
+.line-mask .line { display: block; white-space: normal; }
+.char { display: inline-block; }
+.word { display: inline-block; white-space: nowrap; }
+
+/* ── Project card ── */
+.proj-card {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  perspective: 650px;
+}
+.proj-card:focus-visible {
+  outline: 2px solid #FF3ECF;
+  outline-offset: 4px;
+}
+.proj-card.is-landscape { width: 580px; height: 420px; }
+.proj-card.is-square    { width: 480px; height: 480px; }
+.proj-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform-style: preserve-3d;
+}
+
+/* ── Section navigator (right) ── */
+.section-nav {
+  position: fixed; left: 1144px; top: 50%;
+  transform: translateY(calc(-50% - 12px));
+  width: 240px; z-index: 100; user-select: none;
+}
+.nav-inner { display: flex; flex-direction: column; gap: 24px; }
+.nav-row {
+  display: flex; align-items: center; gap: 16px;
+  position: relative; white-space: nowrap;
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  color: #000; line-height: 1.3;
+}
+.nav-row.is-inactive { opacity: 0.2; cursor: pointer; }
+.nav-num  { font-size: 16px; letter-spacing: -0.16px; min-width: 22px; }
+.nav-name { font-size: 24px; letter-spacing: -0.24px; }
+.nav-chevron {
+  position: absolute; left: -30px; top: 50%;
+  transform: translateY(-50%);
+  width: 24px; height: 24px; display: none;
+}
+.nav-row.is-current .nav-chevron { display: block; }
+.nav-chevron svg { width: 100%; height: 100%; display: block; }
+
+/* ── Bottom bar ── */
+.bottom-location {
+  position: fixed; bottom: 0; left: 0;
+  display: flex; align-items: center; padding: 24px 56px; z-index: 1000;
+}
+.bottom-location p {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 16px; line-height: 1.3; letter-spacing: -0.16px; color: #000; white-space: nowrap;
+}
+
+/* ── Per-project hero layout ── */
+.ph-layout {
+  position: absolute; top: 181px; left: 0; width: 1440px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 56px;
+}
+
+.ph-text {
+  position: relative; z-index: 60;
+  display: flex; flex-direction: column; gap: 8px;
+  width: 400px; padding: 8px 0; flex-shrink: 0;
+}
+.ph-spacer { width: 240px; flex-shrink: 0; }
+.ph-label {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 20px; line-height: 1.3; letter-spacing: -0.2px; color: #000; width: 229px;
+}
+.ph-title {
+  font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
+  font-style: italic; font-weight: 300;
+  font-size: 64px; line-height: 1.1; letter-spacing: -1px; color: #000;
+  white-space: normal;
+  overflow-wrap: normal;
+  overflow: visible;
+  padding-left: 0.05em;
+}
+/* Pre-GSAP hide (prevents flash before load) */
+.page-placeholder .ph-label { opacity: 0; }
+
+/* ── Splash Screen ── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.splash-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right,  rgba(34,32,32,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34,32,32,0.06) 1px, transparent 1px);
+  background-size: 80.68px 80.68px;
+}
+.splash-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
+}
+.splash-inner {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 40px;
+}
+.splash-name {
+  font-family: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
+  font-style: italic; font-weight: 300;
+  font-size: 96px; line-height: 1.1; letter-spacing: -1px; color: #000;
+  overflow: hidden; padding-block: 0.14em;
+}
+.splash-name .char {
+  display: inline-block;
+  opacity: 0; transform: translateY(60%);
+  animation: splashCharIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes splashCharIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.splash-bottom {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.splash-bar-track {
+  width: 200px; height: 1px; background: rgba(0,0,0,0.1);
+  position: relative; overflow: hidden;
+}
+.splash-bar-fill {
+  position: absolute; left: 0; top: 0; height: 100%;
+  width: 0%; background: #FF3ECF;
+}
+.splash-counter {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 14px; letter-spacing: -0.14px; color: rgba(0,0,0,0.35);
+}
+
+/* ── Custom cursor ── */
+#proj-cursor {
+  position: fixed; top: 0; left: 0;
+  width: 0; height: 0;
+  pointer-events: none; z-index: 9998;
+  will-change: transform;
+}
+.proj-cursor-inner {
+  position: absolute; top: 0; left: 0;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  will-change: transform;
+}
+#proj-cursor.is-visible .proj-cursor-inner {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+#proj-cursor svg {
+  display: block;
+  flex-shrink: 0;
+}
+#proj-cursor span {
+  font-family: 'Recoleta', Georgia, serif;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -0.14px;
+  color: #ffffff;
+  white-space: nowrap;
+}
+#proj-cursor svg[data-cursor-icon="close"] { display: none; }
+#proj-cursor.is-close svg[data-cursor-icon="explore"] { display: none; }
+#proj-cursor.is-close svg[data-cursor-icon="close"] { display: block; }
+
+/* Neutralise case-study.css html.lenis rule — homepage must keep html at 100% */
+html.lenis { height: 100%; }
+
+/* ── Case-study overlay (SPA, in-place) ── */
+.cs-overlay { position: fixed; inset: 0; z-index: 9000; background: transparent; display: none; }
+.cs-overlay.is-open { display: block; }
+/* The right panel stacks above the glide clones (z 1–2), clipping them mid-flight */
+#cs-right { background: #fff; position: relative; z-index: 3; }
+
+/* ── FLIP glide clones (created by home.js during overlay open/close) ── */
+.glide-clone {
+  position: fixed;
+  margin: 0;
+  border: none;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+/* Clones live outside .cs-slide, so restate the placeholder positioning */
+.glide-clone .proj-card-ph { position: absolute; inset: 0; }
+.glide-clone img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}

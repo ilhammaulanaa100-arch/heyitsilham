@@ -1,0 +1,1001 @@
+/* Homepage — section parallax, splash, and the card→case-study glide transition.
+   Loads after content.js (PROJECTS) and case-study.js (CaseStudy). */
+(function () {
+  'use strict';
+
+  // ── Guard: abort if content.js failed / PROJECTS missing ──
+  if (typeof PROJECTS === 'undefined' || !PROJECTS || !PROJECTS.length) {
+    console.error('[porto] PROJECTS is undefined — content.js may have failed to load.');
+    var splashEl = document.getElementById('splash');
+    if (splashEl) splashEl.style.display = 'none';
+    var portoEl = document.querySelector('.porto');
+    if (portoEl) portoEl.style.opacity = '1';
+    return;
+  }
+
+  // ── Build sections from PROJECTS ────────────────────────
+  (function () {
+    function esc(str) {
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    var wrap = document.getElementById('sections-wrap');
+    PROJECTS.forEach(function (proj, i) {
+      var shape  = i < 2 ? 'is-square' : 'is-landscape';
+      var imgTag = (proj.media && proj.media.hero)
+        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle) + '" onerror="this.style.display=\'none\'" />'
+        : '';
+
+      wrap.insertAdjacentHTML('beforeend',
+        '<div class="page-section page-placeholder" data-slug="' + proj.slug + '">' +
+          '<div class="section-inner"><section class="ph-layout">' +
+            '<div class="ph-text">' +
+              '<p class="ph-label">' + esc(proj.subtitle) + '</p>' +
+              '<div class="ph-title">' +
+                '<span class="line-mask"><span class="line">' + esc(proj.title) + '</span></span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.title) + '">' +
+              imgTag +
+            '</div>' +
+            '<div class="ph-spacer"></div>' +
+          '</section></div>' +
+        '</div>'
+      );
+    });
+  })();
+
+  // ── Clock ───────────────────────────────────────────────
+  function updateTime() {
+    var t = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta'
+    }).format(new Date());
+    document.getElementById('jakarta-time').textContent = 'based in Jakarta, ' + t + ' WIB';
+  }
+  updateTime();
+  setInterval(updateTime, 1000);
+
+  // ── Character split for hero label + title ──────────────
+  (function splitChars() {
+    document.querySelectorAll('.ph-label, .ph-title .line').forEach(function (el) {
+      var text = el.textContent;
+      el.textContent = '';
+      text.split(/(\s+)/).forEach(function (token) {
+        if (token === '') return;
+        if (/^\s+$/.test(token)) { el.appendChild(document.createTextNode(' ')); return; }
+        var word = document.createElement('span');
+        word.className = 'word';
+        token.split('').forEach(function (ch) {
+          var s = document.createElement('span');
+          s.className = 'char';
+          s.textContent = ch;
+          word.appendChild(s);
+        });
+        el.appendChild(word);
+      });
+    });
+  })();
+
+  // ── Splash name: char split with CSS stagger ────────────
+  (function () {
+    var el = document.getElementById('splash-name');
+    if (!el) return;
+    var text = el.textContent;
+    el.textContent = '';
+    text.split('').forEach(function (ch, i) {
+      var s = document.createElement('span');
+      s.className = 'char';
+      s.textContent = ch === ' ' ? ' ' : ch;
+      s.style.animationDelay = (0.1 + i * 0.065) + 's';
+      el.appendChild(s);
+    });
+  })();
+
+  // ── Splash counter & progress bar ───────────────────────
+  var splashProgress    = 0;
+  var splashCounterDone = false;
+  var doExitSplash      = null;
+  var splashBarEl       = document.getElementById('splash-bar');
+  var splashCounterEl   = document.getElementById('splash-counter');
+
+  function tickCounter() {
+    var step = splashProgress < 70 ? 3 : splashProgress < 90 ? 1 : 0.5;
+    splashProgress = Math.min(100, splashProgress + step);
+    if (splashBarEl)     splashBarEl.style.width = splashProgress + '%';
+    if (splashCounterEl) splashCounterEl.textContent = String(Math.floor(splashProgress)).padStart(2, '0');
+    if (splashProgress >= 100) {
+      splashCounterDone = true;
+      if (doExitSplash) doExitSplash();
+      return;
+    }
+    setTimeout(tickCounter, 30);
+  }
+  setTimeout(tickCounter, 60);
+
+  // ── Section navigator ───────────────────────────────────
+  var SECTION_NAMES = PROJECTS.map(function (p) { return p.subtitle; });
+  var NAV_TOTAL = SECTION_NAMES.length;
+  var navInner  = document.getElementById('nav-inner');
+  var navRows   = navInner.querySelectorAll('.nav-row');
+
+  function fillRow(row, idx) {
+    row.querySelector('.nav-num').textContent  = String(idx + 1).padStart(2, '0');
+    row.querySelector('.nav-name').textContent = SECTION_NAMES[idx];
+  }
+  function updateNav(cur) {
+    fillRow(navRows[0], (cur - 1 + NAV_TOTAL) % NAV_TOTAL);
+    fillRow(navRows[1], cur);
+    fillRow(navRows[2], (cur + 1) % NAV_TOTAL);
+  }
+  updateNav(0);
+
+  // ── No-GSAP fallback ────────────────────────────────────
+  function noGsapFallback() {
+    var splashEl = document.getElementById('splash');
+    if (splashEl) splashEl.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    var porto = document.querySelector('.porto');
+    porto.style.opacity = '1';
+    porto.style.position = 'static';
+    porto.style.overflow = 'visible';
+    document.querySelectorAll('.page-section').forEach(function (s) {
+      s.style.position = 'relative'; s.style.height = '900px';
+    });
+    document.querySelectorAll('.section-inner').forEach(function (s) {
+      s.style.transform = 'none'; s.style.top = '0';
+    });
+    document.querySelectorAll(
+      '.proj-card,.page-placeholder .line,.ph-label'
+    ).forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
+  }
+
+  // ── Safety timeout: force-exit splash after 6 s ─────────
+  setTimeout(function () {
+    var splashEl = document.getElementById('splash');
+    if (!splashEl) return;
+    if (splashEl.style.display === 'none') return;
+    if (splashEl.getBoundingClientRect().bottom <= 0) return;
+    console.warn('[porto] Splash safety timeout fired — forcing exit.');
+    if (typeof doExitSplash === 'function') doExitSplash();
+    else noGsapFallback();
+  }, 6000);
+
+  // ══════════════════════════════════════════════════════════
+  //  Case-study overlay — open/close with trio FLIP glide
+  // ══════════════════════════════════════════════════════════
+  var isOverlayOpen    = false;
+  var _currentSlug     = null;
+  var convObserver     = null;
+  var _entranceTl      = null;
+  var _entranceClones  = [];  // all FLIP clones in flight (active + peers)
+  var _hiddenHomeCards = [];  // homepage cards hidden during entrance glide
+  var _sourceCard         = null;
+  var _sourceProjectIndex = -1;
+  var _exitTl          = null;
+  var _exitPeerMap     = [];  // {homeCard, csCardEl, csSlideEl} captured at open; drives reverse peer glide
+  var _prevFocus       = null;
+  var _trapHandler     = null;
+  var _replayHeroReveal = null; // assigned inside load handler once revealText/sectionText/current are live
+  var _hideHeroForClose = null;
+
+  var GLIDE_DURATION = 0.75;
+  var GLIDE_EASE     = 'power3.inOut';
+
+  // Clones a .proj-card at a fixed position so it can glide between layouts.
+  // cloneNode keeps the inline gradient background and any <img>, so projects
+  // without a hero image glide exactly like the ones with one.
+  // Clones live inside #cs-shell UNDER the white right panel (z-index 3 in CSS),
+  // so mid-flight cards get progressively clipped by the sweeping panel edge —
+  // same as the reference transition.
+  function makeCardClone(cardEl, rect, zIndex) {
+    var clone = cardEl.cloneNode(true);
+    clone.classList.add('glide-clone'); // keep .proj-card etc — child selectors position the inner img/placeholder
+    var s = clone.style; // positioning only — the inline background survives
+    s.position = 'fixed';
+    s.left = rect.left + 'px';
+    s.top  = rect.top + 'px';
+    s.width  = rect.width + 'px';
+    s.height = rect.height + 'px';
+    s.transform = 'none';
+    s.zIndex = zIndex;
+    var img = clone.querySelector('img');
+    if (img) img.style.transform = 'none'; // strip any hover-tilt state
+    var shell = document.getElementById('cs-shell');
+    (shell || document.body).appendChild(clone);
+    return clone;
+  }
+
+  function removeEl(el) {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  // Kill any in-flight entrance/exit animation and restore hidden cards.
+  function killGlides() {
+    if (_entranceTl) { _entranceTl.kill(); _entranceTl = null; }
+    if (_exitTl)     { _exitTl.kill();     _exitTl     = null; }
+    _entranceClones.forEach(removeEl);
+    _entranceClones = [];
+    _hiddenHomeCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
+    _hiddenHomeCards = [];
+  }
+
+  function trapOverlayFocus() {
+    var overlay = document.getElementById('cs-overlay');
+    if (!overlay) return;
+    // Idempotent: a What's-Next navigation re-opens the overlay without closing it.
+    // Drop any existing trap before installing a new one, and pin _prevFocus to the
+    // ORIGINAL opener so focus restores correctly on the final close.
+    if (_trapHandler) { document.removeEventListener('keydown', _trapHandler, true); _trapHandler = null; }
+    if (!_prevFocus) _prevFocus = document.activeElement;
+    var porto = document.querySelector('.porto');
+    if (porto) porto.setAttribute('aria-hidden', 'true');
+    var closeBtn = document.getElementById('cs-close');
+    if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
+    _trapHandler = function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); closeOverlay(); return; }
+      if (e.key !== 'Tab') return;
+      var nodes = overlay.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      var list = Array.prototype.filter.call(nodes, function (el) { return el.offsetParent !== null; });
+      if (!list.length) return;
+      var first = list[0], last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', _trapHandler, true);
+  }
+
+  function releaseOverlayFocus() {
+    if (_trapHandler) { document.removeEventListener('keydown', _trapHandler, true); _trapHandler = null; }
+    var porto = document.querySelector('.porto');
+    if (porto) porto.removeAttribute('aria-hidden');
+    if (_prevFocus && typeof _prevFocus.focus === 'function') {
+      try { _prevFocus.focus({ preventScroll: true }); } catch (e) { _prevFocus.focus(); }
+    }
+    _prevFocus = null;
+  }
+
+  function navigateFromOverlay(href) {
+    var match = href && href.match(/[?&]p=([^&]+)/);
+    var slug = match && decodeURIComponent(match[1]);
+    var nextProject = slug && window.CaseStudy && CaseStudy.resolveProject(slug);
+    if (nextProject) {
+      showOverlay(nextProject);
+      history.pushState({ csOverlay: nextProject.slug }, '', 'case-study.html?p=' + nextProject.slug);
+    } else {
+      window.location.href = href;
+    }
+  }
+
+  // Opens the case-study overlay. fromCard (optional) drives the FLIP glide:
+  // { card, rect, peers: [{ card, rect, slot }] } — all captured pre-click.
+  function showOverlay(rawProject, fromCard) {
+    var project = CaseStudy.resolveProject(rawProject.slug);
+    if (!project) throw new Error('resolveProject returned null');
+
+    killGlides();
+    _exitPeerMap.forEach(function (e) { if (window.gsap && e.homeCard) gsap.set(e.homeCard, { opacity: 1 }); });
+    _exitPeerMap = [];
+
+    CaseStudy.teardown();
+    isOverlayOpen = true;
+    if (convObserver) convObserver.disable();
+
+    var sourceLink = document.getElementById('cs-source');
+    if (sourceLink) {
+      if (project.sourceUrl && project.sourceUrl.trim() !== '') {
+        sourceLink.href = project.sourceUrl;
+        sourceLink.removeAttribute('hidden');
+      } else {
+        sourceLink.setAttribute('hidden', '');
+      }
+    }
+
+    CaseStudy.render(project, {
+      sliderEl:      document.getElementById('cs-slider'),
+      detailEl:      document.getElementById('cs-detail'),
+      scrollWrapper: document.getElementById('cs-right'),
+      contentEl:     document.getElementById('cs-right-content'),
+      exitFn:        navigateFromOverlay
+    });
+
+    var overlay = document.getElementById('cs-overlay');
+    var shell   = document.getElementById('cs-shell');
+    var csRight = document.getElementById('cs-right');
+    overlay.classList.add('is-open');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (window.CaseStudy && CaseStudy.relayout) CaseStudy.relayout();
+      });
+    });
+    trapOverlayFocus();
+    overlay.setAttribute('aria-hidden', 'false');
+    if (shell)   shell.style.opacity = '1';
+    if (csRight) csRight.scrollTop   = 0;
+    _currentSlug = project.slug;
+
+    var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
+    // Mobile: split layout collapses to stacked, so the glide + panel sweep don't apply.
+    var useAnim = !!(fromCard && window.gsap && !prefersReduced && !isMobile);
+
+    if (!useAnim) {
+      _sourceCard = null; _sourceProjectIndex = -1; // no source card → close stays instant/crossfade, not a mismatched glide
+
+      if (isMobile && window.gsap && !prefersReduced) {
+        // Simple mobile crossfade (opacity only)
+        gsap.set('#cs-right', { xPercent: 0 });
+        gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
+        gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+        gsap.to('.porto', { opacity: 0, duration: 0.3, ease: 'power2.out' });
+      } else if (window.gsap) {
+        gsap.set('.porto', { opacity: 0 });
+      } else {
+        var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '0';
+      }
+
+      document.dispatchEvent(new Event('cs-glide-start'));
+      document.dispatchEvent(new Event('cs-entered'));
+      return;
+    }
+
+    // ── Animated entrance: trio FLIP glide ─────────────────
+    var D    = GLIDE_DURATION;
+    var EASE = GLIDE_EASE;
+
+    gsap.set('#cs-right',  { xPercent: 100 });
+    gsap.set('.cs-slide.is-active .proj-card', { opacity: 0 });
+    gsap.set('#cs-close',  { opacity: 0 });
+
+    var clone = makeCardClone(fromCard.card, fromCard.rect, 2);
+    _entranceClones.push(clone);
+    gsap.set(fromCard.card, { opacity: 0 }); // only the clone is visible during the glide
+    _hiddenHomeCards.push(fromCard.card);
+    _sourceCard         = fromCard.card;
+    _sourceProjectIndex = PROJECTS.indexOf(project);
+
+    var destEl   = document.querySelector('.cs-slide.is-active .proj-card');
+    var destRect = destEl ? destEl.getBoundingClientRect() : null;
+
+    // Peer glide prep: places prev/next case-study slides at final geometry
+    // (opacity 0) so their destination rects can be measured, and detaches the
+    // internal cs-glide-start peek animation so it doesn't fight the clones.
+    var peerGlideData = null;
+    if (fromCard.peers && fromCard.peers.length && CaseStudy.prepPeekGlide) {
+      peerGlideData = CaseStudy.prepPeekGlide();
+    }
+
+    _entranceTl = gsap.timeline({
+      onComplete: function () {
+        gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
+        gsap.set('#cs-right', { xPercent: 0 });
+        // Safety sweep — per-clone onCompletes normally clear these already
+        _entranceClones.forEach(removeEl);
+        _entranceClones = [];
+        // Restore homepage cards now that .porto is at opacity 0
+        _hiddenHomeCards.forEach(function (c) { gsap.set(c, { opacity: 1 }); });
+        _hiddenHomeCards = [];
+        _entranceTl = null;
+      }
+    });
+
+    // cs-glide-start drives the internal peek offset-animation in case-study.js.
+    // When clone-driven peers are in use, that handler has been detached by
+    // prepPeekGlide, so the dispatch is skipped.
+    if (!peerGlideData) {
+      _entranceTl.add(function () { document.dispatchEvent(new Event('cs-glide-start')); }, 0);
+    }
+    _entranceTl.to('.porto',    { opacity: 0, duration: D * 0.7, ease: EASE }, 0);
+    _entranceTl.to('#cs-right', { xPercent: 0, duration: D, ease: EASE }, 0);
+
+    if (destRect) {
+      _entranceTl.to(clone, {
+        x: destRect.left - fromCard.rect.left,
+        y: destRect.top  - fromCard.rect.top,
+        width: destRect.width, height: destRect.height,
+        duration: D, ease: EASE,
+        onComplete: function () {
+          gsap.set(destEl, { opacity: 1 });
+          removeEl(clone);
+        }
+      }, 0);
+    }
+
+    // Peer FLIP clones: prev/next homepage cards glide to their case-study
+    // peek slots in unison with the active card.
+    if (peerGlideData) {
+      fromCard.peers.forEach(function (peer) {
+        var slotData = peerGlideData[peer.slot];
+        if (!slotData || !slotData.rect) return; // skip if dest couldn't be measured
+
+        _exitPeerMap.push({
+          homeCard:  peer.card,
+          csCardEl:  slotData.cardEl,
+          csSlideEl: slotData.slideEl
+        });
+
+        var peerClone = makeCardClone(peer.card, peer.rect, 1);
+        _entranceClones.push(peerClone);
+        gsap.set(peer.card, { opacity: 0 });
+        _hiddenHomeCards.push(peer.card);
+
+        _entranceTl.to(peerClone, {
+          x: slotData.rect.left - peer.rect.left,
+          y: slotData.rect.top  - peer.rect.top,
+          width:    slotData.rect.width,
+          height:   slotData.rect.height,
+          opacity:  slotData.targetOpacity, // land at the peek slide's resting opacity
+          duration: D,
+          ease:     EASE,
+          onComplete: function () {
+            gsap.set(slotData.slideEl, { opacity: slotData.targetOpacity });
+            removeEl(peerClone);
+            var idx = _entranceClones.indexOf(peerClone);
+            if (idx !== -1) _entranceClones.splice(idx, 1);
+          }
+        }, 0);
+      });
+    }
+
+    _entranceTl.add(function () { document.dispatchEvent(new Event('cs-entered')); }, D * 0.55);
+    _entranceTl.to('#cs-close', { opacity: 0.5, duration: 0.4, ease: 'power2.out' }, D * 0.80);
+  }
+
+  function closeOverlay() {
+    hideOverlay();
+    history.replaceState({ csOverlay: null }, '', location.pathname.replace(/case-study\.html.*$/, '') || 'index.html');
+  }
+
+  function hideOverlay() {
+    releaseOverlayFocus();
+    killGlides();
+
+    var D = GLIDE_DURATION;
+    var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canAnimate     = !!(window.gsap && !prefersReduced && _sourceCard);
+
+    // Mismatch guard: if the user navigated to a different project inside the
+    // overlay, a glide back to the original card would be wrong — plain close.
+    if (canAnimate) {
+      var activeSlideEl   = document.querySelector('.cs-slide.is-active');
+      var activeDataIndex = activeSlideEl ? parseInt(activeSlideEl.getAttribute('data-index'), 10) : -1;
+      if (activeDataIndex !== _sourceProjectIndex) canAnimate = false;
+    }
+
+    if (!canAnimate) {
+      var isMobile = window.matchMedia && matchMedia('(max-width: 900px)').matches;
+      var overlay  = document.getElementById('cs-overlay');
+      var shell    = document.getElementById('cs-shell');
+
+      var finishClose = function () {
+        if (window.gsap) {
+          gsap.set('.porto', { opacity: 1 });
+          gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
+          gsap.set('#cs-right', { xPercent: 0 });
+          if (_sourceCard) gsap.set(_sourceCard, { opacity: 1 });
+        } else {
+          var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '1';
+        }
+        CaseStudy.teardown();
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+        if (shell) shell.style.opacity = '0';
+        _exitPeerMap = [];
+        _sourceCard = null;
+        _sourceProjectIndex = -1;
+        if (convObserver) convObserver.enable();
+        isOverlayOpen = false;
+        _currentSlug  = null;
+        if (window._resetCursorExplore) window._resetCursorExplore();
+        if (!isMobile && _replayHeroReveal) _replayHeroReveal();
+      };
+
+      if (isMobile && window.gsap && !prefersReduced) {
+        // Simple mobile crossfade close (opacity only)
+        gsap.to(shell, { opacity: 0, duration: 0.28, ease: 'power2.out' });
+        gsap.fromTo('.porto', { opacity: 0 }, { opacity: 1, duration: 0.28, ease: 'power2.out', onComplete: finishClose });
+      } else {
+        finishClose();
+      }
+      return;
+    }
+
+    // ── Animated reverse close: trio glides back home ──────
+    var EASE = GLIDE_EASE;
+    var realCardEl = document.querySelector('.cs-slide.is-active .proj-card');
+    var startRect  = realCardEl ? realCardEl.getBoundingClientRect() : null;
+    var destRect   = _sourceCard.getBoundingClientRect();
+
+    var clone = null;
+    if (realCardEl && startRect) {
+      clone = makeCardClone(realCardEl, startRect, 2);
+      gsap.set(realCardEl, { opacity: 0 });  // only the clone is visible during the glide
+      gsap.set(_sourceCard, { opacity: 0 }); // hide the landing spot until the clone arrives
+    }
+
+    var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
+    var exitClones = clone ? [clone] : [];
+
+    if (_hideHeroForClose) _hideHeroForClose();
+
+    _exitTl = gsap.timeline({
+      onComplete: function () {
+        gsap.set(capturedSourceCard, { opacity: 1 });
+        gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
+        gsap.set('#cs-right', { xPercent: 0 });
+        exitClones.forEach(removeEl);
+        CaseStudy.teardown();
+        var overlay = document.getElementById('cs-overlay');
+        var shell   = document.getElementById('cs-shell');
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+        if (shell) shell.style.opacity = '0';
+        if (convObserver) convObserver.enable();
+        isOverlayOpen = false;
+        _currentSlug        = null;
+        _sourceCard         = null;
+        _sourceProjectIndex = -1;
+        _exitTl             = null;
+        _exitPeerMap        = [];
+        if (window._resetCursorExplore) window._resetCursorExplore();
+      }
+    });
+
+    if (clone) {
+      _exitTl.to(clone, {
+        x: destRect.left - startRect.left,
+        y: destRect.top  - startRect.top,
+        width:  destRect.width,
+        height: destRect.height,
+        duration: D, ease: EASE
+      }, 0);
+    }
+
+    _exitTl.to('#cs-right', { xPercent: 100, duration: D,       ease: EASE }, 0);
+    _exitTl.to('.porto',    { opacity:  1,   duration: D * 0.7, ease: 'power2.out' }, 0);
+    _exitTl.to('#cs-close', { opacity:  0,   duration: 0.2 }, 0);
+    // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
+    // so the text animates in while the panel is still sliding rather than after a dead pause.
+    _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
+
+    // Reverse peer glide — mirror of the open trio glide
+    _exitPeerMap.forEach(function (entry) {
+      if (!entry.csCardEl || !entry.homeCard) return;
+      var pStart = entry.csCardEl.getBoundingClientRect();
+      var pDest  = entry.homeCard.getBoundingClientRect();
+      if (!pStart.width || !pDest.width) return;
+
+      var pClone = makeCardClone(entry.csCardEl, pStart, 1);
+      exitClones.push(pClone);
+      // Start at the peek slide's resting opacity, arrive fully opaque
+      if (entry.csSlideEl && window.getComputedStyle) {
+        pClone.style.opacity = getComputedStyle(entry.csSlideEl).opacity;
+      }
+      if (entry.csSlideEl) gsap.set(entry.csSlideEl, { opacity: 0 });
+      gsap.set(entry.homeCard, { opacity: 0 });
+
+      var homeCard = entry.homeCard;
+      _exitTl.to(pClone, {
+        x: pDest.left - pStart.left,
+        y: pDest.top  - pStart.top,
+        width:  pDest.width,
+        height: pDest.height,
+        opacity: 1,
+        duration: D, ease: EASE,
+        onComplete: function () {
+          gsap.set(homeCard, { opacity: 1 });
+          removeEl(pClone);
+        }
+      }, 0);
+    });
+  }
+
+  // ── Main ────────────────────────────────────────────────
+  window.addEventListener('load', function () {
+    if (!window.gsap || !window.Observer) { noGsapFallback(); return; }
+    gsap.registerPlugin(Observer);
+    history.replaceState({ csOverlay: null }, '', location.href);
+
+    var sections = Array.from(document.querySelectorAll('.page-section'));
+
+    // ── Initial hidden states ──
+    sections.forEach(function (sec) {
+      var label = sec.querySelector('.ph-label');
+      if (label) gsap.set(label, { opacity: 1 });
+      gsap.set(sec.querySelectorAll('.ph-label .char, .ph-title .char'), { yPercent: 40, opacity: 0 });
+    });
+
+    // ── Scroll parallax system ──
+    var TOTAL     = PROJECTS.length;
+    var current   = 0;
+    var animating = false;
+    var VH = window.innerHeight;
+
+    var PEEK_BELOW = 0.64;   // next section peeking from the bottom
+    var PEEK_ABOVE = -0.58;  // previous section peeking from the top
+    var PARK_BELOW = 1.5;    // parked just below the viewport
+    var PARK_ABOVE = -1.5;   // parked just above the viewport
+
+    function sectionY(i, cur) {
+      var fd = (i - cur + TOTAL) % TOTAL;
+      if (fd === 0)         return 0;
+      if (fd === 1)         return VH * PEEK_BELOW;
+      if (fd === TOTAL - 1) return VH * PEEK_ABOVE;
+      if (fd === TOTAL - 2) return VH * PARK_ABOVE;
+      return VH * PARK_BELOW;
+    }
+
+    function sectionZ(fd) {
+      if (fd === 1)         return 30;
+      if (fd === 0)         return 20;
+      if (fd === TOTAL - 1) return 25;
+      return 10;
+    }
+
+    // on-screen slots must animate, not snap
+    function onScreen(fd) {
+      return fd === 0 || fd === 1 || fd === TOTAL - 1;
+    }
+
+    // ── Card click → case study ──
+    sections.forEach(function (section, i) {
+      var card = section.querySelector('.proj-card');
+      if (!card) return;
+      var slug = PROJECTS[i] && PROJECTS[i].slug;
+      if (!slug) return;
+
+      card.addEventListener('click', function () {
+        if (animating || !window.CaseStudy) return;
+
+        var imgEl = card.querySelector('img');
+        if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 }); // reset hover tilt before measuring
+        var fromCard = { card: card, rect: card.getBoundingClientRect(), peers: [] };
+
+        // Capture the two adjacent on-screen peek cards so all three glide together
+        var seenPeer = {};
+        [{ pIdx: (i - 1 + TOTAL) % TOTAL, slot: 'prev' },
+         { pIdx: (i + 1) % TOTAL,          slot: 'next' }].forEach(function (def) {
+          if (def.pIdx === i) return;            // TOTAL=1 guard
+          if (seenPeer[def.pIdx]) return;        // de-dupe when TOTAL=2
+          seenPeer[def.pIdx] = true;
+          if (!onScreen((def.pIdx - i + TOTAL) % TOTAL)) return; // skip parked (off-screen) cards
+          var pCard = sections[def.pIdx] && sections[def.pIdx].querySelector('.proj-card');
+          if (!pCard) return;
+          fromCard.peers.push({ card: pCard, rect: pCard.getBoundingClientRect(), slot: def.slot });
+        });
+
+        try {
+          showOverlay(PROJECTS[i], fromCard);
+          history.pushState({ csOverlay: slug }, '', 'case-study.html?p=' + slug);
+        } catch (e) {
+          console.error('[porto] showOverlay failed:', e);
+          isOverlayOpen = false;
+          _currentSlug = null;
+          if (convObserver) convObserver.enable();
+        }
+      });
+
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+
+    sections.forEach(function (el, i) {
+      gsap.set(el, { y: sectionY(i, 0) });
+      el.style.zIndex = sectionZ((i - 0 + TOTAL) % TOTAL);
+    });
+    sections[0].classList.add('is-active');
+
+    function syncActiveCardTab() {
+      sections.forEach(function (s) {
+        var c = s.querySelector('.proj-card');
+        if (!c) return;
+        c.setAttribute('tabindex', s.classList.contains('is-active') ? '0' : '-1');
+      });
+    }
+    syncActiveCardTab();
+
+    function sectionText(idx) {
+      var sec = sections[idx];
+      if (!sec) return { small: null, big: null };
+      return {
+        small: sec.querySelectorAll('.ph-label .char'),
+        big:   sec.querySelectorAll('.ph-title .char')
+      };
+    }
+
+    function revealText(tl, t) {
+      if (t.big   && t.big.length)   tl.fromTo(t.big,   { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: { each: 0.022, from: 'start' } }, 0.25);
+      if (t.small && t.small.length) tl.fromTo(t.small, { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: 'power3.out', stagger: { each: 0.016 } }, 0.35);
+    }
+
+    function hideText(tl, t) {
+      if (t.big   && t.big.length)   tl.to(t.big,   { yPercent: -40, opacity: 0, duration: 0.35, ease: 'power3.in', stagger: { each: 0.008, from: 'end' } }, 0);
+      if (t.small && t.small.length) tl.to(t.small, { yPercent: -40, opacity: 0, duration: 0.3,  ease: 'power3.in' }, 0);
+    }
+
+    // Expose hero reveal so hideOverlay (outer scope) can replay it on close.
+    _hideHeroForClose = function () {
+      var t = sectionText(current);
+      if (t.big   && t.big.length)   { gsap.killTweensOf(t.big);   gsap.set(t.big,   { yPercent: 40, opacity: 0 }); }
+      if (t.small && t.small.length) { gsap.killTweensOf(t.small); gsap.set(t.small, { yPercent: 40, opacity: 0 }); }
+    };
+
+    _replayHeroReveal = function () {
+      _hideHeroForClose();
+      revealText(gsap.timeline(), sectionText(current));
+    };
+
+    function go(dir) {
+      if (animating) return;
+      animating = true;
+
+      var prev = current;
+
+      // Kill any running tweens on the outgoing section to prevent conflicts
+      var outgoing = sectionText(prev);
+      if (outgoing.big)   gsap.killTweensOf(outgoing.big);
+      if (outgoing.small) gsap.killTweensOf(outgoing.small);
+      current = (prev + dir + TOTAL) % TOTAL;
+
+      sections.forEach(function (s) { s.classList.remove('is-active'); });
+      sections[current].classList.add('is-active');
+      syncActiveCardTab();
+
+      sections.forEach(function (el) { el.style.willChange = 'transform'; });
+
+      var tl = gsap.timeline({
+        onComplete: function () {
+          animating = false;
+          sections.forEach(function (el) { el.style.willChange = 'auto'; });
+          sections[current].style.zIndex = sectionZ(0); // restore resting layer
+        }
+      });
+
+      sections.forEach(function (el, i) {
+        var fdNew = (i - current + TOTAL) % TOTAL;
+        var fdOld = (i - prev    + TOTAL) % TOTAL;
+        el.style.zIndex = sectionZ(fdNew);
+        if (onScreen(fdNew) || onScreen(fdOld)) {
+          tl.to(el, { y: sectionY(i, current), duration: 1.1, ease: 'expo.inOut' }, 0);
+        } else {
+          gsap.set(el, { y: sectionY(i, current) });
+        }
+      });
+
+      // lift incoming section above all while it travels to centre,
+      // so the outgoing card can't cover it (the scroll-up collision)
+      sections[current].style.zIndex = 50;
+
+      // Text reveal / exit
+      if (prev !== current) hideText(tl, sectionText(prev));
+
+      // Hard-reset incoming section chars before reveal (prevents stale positions)
+      var incoming = sectionText(current);
+      if (incoming.big   && incoming.big.length)   gsap.set(incoming.big,   { yPercent: 40, opacity: 0 });
+      if (incoming.small && incoming.small.length) gsap.set(incoming.small, { yPercent: 40, opacity: 0 });
+
+      revealText(tl, sectionText(current));
+
+      // Nav update
+      tl.to(navInner, {
+        opacity: 0, y: dir > 0 ? -10 : 10, duration: 0.16, ease: 'power2.in',
+        onComplete: function () {
+          updateNav(current);
+          gsap.set(navInner, { y: dir > 0 ? 10 : -10 });
+        }
+      }, 0.08)
+      .to(navInner, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.3);
+    }
+
+    convObserver = Observer.create({
+      type: 'wheel,touch',
+      onDown: function () { go(1);  },
+      onUp:   function () { go(-1); },
+      tolerance: 10,
+      preventDefault: true
+    });
+
+    window.addEventListener('resize', function () {
+      VH = window.innerHeight;
+      sections.forEach(function (el, i) { gsap.set(el, { y: sectionY(i, current) }); });
+    });
+
+    window.addEventListener('keydown', function (e) {
+      if (isOverlayOpen) return;
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { go(1);  e.preventDefault(); }
+      else if (e.key === 'ArrowUp'   || e.key === 'PageUp')               { go(-1); e.preventDefault(); }
+    });
+
+    navRows[0].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(-1); });
+    navRows[2].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(1);  });
+
+    // ── Close button for the in-place overlay ──
+    var csCloseBtn = document.getElementById('cs-close');
+    if (csCloseBtn) {
+      csCloseBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeOverlay();
+      });
+    }
+
+    // ── History navigation (popstate) ──
+    window.addEventListener('popstate', function (e) {
+      var target = (e.state && e.state.csOverlay) || null;
+      if (target && target !== _currentSlug) {
+        var p = CaseStudy.resolveProject(target);
+        if (p) showOverlay(p);
+      } else if (!target && _currentSlug) {
+        hideOverlay();
+      }
+    });
+
+    // ── Splash exit → intro ──
+    var splashExited = false;
+    animating = true;
+
+    doExitSplash = function () {
+      if (splashExited) return;
+      splashExited = true;
+      var splashEl = document.getElementById('splash');
+      var introTl = gsap.timeline({ onComplete: function () { animating = false; } });
+      introTl
+        .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)
+        .to('.porto',  { opacity: 1,    duration: 0.5,  ease: 'power2.out' }, 0.3);
+      revealText(introTl, sectionText(0));
+    };
+
+    if (splashCounterDone) doExitSplash();
+  });
+
+  // ── Custom proj-card cursor ───────────────────────────
+  (function () {
+    var cursor = document.getElementById('proj-cursor');
+    if (!cursor) return;
+
+    var mouseX = window.innerWidth / 2;
+    var mouseY = window.innerHeight / 2;
+    var curX = mouseX, curY = mouseY;
+    var rafId = null;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function applyTransform() {
+      cursor.style.transform = 'translate3d(' + curX + 'px,' + curY + 'px,0)';
+    }
+
+    function loop() {
+      curX = lerp(curX, mouseX, 0.12);
+      curY = lerp(curY, mouseY, 0.12);
+      applyTransform();
+      if (Math.abs(mouseX - curX) < 0.1 && Math.abs(mouseY - curY) < 0.1) {
+        curX = mouseX; curY = mouseY;
+        applyTransform();
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function kick() {
+      if (rafId === null) rafId = requestAnimationFrame(loop);
+    }
+
+    applyTransform();
+
+    document.addEventListener('mousemove', function (e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      kick();
+    }, { passive: true });
+
+    // Event delegation on document catches all .proj-card hovers
+    document.addEventListener('mouseover', function (e) {
+      if (e.target.closest('.page-section .proj-card')) {
+        cursor.classList.add('is-visible');
+        document.body.style.cursor = 'none';
+      }
+    });
+
+    document.addEventListener('mouseout', function (e) {
+      if (e.target.closest('.page-section .proj-card')) {
+        var related = e.relatedTarget;
+        if (!related || !related.closest('.page-section .proj-card')) {
+          cursor.classList.remove('is-visible');
+          document.body.style.cursor = '';
+        }
+      }
+    });
+
+    var cursorLabel = cursor.querySelector('span');
+
+    function setCursorClose() {
+      cursor.classList.add('is-close');
+      if (cursorLabel) cursorLabel.textContent = 'CLOSE';
+    }
+    function resetCursorExplore() {
+      cursor.classList.remove('is-close');
+      if (cursorLabel) cursorLabel.textContent = '[EXPLORE]';
+    }
+
+    // Expose reset so hideOverlay can call it
+    window._resetCursorExplore = resetCursorExplore;
+
+    document.addEventListener('mouseover', function (e) {
+      if (!isOverlayOpen) return;
+      if (e.target.closest('.cs-slide .proj-card')) {
+        setCursorClose();
+        cursor.classList.add('is-visible');
+        document.body.style.cursor = 'none';
+      }
+    });
+
+    document.addEventListener('mouseout', function (e) {
+      if (!isOverlayOpen) return;
+      if (e.target.closest('.cs-slide .proj-card')) {
+        var related = e.relatedTarget;
+        if (!related || !related.closest('.cs-slide .proj-card')) {
+          resetCursorExplore();
+          cursor.classList.remove('is-visible');
+          document.body.style.cursor = '';
+        }
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!isOverlayOpen) return;
+      if (e.target.closest('#cs-close')) return;
+      if (e.target.closest('.cs-slider-prev, .cs-slider-next, .cs-slider-dot, .cs-slider-dots')) return;
+      if (e.target.closest('#cs-left')) {
+        closeOverlay();
+      }
+    });
+  })();
+
+  // ── proj-card 3D tilt ─────────────────────────────────
+  (function () {
+    var activeCard = null;
+    var activeImg  = null;
+    var rect       = null;
+    var lastX = 0, lastY = 0;
+    var rafId = null;
+
+    function onFrame() {
+      rafId = null;
+      if (!activeCard || !activeImg || !rect) return;
+      var nx = (lastX - rect.left) / rect.width;
+      var ny = (lastY - rect.top)  / rect.height;
+      var rotateX = ((ny - 0.5) * 2) * -10;
+      var rotateY = ((nx - 0.5) * 2) *  10;
+      gsap.to(activeImg, { rotateX: rotateX, rotateY: rotateY, scale: 1.04, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
+    }
+
+    document.addEventListener('mouseover', function (e) {
+      var card = e.target.closest('.proj-card');
+      if (!card || card === activeCard) return;
+      activeCard = card;
+      activeImg  = card.querySelector('img');
+      rect       = card.getBoundingClientRect();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!activeCard) return;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (rafId === null) rafId = requestAnimationFrame(onFrame);
+    }, { passive: true });
+
+    document.addEventListener('mouseout', function (e) {
+      var card = e.target.closest('.proj-card');
+      if (!card) return;
+      var related = e.relatedTarget;
+      if (related && related.closest('.proj-card')) return;
+      if (activeImg) {
+        gsap.to(activeImg, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+      }
+      activeCard = null; activeImg = null; rect = null;
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+    });
+  })();
+})();
