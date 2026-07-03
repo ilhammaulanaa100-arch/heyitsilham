@@ -71,8 +71,19 @@
 
   <div class="porto">
 
-    <!-- Background grid (Figma: Grid layers - v1) -->
-    <div class="grid-bg"></div>
+    <!-- Scan grid: outline grid with a scanning focus frame at centre -->
+    <div class="scan-grid" aria-hidden="true">
+      <span class="scan-line scan-line-v1"></span>
+      <span class="scan-line scan-line-v2"></span>
+      <span class="scan-line scan-line-h1"></span>
+      <span class="scan-line scan-line-h2"></span>
+      <div class="scan-focus" id="scan-focus">
+        <span class="scan-corner scan-corner-tl"></span>
+        <span class="scan-corner scan-corner-tr"></span>
+        <span class="scan-corner scan-corner-bl"></span>
+        <span class="scan-corner scan-corner-br"></span>
+      </div>
+    </div>
 
     <!-- Sections generated from PROJECTS in content.js -->
     <div id="sections-wrap"></div>

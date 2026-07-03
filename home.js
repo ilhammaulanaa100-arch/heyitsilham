@@ -197,6 +197,7 @@
   var _sourceCard         = null;
   var _sourceProjectIndex = -1;
   var _gridReturn      = null;  // { rect } — set when the overlay was opened from the grid view
+  var _hiddenCellMedia = -1;    // project index whose grid-cell media is blanked during a glide
   var _exitTl          = null;
   var _prevFocus       = null;
   var _trapHandler     = null;
@@ -245,6 +246,10 @@
     _entranceClones = [];
     _hiddenHomeCards.forEach(function (c) { if (window.gsap) gsap.set(c, { opacity: 1 }); });
     _hiddenHomeCards = [];
+    if (_hiddenCellMedia >= 0 && window.GridView && GridView.setCellMediaHidden) {
+      GridView.setCellMediaHidden(_hiddenCellMedia, false);
+    }
+    _hiddenCellMedia = -1;
   }
 
   function trapOverlayFocus() {
@@ -386,7 +391,9 @@
     if (srcEl) {
       clone = makeCardClone(srcEl, fromCard.rect, 2);
       clone.style.opacity = '1'; // destEl carries an inline opacity:0 — the clone must not
-      gsap.set(clone, { scale: 0.96, transformOrigin: '50% 50%' }); // slight pop as it commits
+      // No spawn scale-pop: the clone must sit pixel-exact on the source rect at
+      // frame one, or the media underneath (grid canvas / homepage card) peeks
+      // out around it and reads as a ghost image.
       _entranceClones.push(clone);
     }
     if (fromCard.card) {
@@ -396,6 +403,14 @@
     _sourceCard         = fromCard.card || null;
     _gridReturn         = isGrid ? { rect: fromCard.rect, cell: fromCard.cell } : null;
     _sourceProjectIndex = PROJECTS.indexOf(project);
+
+    // The clone now owns the media: blank it out of the grid-cell texture for
+    // the whole glide, so the canvas never renders a second copy of the image
+    // diverging behind the flying card.
+    if (isGrid && window.GridView && GridView.setCellMediaHidden && _sourceProjectIndex >= 0) {
+      _hiddenCellMedia = _sourceProjectIndex;
+      GridView.setCellMediaHidden(_hiddenCellMedia, true);
+    }
 
     _entranceTl = gsap.timeline({
       onComplete: function () {
@@ -408,7 +423,13 @@
         _hiddenHomeCards.forEach(function (c) { gsap.set(c, { opacity: 1 }); });
         _hiddenHomeCards = [];
         _entranceTl = null;
-        if (isGrid && window.GridView) GridView.hide(true); // fully faded — drop the canvas
+        if (isGrid && window.GridView) {
+          GridView.hide(true); // fully faded — drop the canvas
+          if (_hiddenCellMedia >= 0 && GridView.setCellMediaHidden) {
+            GridView.setCellMediaHidden(_hiddenCellMedia, false);
+            _hiddenCellMedia = -1;
+          }
+        }
       }
     });
 
@@ -435,7 +456,6 @@
         x: destRect.left - fromCard.rect.left,
         y: destRect.top  - fromCard.rect.top,
         width: destRect.width, height: destRect.height,
-        scale: 1,
         duration: CARD_D, ease: CARD_EASE,
         onComplete: function () {
           gsap.set(destEl, { opacity: 1 });
@@ -518,8 +538,16 @@
     if (wasGrid) {
       // Reveal the grid (resting curved lens) under the overlay so the card
       // can land on its cell — rect recomputed below through that lens.
+      // .porto stays at opacity 0 for now: the grid fades in from 0 during
+      // zoomOutFrom, and the homepage must not flash through it. Restored in
+      // the exit timeline's onComplete once the grid is opaque again.
+      // The landing cell's media is blanked for the whole return glide — the
+      // flying clone is the only copy of the image until it lands.
+      if (window.GridView && GridView.setCellMediaHidden && _sourceProjectIndex >= 0) {
+        _hiddenCellMedia = _sourceProjectIndex;
+        GridView.setCellMediaHidden(_hiddenCellMedia, true);
+      }
       if (window.GridView) GridView.showInstant();
-      gsap.set('.porto', { opacity: 1 }); // restore silently — it sits hidden under the grid
     } else if (_hideHeroForClose) {
       _hideHeroForClose();
     }
@@ -539,7 +567,10 @@
     }
 
     var capturedSourceCard = _sourceCard; // capture now; _sourceCard nulled in onComplete
-    var exitClones = clone ? [clone] : [];
+    // Track the exit clone in _entranceClones too, so killGlides sweeps it if
+    // the close is interrupted (popstate / re-open) — otherwise it stays frozen
+    // mid-screen as a leftover image.
+    if (clone) _entranceClones.push(clone);
 
     // Reverse camera move: start deep inside the cell, pull back to resting view.
     // destRect above was measured at the resting lens — the dolly and the card
@@ -553,7 +584,15 @@
         if (capturedSourceCard) gsap.set(capturedSourceCard, { opacity: 1 });
         gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
         gsap.set('#cs-right', { xPercent: 0 });
-        exitClones.forEach(removeEl);
+        if (wasGrid) gsap.set('.porto', { opacity: 1 }); // grid is opaque again — restore silently under it
+        // Land the card INTO its cell: restore the canvas media on the same
+        // tick the clone is removed — rects match, so the swap is invisible.
+        if (wasGrid && window.GridView && GridView.setCellMediaHidden && _hiddenCellMedia >= 0) {
+          GridView.setCellMediaHidden(_hiddenCellMedia, false);
+          _hiddenCellMedia = -1;
+        }
+        _entranceClones.forEach(removeEl);
+        _entranceClones = [];
         CaseStudy.teardown();
         var overlay = document.getElementById('cs-overlay');
         var shell   = document.getElementById('cs-shell');
@@ -585,7 +624,10 @@
     _exitTl.to('#cs-right', { xPercent: 100, duration: D, ease: 'power2.out' }, 0);
     _exitTl.to('#cs-close', { opacity:  0,   duration: 0.2 }, 0);
     if (!wasGrid) {
-      _exitTl.to('.porto', { opacity: 1, duration: D * 0.7, ease: 'power2.out' }, 0);
+      // Back-loaded: homepage fades in only as the panel nears the end of its
+      // slide, so content isn't already fully rendered while the panel is
+      // still visibly retracting.
+      _exitTl.to('.porto', { opacity: 1, duration: D * 0.45, ease: 'power2.out' }, D * 0.55);
       // Fire hero headline reveal as the white panel nears the end of its retract (~72% through),
       // so the text animates in while the panel is still sliding rather than after a dead pause.
       _exitTl.add(function () { if (_replayHeroReveal) _replayHeroReveal(); }, D * 0.72);
@@ -612,6 +654,60 @@
     var current   = 0;
     var animating = false;
     var VH = window.innerHeight;
+    // Scan grid: crosshair + focus frame tracking the active proj-card's live rect
+    var scanEls = {
+      focus: document.getElementById('scan-focus'),
+      v1: document.querySelector('.scan-line-v1'),
+      v2: document.querySelector('.scan-line-v2'),
+      h1: document.querySelector('.scan-line-h1'),
+      h2: document.querySelector('.scan-line-h2')
+    };
+
+    var SCAN_CORNER_OFFSET = 10; // must match the corner bracket outset in home.css
+
+    function setScanRect(r) {
+      gsap.set(scanEls.focus, { left: r.left, top: r.top, width: r.width, height: r.height });
+      gsap.set(scanEls.v1, { left: r.left - SCAN_CORNER_OFFSET });
+      gsap.set(scanEls.v2, { left: r.left + r.width + SCAN_CORNER_OFFSET });
+      gsap.set(scanEls.h1, { top: r.top - SCAN_CORNER_OFFSET });
+      gsap.set(scanEls.h2, { top: r.top + r.height + SCAN_CORNER_OFFSET });
+    }
+
+    function cardRect(i) {
+      var card = sections[i] && sections[i].querySelector('.proj-card');
+      return card ? card.getBoundingClientRect() : null;
+    }
+
+    // Measures a card's rect as it will sit at rest, even while its section is
+    // still parked off-screen (temporarily zeroes the section's y transform).
+    function restingCardRect(i) {
+      var sec = sections[i];
+      var card = sec && sec.querySelector('.proj-card');
+      if (!card) return null;
+      var savedY = gsap.getProperty(sec, 'y');
+      gsap.set(sec, { y: 0 });
+      var r = card.getBoundingClientRect();
+      gsap.set(sec, { y: savedY });
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    }
+
+    function scaleRect(r, factor) {
+      var w = r.width * factor, h = r.height * factor;
+      return { left: r.left - (w - r.width) / 2, top: r.top - (h - r.height) / 2, width: w, height: h };
+    }
+
+    function syncScanToActive() {
+      var r = cardRect(current);
+      if (r) setScanRect(r);
+    }
+
+    function tweenScanTo(tl, rect, pos, dur) {
+      tl.to(scanEls.focus, { left: rect.left, top: rect.top, width: rect.width, height: rect.height, duration: dur, ease: 'expo.inOut' }, pos)
+        .to(scanEls.v1, { left: rect.left - SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos)
+        .to(scanEls.v2, { left: rect.left + rect.width + SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos)
+        .to(scanEls.h1, { top: rect.top - SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos)
+        .to(scanEls.h2, { top: rect.top + rect.height + SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos);
+    }
 
     var PEEK_BELOW = 0.64;   // next section peeking from the bottom
     var PEEK_ABOVE = -0.58;  // previous section peeking from the top
@@ -677,6 +773,7 @@
       el.style.zIndex = sectionZ((i - 0 + TOTAL) % TOTAL);
     });
     sections[0].classList.add('is-active');
+    syncScanToActive();
 
     function syncActiveCardTab() {
       sections.forEach(function (s) {
@@ -769,6 +866,17 @@
 
       revealText(tl, sectionText(current));
 
+      // Scan grid: scale ~20% larger over the outgoing card mid-transition,
+      // then settle back to normal size framing the incoming card.
+      if (scanEls.focus) {
+        var scanOldRect = cardRect(prev);
+        var scanNewRect = restingCardRect(current);
+        if (scanOldRect && scanNewRect) {
+          tweenScanTo(tl, scaleRect(scanOldRect, 1.2), 0, 0.55);
+          tweenScanTo(tl, scanNewRect, 0.55, 0.55);
+        }
+      }
+
       // Nav update
       tl.to(navInner, {
         opacity: 0, y: dir > 0 ? -10 : 10, duration: 0.16, ease: 'power2.in',
@@ -791,6 +899,7 @@
     window.addEventListener('resize', function () {
       VH = window.innerHeight;
       sections.forEach(function (el, i) { gsap.set(el, { y: sectionY(i, current) }); });
+      if (!animating) syncScanToActive();
     });
 
     window.addEventListener('keydown', function (e) {

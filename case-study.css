@@ -756,3 +756,38 @@ html.dark .cs-tldr-bullet {
 html.dark .cs-img-inset-inner,
 html.dark .cs-next-thumb { background: #1c1b1b; }
 html.dark .cs-img-inset-num { color: rgba(255, 255, 255, 0.35); }
+/* ══ Responsive additions ═════════════════════════════════ */
+
+/* ── Tablet (901–1200px): narrower article gutters ── */
+@media (max-width: 1200px) and (min-width: 901px) {
+  #cs-right-content { padding: 32px 48px 100px; }
+  .cs-video-block { width: calc(100% + 96px); margin-left: -48px; }
+}
+
+/* ── Mobile (≤900px): the 320×380 slider card overflows the
+   stacked left panel — shrink card + panel together ── */
+@media (max-width: 900px) {
+  /* pin the shell to the viewport and let the article take the remaining
+     height — a fixed 100vh article under the image panel left its last
+     ~360px unreachable */
+  .cs-shell { height: 100vh; min-height: 0; }
+  .cs-right { height: auto; flex: 1; min-height: 0; }
+
+  .cs-left {
+    flex-shrink: 0;
+    height: 70vw;
+    min-height: 360px;
+    max-height: 55vh;
+  }
+  .cs-slide { margin-left: -130px; margin-top: -140px; }
+  .cs-slide .proj-card { width: 260px; height: 280px; }
+  /* num + caption duplicate the counter and tag pill, and collide with
+     the close link / arrows in the short stacked panel */
+  .cs-slide-num, .cs-slide-caption { display: none; }
+  .cs-slider-nav { bottom: 10px; }
+  .cs-close { top: 20px; left: 20px; }
+  .cs-source { margin-bottom: 32px; }
+  .cs-headline { margin-bottom: 32px; }
+  .cs-meta-cell { padding: 14px 16px; }
+  .cs-body-block, .cs-img-inset, .cs-video-block, .cs-tldr-block { margin-bottom: 48px; }
+}

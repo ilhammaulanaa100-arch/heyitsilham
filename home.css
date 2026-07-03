@@ -18,23 +18,32 @@ body { background: #fff; overflow: hidden; }
 .page-section:not(.is-active) .proj-card { pointer-events: none; }
 .page-section.is-active .proj-card { pointer-events: auto; cursor: none; }
 
+/* Fluid stage — renders identically at 1440px, adapts below/above it */
 .section-inner {
   position: absolute;
   left: 0;
+  right: 0;
   top: 50%;
-  width: 1440px;
   height: 900px;
   transform: translateY(-50%);
 }
 
-/* ── Background grid (Figma: Grid layers - v1, #222020 @ 80.68px) ── */
-.grid-bg {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(to right,  rgba(34,32,32,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(34,32,32,0.06) 1px, transparent 1px);
-  background-size: 80.68px 80.68px;
-}
+/* ── Scan grid: crosshair + focus frame tracking the active proj-card ──
+   home.js positions .scan-line-v*/.scan-line-h*/.scan-focus in px to match
+   the card's live getBoundingClientRect(); it scales the focus ~20% larger
+   mid-transition, then settles back onto the next card. */
+.scan-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.scan-line { position: absolute; background: rgba(34,32,32,0.07); }
+.scan-line-v1, .scan-line-v2 { top: 0; bottom: 0; width: 1px; }
+.scan-line-h1, .scan-line-h2 { left: 0; right: 0; height: 1px; }
+
+.scan-focus { position: absolute; }
+.scan-corner { position: absolute; width: 26px; height: 26px; }
+/* offset outside the card edge — the opaque card sits above the scan-grid and would hide a flush-mounted bracket */
+.scan-corner-tl { top: -10px; left: -10px; border-top: 2px solid rgba(34,32,32,0.9); border-left: 2px solid rgba(34,32,32,0.9); }
+.scan-corner-tr { top: -10px; right: -10px; border-top: 2px solid rgba(34,32,32,0.9); border-right: 2px solid rgba(34,32,32,0.9); }
+.scan-corner-bl { bottom: -10px; left: -10px; border-bottom: 2px solid rgba(34,32,32,0.9); border-left: 2px solid rgba(34,32,32,0.9); }
+.scan-corner-br { bottom: -10px; right: -10px; border-bottom: 2px solid rgba(34,32,32,0.9); border-right: 2px solid rgba(34,32,32,0.9); }
 
 .vignette-radial {
   position: fixed;
@@ -103,7 +112,7 @@ body { background: #fff; overflow: hidden; }
 
 /* ── Section navigator (right) ── */
 .section-nav {
-  position: fixed; left: 1144px; top: 50%;
+  position: fixed; left: auto; right: 56px; top: 50%; /* right-anchored: same spot at 1440, tracks the edge below it */
   transform: translateY(calc(-50% - 12px));
   width: 240px; z-index: 100; user-select: none;
 }
@@ -137,7 +146,7 @@ body { background: #fff; overflow: hidden; }
 
 /* ── Per-project hero layout ── */
 .ph-layout {
-  position: absolute; top: 181px; left: 0; width: 1440px;
+  position: absolute; top: 181px; left: 0; width: 100%; max-width: 1440px;
   display: flex; align-items: center;
   justify-content: space-between;
   padding: 0 56px;
@@ -324,12 +333,13 @@ html.lenis { height: 100%; }
 html.dark body,
 html.dark .porto,
 html.dark #splash { background: #0f0e0e; }
-html.dark .grid-bg,
 html.dark .splash-grid {
   background-image:
     linear-gradient(to right,  rgba(255,255,255,0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
 }
+html.dark .scan-line { background: rgba(255,255,255,0.07); }
+html.dark .scan-corner { border-color: rgba(255,255,255,0.9); }
 html.dark .vignette-radial,
 html.dark .splash-vignette {
   background:
@@ -353,3 +363,89 @@ html.dark .splash-name { color: #fff; }
 html.dark .splash-bar-track { background: rgba(255,255,255,0.12); }
 html.dark .splash-counter { color: rgba(255,255,255,0.4); }
 html.dark #cs-right { background: #0f0e0e; }
+
+/* ══ Responsive ═══════════════════════════════════════════
+   Desktop (>1280px) is untouched — the stage is already fluid.
+   Tablet keeps the side-by-side hero, mobile stacks it. */
+
+/* ── Touch devices: the custom cursor is mouse-only ── */
+@media (hover: none), (pointer: coarse) {
+  #proj-cursor { display: none; }
+  .page-section.is-active .proj-card { cursor: pointer; }
+}
+
+/* ── Tablet (901–1280px): same layout, shrunk to fit ── */
+@media (max-width: 1280px) {
+  .navbar { padding: 20px 40px; }
+  .bottom-location { padding: 20px 40px; }
+  .view-tabs { right: 40px; }
+  .section-nav { right: 40px; width: auto; }
+  .nav-name { font-size: 20px; }
+
+  .ph-layout { padding: 0 40px; }
+  .ph-text { width: clamp(260px, 30vw, 400px); }
+  .ph-spacer { width: 200px; } /* pushes the card left, clear of the fixed section-nav */
+  .ph-title { font-size: clamp(38px, 4.8vw, 64px); }
+  .proj-card.is-landscape { width: min(44vw, 580px); height: auto; aspect-ratio: 580 / 420; }
+  .proj-card.is-square    { width: min(40vw, 480px); height: auto; aspect-ratio: 1; }
+}
+
+/* ── Small tablet (≤1100px): the fixed section-nav starts crowding the card ── */
+@media (max-width: 1100px) {
+  .proj-card.is-landscape { width: min(38vw, 580px); }
+  .proj-card.is-square    { width: min(34vw, 480px); }
+}
+
+/* ── Mobile (≤900px): stacked hero, compact chrome ── */
+@media (max-width: 900px) {
+  .section-inner { height: 100%; top: 0; transform: none; }
+
+  .ph-layout {
+    top: 50%; left: 0; transform: translateY(-50%);
+    flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 24px; padding: 0 24px;
+  }
+  .ph-text { width: 100%; gap: 6px; }
+  .ph-label { width: auto; font-size: 15px; }
+  .ph-title { font-size: clamp(32px, 9.5vw, 52px); letter-spacing: -0.5px; }
+  .ph-spacer { display: none; }
+  /* vh caps keep cards on screen in landscape phones too */
+  .proj-card.is-landscape { width: min(100%, 63vh); height: auto; aspect-ratio: 580 / 420; }
+  .proj-card.is-square    { width: min(100%, 48vh); height: auto; aspect-ratio: 1; }
+
+  .navbar { padding: 14px 20px; }
+  .logo { width: 56px; height: 45px; }
+  .nav-item { padding: 8px 16px; font-size: 15px; }
+
+  /* Section nav: current row only, tucked above the view tabs */
+  .section-nav { right: 20px; top: auto; bottom: 64px; transform: none; width: auto; }
+  .nav-inner { gap: 0; align-items: flex-end; }
+  .nav-row.is-inactive { display: none; }
+  .nav-chevron { display: none !important; }
+  .nav-num  { font-size: 12px; min-width: auto; }
+  .nav-name { font-size: 16px; max-width: 48vw; overflow: hidden; text-overflow: ellipsis; }
+
+  .bottom-location { padding: 16px 20px; }
+  .bottom-location p { font-size: 13px; }
+  .view-tabs { right: 20px; bottom: 18px; gap: 20px; }
+  .view-tab { font-size: 13px; }
+
+  /* Softer edge fade — 18% of a phone screen washes out the content */
+  .vignette-radial {
+    background:
+      linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%),
+      linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%),
+      linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%),
+      linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%);
+  }
+  html.dark .vignette-radial {
+    background:
+      linear-gradient(to bottom, rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 8%),
+      linear-gradient(to top,    rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 8%),
+      linear-gradient(to right,  rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 8%),
+      linear-gradient(to left,   rgba(15,14,14,0.92) 0%, rgba(15,14,14,0) 8%);
+  }
+
+  .splash-name { font-size: clamp(48px, 14vw, 72px); }
+  .splash-bar-track { width: 160px; }
+}

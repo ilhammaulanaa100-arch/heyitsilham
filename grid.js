@@ -71,7 +71,7 @@ window.GridView = (function () {
     return lines;
   }
 
-  function drawCell(ctx, p, W, H, img) {
+  function drawCell(ctx, p, W, H, img, blankMedia) {
     var MONO = "500 13px 'SF Mono', Menlo, 'Courier New', monospace";
     var PAD = 26;
     var th = theme();
@@ -89,7 +89,10 @@ window.GridView = (function () {
     // Media — centred square, cover-cropped
     var mw = Math.round(W * 0.58);
     var mx = (W - mw) / 2, my = (H - mw) / 2;
-    if (img) {
+    if (blankMedia) {
+      // media square intentionally left empty — the DOM glide clone owns the
+      // media while a card is in flight to/from this cell
+    } else if (img) {
       var s = Math.min(img.width, img.height);
       ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, mx, my, mw, mw);
     } else {
@@ -148,10 +151,13 @@ window.GridView = (function () {
     var tex = new THREE.CanvasTexture(cv);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     tex.minFilter = THREE.LinearMipmapLinearFilter;
-    var cell = { p: p, ctx: ctx, tex: tex, img: null };
+    var cell = { p: p, ctx: ctx, tex: tex, img: null, hideMedia: false };
     if (p.media && p.media.hero) {
       var img = new Image();
-      img.onload = function () { cell.img = img; drawCell(ctx, p, W, H, img); tex.needsUpdate = true; };
+      img.onload = function () {
+        cell.img = img;
+        if (!cell.hideMedia) { drawCell(ctx, p, W, H, img); tex.needsUpdate = true; }
+      };
       img.src = p.media.hero;
     }
     cells.push(cell);
@@ -165,9 +171,23 @@ window.GridView = (function () {
     gridScene.background.set(th.bg);
     postMat.uniforms.uBg.value.set(th.bg);
     cells.forEach(function (c) {
-      drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img);
+      drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img, c.hideMedia);
       c.tex.needsUpdate = true;
     });
+  }
+
+  // Hide/restore one project's media square in its cell texture. Used while a
+  // card FLIP-glides to/from the case study: the DOM clone owns the media, so
+  // the canvas must never show a duplicate of it. Affects every tiled repeat
+  // of the project — acceptable for the glide's duration.
+  function setCellMediaHidden(pIdx, hidden) {
+    var c = cells[pIdx];
+    if (!c) return;
+    hidden = !!hidden;
+    if (c.hideMedia === hidden) return;
+    c.hideMedia = hidden;
+    drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img, hidden);
+    c.tex.needsUpdate = true;
   }
 
   // ── Concave (panoramic) post shader ──
@@ -239,15 +259,20 @@ window.GridView = (function () {
   }
 
   // Screen rect of a cell's media square through the current (curved) lens.
-  // Radial distortion bends a square slightly non-rectangular; the TL/BR
-  // corner fit is within a couple px at DISTORTION 0.25 — fine for a FLIP seed.
+  // Fitted to the EDGE MIDPOINTS, not the corners: the lens bows the square's
+  // sides, and corners sit at a larger radius (stronger distortion), so a
+  // corner fit overshoots the visible edges by several px (measured ~7px at
+  // DISTORTION 0.25). Edge midpoints track what the eye reads as the border.
   function cellScreenRect(col, row) {
     var mw = CELL_W * 0.58; // matches the media size drawn in the cell texture
     var x0 = col * CELL_W - sx + (CELL_W - mw) / 2;
     var y0 = row * CELL_H - sy + (CELL_H - mw) / 2;
-    var tl = gridToScreen(x0, y0);
-    var br = gridToScreen(x0 + mw, y0 + mw);
-    return { left: tl.x, top: tl.y, width: br.x - tl.x, height: br.y - tl.y };
+    var xc = x0 + mw / 2, yc = y0 + mw / 2;
+    var L = gridToScreen(x0, yc).x;
+    var R = gridToScreen(x0 + mw, yc).x;
+    var T = gridToScreen(xc, y0).y;
+    var B = gridToScreen(xc, y0 + mw).y;
+    return { left: L, top: T, width: R - L, height: B - T };
   }
 
   // ── Zoom-through dolly (open/close camera move) ──
@@ -295,8 +320,10 @@ window.GridView = (function () {
     dolly(col, row, camera.zoom, THRU_ZOOM, camera.zoom, duration);
     // lens bulges as we push through it
     gsap.to(postMat.uniforms.uStrength, { value: DISTORTION * 1.9, duration: duration, ease: 'power2.inOut' });
-    // fade rides the second half of the push, done just before the timeline ends
-    gsap.to(viewEl, { opacity: 0, duration: duration * 0.5, delay: duration * 0.4, ease: 'power1.inOut' });
+    // Fade starts almost immediately: the DOM clone owns the media from frame
+    // one, and the canvas copy diverges from it as the dolly pins the cell —
+    // any lingering means a ghost image left behind mid-screen.
+    gsap.to(viewEl, { opacity: 0, duration: duration * 0.5, delay: duration * 0.08, ease: 'power1.out' });
   }
 
   // Close: reverse — start deep inside the cell, pull back to the resting view.
@@ -310,6 +337,12 @@ window.GridView = (function () {
     dolly(col, row, THRU_ZOOM, 1, 1, duration);
     gsap.fromTo(postMat.uniforms.uStrength, { value: DISTORTION * 1.9 },
       { value: DISTORTION, duration: duration, ease: 'power2.inOut' });
+    // Never show the deep-zoom frame (giant blurry cell) at full opacity —
+    // the grid materialises quickly while the camera pulls back. The target
+    // cell's media is hidden by home.js for the whole glide, so the grid can
+    // be fully opaque early without ever doubling the flying card.
+    gsap.fromTo(viewEl, { opacity: 0 },
+      { opacity: 1, duration: duration * 0.35, ease: 'power1.out' });
   }
 
   // ── Layout / mesh pool ──
@@ -318,7 +351,8 @@ window.GridView = (function () {
     vh = window.innerHeight;
     GW = vw * ZOOM;  // the camera sees a zoomed-out (larger) slice of the grid
     GH = vh * ZOOM;
-    CELL_W = Math.max(320, Math.round(vw / 3.5));
+    // phones: 320px min would show barely one cell — size to ~72% of the screen
+    CELL_W = vw < 700 ? Math.round(vw * 0.72) : Math.max(320, Math.round(vw / 3.5));
     CELL_H = Math.round(CELL_W * 1.06);
     // pool sized for the widest view (hold-zoom shows GW / HOLD_ZOOM of world)
     NX = Math.ceil(GW / HOLD_ZOOM / CELL_W) + 3;
@@ -507,6 +541,9 @@ window.GridView = (function () {
     open = true;
     if (!built) build();
     killDolly();
+    // A glide interrupted mid-flight can leave a cell's media hidden — never
+    // enter the grid with blank cells.
+    cells.forEach(function (c, i) { if (c.hideMedia) setCellMediaHidden(i, false); });
     document.body.classList.add('grid-mode');
     viewEl.style.display = 'block';
     viewEl.setAttribute('aria-hidden', 'false');
@@ -579,6 +616,7 @@ window.GridView = (function () {
     zoomInto: zoomInto,
     zoomOutFrom: zoomOutFrom,
     cellScreenRect: cellScreenRect,
+    setCellMediaHidden: setCellMediaHidden,
     setTheme: setTheme,
     hide: hide,
     isOpen: function () { return open; }
