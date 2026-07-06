@@ -387,70 +387,30 @@
   color: rgba(0, 0, 0, 0.82);
 }
 
-/* ── Numbered image insets (odd left-aligned, even right-aligned) ── */
-.cs-img-inset {
-  position: relative;
-  margin-bottom: 64px;
+/* ── Scattered gallery (replaces numbered image insets) ──
+   Fixed 7-slot pattern. Two shapes only: landscape (homepage ratio) + square.
+   Dense + interlocking: big images with negative margin-top so a right-lane
+   image sits BESIDE a shorter left-lane image, killing white space. "Rapih"
+   comes from the lane — left images align at ml≈2%, right images hug the right
+   edge. Collision-safe: left lane ≤54% / right lane ≥52%. */
+.cs-gallery { position: relative; }
+.cs-g-fig { margin: 0; position: relative; overflow: hidden; background: #f0f0f0; }
+.cs-g-fig.ls { aspect-ratio: 580 / 420; }
+.cs-g-fig.sq { aspect-ratio: 1 / 1; }
+.cs-g-ph { position: absolute; inset: 0; }
+.cs-g-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
 }
 
-.cs-img-inset-inner {
-  width: 72%;
-  aspect-ratio: 4/3;
-  overflow: hidden;
-  position: relative;
-  background: #f0f0f0;
-}
-
-.cs-img-inset-inner img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.cs-img-inset:nth-child(odd) .cs-img-inset-inner {
-  margin-left: 0;
-}
-
-.cs-img-inset:nth-child(even) .cs-img-inset-inner {
-  margin-left: auto;
-}
-
-.cs-img-inset-num {
-  position: absolute;
-  bottom: -24px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  color: rgba(0, 0, 0, 0.3);
-}
-
-.cs-img-inset:nth-child(odd) .cs-img-inset-num {
-  left: 0;
-}
-
-.cs-img-inset:nth-child(even) .cs-img-inset-num {
-  right: 0;
-}
-
-.cs-img-inset-ph {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cs-img-inset-ph-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
-}
+.s1 { width: 54%; margin-left: 0;    }
+.s2 { width: 38%; margin-left: 62%;  margin-top: -140px; }
+.s3 { width: 38%; margin-left: 2%;   margin-top: 10px;   }
+.s4 { width: 48%; margin-left: 52%;  margin-top: -120px; }
+.s5 { width: 40%; margin-left: 2%;   margin-top: -70px;  }
+.s6 { width: 46%; margin-left: 54%;  margin-top: -120px; }
+.s7 { width: 50%; margin-left: 2%;   margin-top: -70px;  }
 
 /* ── Full-bleed video showcase ── */
 .cs-video-block {
@@ -678,9 +638,13 @@
     margin-left: 0;
   }
 
-  .cs-img-inset-inner {
-    width: 90%;
-  }
+  .s1 { width: 92%; margin-left: 4%;  margin-top: 0;    }
+  .s2 { width: 58%; margin-left: 42%; margin-top: 32px; }
+  .s3 { width: 66%; margin-left: 0;   margin-top: 32px; }
+  .s4 { width: 88%; margin-left: 12%; margin-top: 40px; }
+  .s5 { width: 54%; margin-left: 4%;  margin-top: 32px; }
+  .s6 { width: 60%; margin-left: 38%; margin-top: 32px; }
+  .s7 { width: 92%; margin-left: 4%;  margin-top: 40px; }
 
   .cs-headline {
     font-size: clamp(32px, 9vw, 56px);
@@ -748,9 +712,8 @@ html.dark .cs-tldr-bullet {
   color: rgba(255, 255, 255, 0.75);
   background: rgba(255, 255, 255, 0.05);
 }
-html.dark .cs-img-inset-inner,
-html.dark .cs-next-thumb { background: #1c1b1b; }
-html.dark .cs-img-inset-num { color: rgba(255, 255, 255, 0.35); }
+html.dark .cs-next-thumb,
+html.dark .cs-g-fig { background: #1c1b1b; }
 /* ══ Responsive additions ═════════════════════════════════ */
 
 /* ── Tablet (901–1200px): narrower article gutters ── */
@@ -784,5 +747,5 @@ html.dark .cs-img-inset-num { color: rgba(255, 255, 255, 0.35); }
   .cs-source { margin-bottom: 32px; }
   .cs-headline { margin-bottom: 32px; }
   .cs-meta-cell { padding: 14px 16px; }
-  .cs-body-block, .cs-img-inset, .cs-video-block, .cs-tldr-block { margin-bottom: 48px; }
+  .cs-body-block, .cs-video-block, .cs-tldr-block { margin-bottom: 48px; }
 }
