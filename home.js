@@ -267,7 +267,7 @@
     if (!_prevFocus) _prevFocus = document.activeElement;
     var porto = document.querySelector('.porto');
     if (porto) porto.setAttribute('aria-hidden', 'true');
-    var closeBtn = document.getElementById('cs-close');
+    var closeBtn = document.getElementById('cs-right-close');
     if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
     _trapHandler = function (e) {
       if (e.key === 'Escape') { e.preventDefault(); closeOverlay(); return; }
@@ -385,7 +385,7 @@
 
     gsap.set('#cs-right',  { xPercent: 100 });
     gsap.set('.cs-slide.is-active .proj-card', { opacity: 0 });
-    gsap.set('#cs-close',  { opacity: 0 });
+    gsap.set('#cs-right-close',  { opacity: 0 });
 
     var destEl   = document.querySelector('.cs-slide.is-active .proj-card');
     var destRect = destEl ? destEl.getBoundingClientRect() : null;
@@ -471,7 +471,7 @@
     }
 
     _entranceTl.add(function () { document.dispatchEvent(new Event('cs-entered')); }, CARD_D * 0.9);
-    _entranceTl.to('#cs-close', { opacity: 0.5, duration: 0.4, ease: 'power2.out' }, PANEL_DELAY + D * 0.7);
+    _entranceTl.to('#cs-right-close', { opacity: 0.7, duration: 0.4, ease: 'power2.out' }, PANEL_DELAY + D * 0.7);
   }
 
   function closeOverlay() {
@@ -630,7 +630,7 @@
     }
 
     _exitTl.to('#cs-right', { xPercent: 100, duration: D, ease: 'power2.out' }, 0);
-    _exitTl.to('#cs-close', { opacity:  0,   duration: 0.2 }, 0);
+    _exitTl.to('#cs-right-close', { opacity:  0,   duration: 0.2 }, 0);
     if (!wasGrid) {
       // Back-loaded: homepage fades in only as the panel nears the end of its
       // slide, so content isn't already fully rendered while the panel is
@@ -999,7 +999,7 @@
     });
 
     // ── Close button for the in-place overlay ──
-    var csCloseBtn = document.getElementById('cs-close');
+    var csCloseBtn = document.getElementById('cs-right-close');
     if (csCloseBtn) {
       csCloseBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -1137,7 +1137,7 @@
 
     document.addEventListener('click', function (e) {
       if (!isOverlayOpen) return;
-      if (e.target.closest('#cs-close')) return;
+      if (e.target.closest('#cs-right-close')) return;
       if (e.target.closest('.cs-slider-nav')) return;
       if (e.target.closest('#cs-left')) {
         closeOverlay();
