@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Font Lab — porto</title>
+
+<!-- Fontshare -->
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@300,400,500,600,700&f[]=general-sans@300,400,500,600,700&f[]=zodiak@300,400,700&f[]=gambetta@300,400,600&f[]=sentient@400&f[]=recoleta@300,400,600&f[]=switzer@300,400,600&display=swap" rel="stylesheet" />
+<!-- Google -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300..700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Cormorant+Garamond:ital,wght@0,300..600;1,300..600&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+
+<style>
+  @font-face {
+    font-family: 'ITC Garamond Std';
+    font-weight: 300;
+    src: local('ITC Garamond Std Light Narrow Italic'),
+         local('ITCGaramondStd-LtNarrIt'),
+         local('ITC Garamond Std Light Italic');
+  }
+
+  :root {
+    --bg: #ffffff; --fg: #000000; --muted: rgba(0,0,0,0.35); --line: rgba(0,0,0,0.12);
+    --title-font: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
+    --title-style: italic; --title-weight: 300; --title-size: 96px;
+    --title-track: -1px; --title-lh: 1.1;
+  }
+  .dark {
+    --bg: #0a0a0a; --fg: #f2f2f2; --muted: rgba(255,255,255,0.35); --line: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: 'Recoleta', Georgia, serif;
+         min-height: 100vh; display: grid; grid-template-columns: 320px 1fr; transition: background .3s, color .3s; }
+
+  /* ── Control panel ── */
+  .panel { border-right: 1px solid var(--line); padding: 22px 20px; position: sticky; top: 0; height: 100vh;
+           overflow-y: auto; font-family: 'Switzer','Recoleta',system-ui,sans-serif; }
+  .panel h1 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+  .panel .sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.4; }
+  .grp { margin-bottom: 18px; }
+  .grp-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .fonts { display: flex; flex-direction: column; gap: 4px; }
+  .fbtn { text-align: left; border: 1px solid var(--line); background: transparent; color: var(--fg);
+          padding: 8px 10px; border-radius: 7px; cursor: pointer; font: inherit; font-size: 13px;
+          display: flex; justify-content: space-between; align-items: baseline; gap: 8px; transition: .15s; }
+  .fbtn:hover { border-color: var(--fg); }
+  .fbtn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .fbtn .tag { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; opacity: .5; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12px; }
+  .row label { width: 66px; color: var(--muted); }
+  .row input[type=range] { flex: 1; accent-color: var(--fg); }
+  .row .val { width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  .row input[type=checkbox] { accent-color: var(--fg); width: 15px; height: 15px; }
+  .txt { width: 100%; border: 1px solid var(--line); background: transparent; color: var(--fg);
+         padding: 8px 10px; border-radius: 7px; font: inherit; font-size: 13px; }
+
+  /* ── Stage: mimics home hero + technical UI ── */
+  .stage { position: relative; overflow: hidden; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
+  .scan { position: absolute; inset: 0; pointer-events: none; }
+  .scan span { position: absolute; background: var(--line); }
+  .scan .v1 { left: 33.33%; top: 0; bottom: 0; width: 1px; }
+  .scan .v2 { left: 66.66%; top: 0; bottom: 0; width: 1px; }
+  .scan .h1 { top: 33.33%; left: 0; right: 0; height: 1px; }
+  .scan .h2 { top: 66.66%; left: 0; right: 0; height: 1px; }
+
+  .eyebrow { font-family: 'Recoleta', serif; font-weight: 300; font-size: 14px; letter-spacing: .06em;
+             color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+  .title { font-family: var(--title-font); font-style: var(--title-style); font-weight: var(--title-weight);
+           font-size: var(--title-size); letter-spacing: var(--title-track); line-height: var(--title-lh);
+           color: var(--fg); max-width: 12ch; }
+  .subtitle { font-family: 'Recoleta', serif; font-weight: 300; font-size: 20px; letter-spacing: -0.2px;
+              color: var(--fg); margin-top: 20px; max-width: 34ch; line-height: 1.35; }
+  .now-font { font-family:'Switzer',sans-serif; font-size: 11px; letter-spacing: .1em; color: var(--muted);
+              margin-top: 34px; text-transform: uppercase; }
+
+  /* technical UI chrome */
+  .cursor-lbl { position: absolute; top: 60px; right: 60px; font-family:'Switzer',sans-serif;
+                font-size: 12px; letter-spacing: .1em; border: 1px solid var(--fg); border-radius: 40px;
+                padding: 6px 14px; }
+  .counter { position: absolute; bottom: 60px; right: 60px; font-family:'Switzer',sans-serif;
+             font-size: 13px; letter-spacing: .1em; color: var(--muted); }
+  .navstack { position: absolute; bottom: 60px; left: 60px; font-family:'Recoleta',serif; }
+  .navstack .r { font-size: 24px; letter-spacing: -.24px; line-height: 1.25; }
+  .navstack .r.dim { color: var(--muted); }
+  .navstack .n { font-size: 15px; margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<aside class="panel">
+  <h1>Font Lab</h1>
+  <p class="sub">Ganti font title-nya, lihat dalam konteks. Klik font mana aja untuk apply ke judul besar.</p>
+
+  <div class="grp">
+    <div class="grp-label">Grotesque / Display sans</div>
+    <div class="fonts" data-cat="grotesque"></div>
+  </div>
+  <div class="grp">
+    <div class="grp-label">Serif berkarakter</div>
+    <div class="fonts" data-cat="serif"></div>
+  </div>
+  <div class="grp">
+    <div class="grp-label">Pembanding (yang sekarang)</div>
+    <div class="fonts" data-cat="current"></div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-label">Atur</div>
+    <div class="row"><label>Italic</label><input type="checkbox" id="ck-italic"></div>
+    <div class="row"><label>Weight</label><input type="range" id="rg-weight" min="300" max="700" step="50" value="300"><span class="val" id="v-weight">300</span></div>
+    <div class="row"><label>Size</label><input type="range" id="rg-size" min="48" max="140" step="1" value="96"><span class="val" id="v-size">96</span></div>
+    <div class="row"><label>Tracking</label><input type="range" id="rg-track" min="-4" max="2" step="0.5" value="-1"><span class="val" id="v-track">-1</span></div>
+    <div class="row"><label>Line-h</label><input type="range" id="rg-lh" min="0.9" max="1.4" step="0.05" value="1.1"><span class="val" id="v-lh">1.1</span></div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-label">Teks judul</div>
+    <input class="txt" id="txt-title" value="Editorial, cinematic digital experiences">
+  </div>
+  <div class="grp">
+    <div class="row"><label>Dark</label><input type="checkbox" id="ck-dark"></div>
+  </div>
+</aside>
+
+<main class="stage">
+  <div class="scan"><span class="v1"></span><span class="v2"></span><span class="h1"></span><span class="h2"></span></div>
+  <div class="cursor-lbl">[ EXPLORE ]</div>
+  <div class="counter">03 — 06</div>
+  <div class="navstack">
+    <div class="r dim"><span class="n">02</span>Byond</div>
+    <div class="r"><span class="n">03</span>Porto 2026</div>
+    <div class="r dim"><span class="n">04</span>Project</div>
+  </div>
+
+  <div class="eyebrow">Selected Work</div>
+  <h1 class="title" id="stage-title">Editorial, cinematic digital experiences</h1>
+  <p class="subtitle">Product designer based in Jakarta, crafting editorial and cinematic digital experiences.</p>
+  <div class="now-font" id="now-font">Now: ITC Garamond Std</div>
+</main>
+
+<script>
+const FONTS = [
+  // grotesque / display sans
+  { cat:'grotesque', name:'Clash Display',   stack:"'Clash Display', sans-serif",   tag:'free · fontshare', italic:false, defW:600 },
+  { cat:'grotesque', name:'General Sans',     stack:"'General Sans', sans-serif",     tag:'free · fontshare', italic:false, defW:600 },
+  { cat:'grotesque', name:'Space Grotesk',    stack:"'Space Grotesk', sans-serif",    tag:'free · google',    italic:false, defW:500 },
+  { cat:'grotesque', name:'Switzer',          stack:"'Switzer', sans-serif",          tag:'free · fontshare', italic:false, defW:600 },
+  // serif berkarakter
+  { cat:'serif', name:'Fraunces',            stack:"'Fraunces', serif",             tag:'free · google',    italic:false, defW:400 },
+  { cat:'serif', name:'Zodiak',              stack:"'Zodiak', serif",               tag:'free · fontshare', italic:false, defW:400 },
+  { cat:'serif', name:'Gambetta',            stack:"'Gambetta', serif",             tag:'free · fontshare', italic:false, defW:400 },
+  { cat:'serif', name:'Instrument Serif',    stack:"'Instrument Serif', serif",     tag:'free · google',    italic:true,  defW:400 },
+  { cat:'serif', name:'Bodoni Moda',         stack:"'Bodoni Moda', serif",          tag:'free · google',    italic:false, defW:500 },
+  { cat:'serif', name:'Playfair Display',    stack:"'Playfair Display', serif",     tag:'free · google',    italic:false, defW:500 },
+  // current
+  { cat:'current', name:'ITC Garamond (lokal)', stack:"'ITC Garamond Std','Cormorant Garamond',serif", tag:'sekarang', italic:true, defW:300 },
+  { cat:'current', name:'Cormorant Garamond',   stack:"'Cormorant Garamond', serif", tag:'sekarang', italic:true, defW:300 },
+  { cat:'current', name:'Recoleta',             stack:"'Recoleta', serif",           tag:'body kamu', italic:false, defW:300 },
+];
+
+const root = document.documentElement.style;
+const $ = s => document.querySelector(s);
+const nowFont = $('#now-font');
+const ckItalic = $('#ck-italic'), rgW = $('#rg-weight'), rgS = $('#rg-size'), rgT = $('#rg-track'), rgLh = $('#rg-lh');
+
+// build buttons
+document.querySelectorAll('.fonts').forEach(box => {
+  FONTS.filter(f => f.cat === box.dataset.cat).forEach(f => {
+    const b = document.createElement('button');
+    b.className = 'fbtn'; b.style.fontFamily = f.stack;
+    b.innerHTML = `<span>${f.name}</span><span class="tag">${f.tag}</span>`;
+    b.onclick = () => applyFont(f, b);
+    box.appendChild(b);
+  });
+});
+
+function applyFont(f, btn) {
+  document.querySelectorAll('.fbtn').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+  root.setProperty('--title-font', f.stack);
+  ckItalic.checked = f.italic;
+  rgW.value = f.defW;
+  syncVars();
+  nowFont.textContent = 'Now: ' + f.name;
+}
+function syncVars() {
+  root.setProperty('--title-style', ckItalic.checked ? 'italic' : 'normal');
+  root.setProperty('--title-weight', rgW.value);
+  root.setProperty('--title-size', rgS.value + 'px');
+  root.setProperty('--title-track', rgT.value + 'px');
+  root.setProperty('--title-lh', rgLh.value);
+  $('#v-weight').textContent = rgW.value;
+  $('#v-size').textContent = rgS.value;
+  $('#v-track').textContent = rgT.value;
+  $('#v-lh').textContent = rgLh.value;
+}
+[ckItalic, rgW, rgS, rgT, rgLh].forEach(el => el.addEventListener('input', syncVars));
+$('#txt-title').addEventListener('input', e => $('#stage-title').textContent = e.target.value || ' ');
+$('#ck-dark').addEventListener('change', e => document.body.classList.toggle('dark', e.target.checked));
+syncVars();
+</script>
+</body>
+</html>

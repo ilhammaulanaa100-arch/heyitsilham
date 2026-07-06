@@ -59,7 +59,7 @@ window.GridView = (function () {
   // Cell palette follows the global theme (html.dark, toggled in home.js)
   function theme() {
     return document.documentElement.classList.contains('dark')
-      ? { bg: '#0f0e0e', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
+      ? { bg: '#0B0B0B', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
       : { bg: '#ffffff', line: 'rgba(34,32,32,0.07)',    text: '#000', dim: 'rgba(0,0,0,0.8)' };
   }
 

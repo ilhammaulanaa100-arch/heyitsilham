@@ -49,7 +49,7 @@ const PROJECTS = [
     category: 'PRODUCT',
     period: '2024',
     sourceUrl: '',
-    subtitle: 'BYOND by BSI',
+    subtitle: 'BYOND\nby BSI',
     title: 'Redesigning Islamic Banking for Indonesia',
     color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
     hoverColor: '#a9dcb8', // grid-view hover tint (soft green)

@@ -22,20 +22,24 @@
     PROJECTS.forEach(function (proj, i) {
       var shape  = i < 2 ? 'is-square' : 'is-landscape';
       var imgTag = (proj.media && proj.media.hero)
-        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle) + '" onerror="this.style.display=\'none\'" />'
+        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" onerror="this.style.display=\'none\'" />'
         : '';
 
       wrap.insertAdjacentHTML('beforeend',
         '<div class="page-section page-placeholder" data-slug="' + proj.slug + '">' +
           '<div class="section-inner"><section class="ph-layout">' +
             '<div class="ph-text">' +
-              '<p class="ph-label">' + esc(proj.subtitle) + '</p>' +
+              '<p class="ph-label">' + esc(proj.period) + '</p>' +
               '<div class="ph-title">' +
-                '<span class="line-mask"><span class="line">' + esc(proj.title) + '</span></span>' +
+                proj.subtitle.split('\n').map(function (line) {
+                  return '<span class="line-mask"><span class="line">' + esc(line) + '</span></span>';
+                }).join('') +
               '</div>' +
             '</div>' +
-            '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.title) + '">' +
-              imgTag +
+            '<div class="ph-media">' +
+              '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.subtitle.replace(/\n/g, ' ')) + '">' +
+                imgTag +
+              '</div>' +
             '</div>' +
             '<div class="ph-spacer"></div>' +
           '</section></div>' +
@@ -46,10 +50,10 @@
 
   // ── Clock ───────────────────────────────────────────────
   function updateTime() {
-    var t = new Intl.DateTimeFormat('en-GB', {
-      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta'
+    var t = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Jakarta'
     }).format(new Date());
-    document.getElementById('jakarta-time').textContent = 'based in Jakarta, ' + t + ' WIB';
+    document.getElementById('jakarta-time').textContent = t.replace(/^0/, '');
   }
   updateTime();
   setInterval(updateTime, 1000);
@@ -138,21 +142,22 @@
   setTimeout(tickCounter, 60);
 
   // ── Section navigator ───────────────────────────────────
-  var SECTION_NAMES = PROJECTS.map(function (p) { return p.subtitle; });
-  var NAV_TOTAL = SECTION_NAMES.length;
+  var NAV_TOTAL = PROJECTS.length;
   var navInner  = document.getElementById('nav-inner');
   var navRows   = navInner.querySelectorAll('.nav-row');
 
   function fillRow(row, idx) {
-    row.querySelector('.nav-num').textContent  = String(idx + 1).padStart(2, '0');
-    row.querySelector('.nav-name').textContent = SECTION_NAMES[idx];
+    row.querySelector('.nav-num').textContent = String(idx + 1).padStart(2, '0');
   }
   function updateNav(cur) {
-    fillRow(navRows[0], (cur - 1 + NAV_TOTAL) % NAV_TOTAL);
-    fillRow(navRows[1], cur);
-    fillRow(navRows[2], (cur + 1) % NAV_TOTAL);
+    fillRow(navRows[0], (cur - 2 + 2 * NAV_TOTAL) % NAV_TOTAL);
+    fillRow(navRows[1], (cur - 1 + NAV_TOTAL) % NAV_TOTAL);
+    fillRow(navRows[2], cur);
+    fillRow(navRows[3], (cur + 1) % NAV_TOTAL);
+    fillRow(navRows[4], (cur + 2) % NAV_TOTAL);
   }
   updateNav(0);
+  navInner.setAttribute('data-total', String(NAV_TOTAL).padStart(2, '0')); // mobile counter "01 / 06"
 
   // ── No-GSAP fallback ────────────────────────────────────
   function noGsapFallback() {
@@ -309,6 +314,7 @@
 
     CaseStudy.teardown();
     isOverlayOpen = true;
+    document.body.classList.add('cs-open');
     if (convObserver) convObserver.disable();
 
     var sourceLink = document.getElementById('cs-source');
@@ -512,6 +518,7 @@
         _gridReturn = null;
         if (convObserver) convObserver.enable();
         isOverlayOpen = false;
+        document.body.classList.remove('cs-open');
         _currentSlug  = null;
         if (window._resetCursorExplore) window._resetCursorExplore();
         if (!isMobile && _replayHeroReveal) _replayHeroReveal();
@@ -601,6 +608,7 @@
         if (shell) shell.style.opacity = '0';
         if (convObserver) convObserver.enable();
         isOverlayOpen = false;
+        document.body.classList.remove('cs-open');
         _currentSlug        = null;
         _sourceCard         = null;
         _sourceProjectIndex = -1;
@@ -654,6 +662,10 @@
     var current   = 0;
     var animating = false;
     var VH = window.innerHeight;
+    var VW = window.innerWidth;
+    // Mobile flow: sections travel horizontally (carousel), desktop vertically
+    var mobileFlowMQ = window.matchMedia('(max-width: 900px)');
+    function isMobileFlow() { return mobileFlowMQ.matches; }
     // Scan grid: crosshair + focus frame tracking the active proj-card's live rect
     var scanEls = {
       focus: document.getElementById('scan-focus'),
@@ -684,10 +696,11 @@
       var sec = sections[i];
       var card = sec && sec.querySelector('.proj-card');
       if (!card) return null;
+      var savedX = gsap.getProperty(sec, 'x');
       var savedY = gsap.getProperty(sec, 'y');
-      gsap.set(sec, { y: 0 });
+      gsap.set(sec, { x: 0, y: 0 });
       var r = card.getBoundingClientRect();
-      gsap.set(sec, { y: savedY });
+      gsap.set(sec, { x: savedX, y: savedY });
       return { left: r.left, top: r.top, width: r.width, height: r.height };
     }
 
@@ -714,18 +727,34 @@
     var PARK_BELOW = 1.5;    // parked just below the viewport
     var PARK_ABOVE = -1.5;   // parked just above the viewport
 
-    function sectionY(i, cur) {
+    // Mobile carousel: next/prev cards peek in from the sides (0.8·VW offset)
+    var PEEK_NEXT_X = 0.8;
+    var PEEK_PREV_X = -0.8;
+
+    function sectionOffset(i, cur) {
       var fd = (i - cur + TOTAL) % TOTAL;
+      var horiz = isMobileFlow();
+      var span  = horiz ? VW : VH;
       if (fd === 0)         return 0;
-      if (fd === 1)         return VH * PEEK_BELOW;
-      if (fd === TOTAL - 1) return VH * PEEK_ABOVE;
-      if (fd === TOTAL - 2) return VH * PARK_ABOVE;
-      return VH * PARK_BELOW;
+      if (fd === 1)         return span * (horiz ? PEEK_NEXT_X : PEEK_BELOW);
+      if (fd === TOTAL - 1) return span * (horiz ? PEEK_PREV_X : PEEK_ABOVE);
+      if (fd === TOTAL - 2) return span * PARK_ABOVE;
+      return span * PARK_BELOW;
     }
 
+    // gsap vars for a section's resting spot — always writes both axes so a
+    // breakpoint crossing (resize handler) clears the stale one
+    function sectionPos(i, cur) {
+      var off = sectionOffset(i, cur);
+      return isMobileFlow() ? { x: off, y: 0 } : { x: 0, y: off };
+    }
+
+    // Only the active section (fd 0) sits above .vignette-radial's z-index:50 —
+    // its text/card must stay clear of the edge fade. Peeking neighbours (prev/next)
+    // stay below it on purpose, so the fade is visible on them as they scroll in/out.
     function sectionZ(fd) {
+      if (fd === 0)         return 70;
       if (fd === 1)         return 30;
-      if (fd === 0)         return 20;
       if (fd === TOTAL - 1) return 25;
       return 10;
     }
@@ -755,6 +784,7 @@
         } catch (e) {
           console.error('[porto] showOverlay failed:', e);
           isOverlayOpen = false;
+        document.body.classList.remove('cs-open');
           _currentSlug = null;
           if (convObserver) convObserver.enable();
         }
@@ -769,7 +799,7 @@
     });
 
     sections.forEach(function (el, i) {
-      gsap.set(el, { y: sectionY(i, 0) });
+      gsap.set(el, sectionPos(i, 0));
       el.style.zIndex = sectionZ((i - 0 + TOTAL) % TOTAL);
     });
     sections[0].classList.add('is-active');
@@ -846,15 +876,15 @@
         var fdOld = (i - prev    + TOTAL) % TOTAL;
         el.style.zIndex = sectionZ(fdNew);
         if (onScreen(fdNew) || onScreen(fdOld)) {
-          tl.to(el, { y: sectionY(i, current), duration: 1.1, ease: 'expo.inOut' }, 0);
+          tl.to(el, Object.assign({ duration: 1.1, ease: 'expo.inOut' }, sectionPos(i, current)), 0);
         } else {
-          gsap.set(el, { y: sectionY(i, current) });
+          gsap.set(el, sectionPos(i, current));
         }
       });
 
       // lift incoming section above all while it travels to centre,
       // so the outgoing card can't cover it (the scroll-up collision)
-      sections[current].style.zIndex = 50;
+      sections[current].style.zIndex = 100;
 
       // Text reveal / exit
       if (prev !== current) hideText(tl, sectionText(prev));
@@ -892,13 +922,17 @@
       type: 'wheel,touch',
       onDown: function () { go(1);  },
       onUp:   function () { go(-1); },
+      // Mobile carousel: finger-swipe left (Observer onLeft) = next project
+      onLeft:  function () { if (isMobileFlow()) go(1);  },
+      onRight: function () { if (isMobileFlow()) go(-1); },
       tolerance: 10,
       preventDefault: true
     });
 
     window.addEventListener('resize', function () {
       VH = window.innerHeight;
-      sections.forEach(function (el, i) { gsap.set(el, { y: sectionY(i, current) }); });
+      VW = window.innerWidth;
+      sections.forEach(function (el, i) { gsap.set(el, sectionPos(i, current)); });
       if (!animating) syncScanToActive();
     });
 
@@ -909,8 +943,8 @@
       else if (e.key === 'ArrowUp'   || e.key === 'PageUp')               { go(-1); e.preventDefault(); }
     });
 
-    navRows[0].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(-1); });
-    navRows[2].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(1);  });
+    navRows[1].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(-1); });
+    navRows[3].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(1);  });
 
     // ── View tabs: Vertical / Grid ──
     var viewTabs = document.querySelectorAll('.view-tab');

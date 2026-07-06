@@ -11,7 +11,7 @@
 /* ── Design tokens ── */
 :root {
   --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'ITC Garamond Std', 'Cormorant Garamond', Georgia, serif;
+  --font-display: 'Bai Jamjuree', sans-serif;
   --font-body: 'Recoleta', Georgia, serif;
   --accent: #FF3ECF;
   --divider: #e0e0e0;
@@ -314,11 +314,10 @@
 /* ── Headline ── */
 .cs-headline {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(40px, 5.5vw, 72px);
   line-height: 1.1;
-  letter-spacing: -1px;
+  letter-spacing: -0.02em;
   color: #000;
   margin-bottom: 48px;
   overflow: hidden;
@@ -510,8 +509,7 @@
 
 .cs-tldr-title {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
+  font-weight: 400;
   font-size: 22px;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -566,8 +564,7 @@
 
 .cs-reflections-title {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
+  font-weight: 400;
   font-size: 22px;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -585,10 +582,9 @@
 
 .cs-refl-heading {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 14px;
-  font-weight: 300;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   color: #000;
   margin-bottom: 6px;
 }
@@ -644,9 +640,8 @@
 
 .cs-next-name {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 22px;
-  font-weight: 300;
+  font-weight: 400;
   letter-spacing: -0.02em;
   color: #000;
   transition: opacity 0.2s;
@@ -689,7 +684,7 @@
 
   .cs-headline {
     font-size: clamp(32px, 9vw, 56px);
-    letter-spacing: -0.5px;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -727,7 +722,7 @@ html.lenis {
 
 /* ── Dark theme (html.dark) ── */
 html.dark { --divider: rgba(255, 255, 255, 0.14); }
-html.dark .cs-right { background: #0f0e0e; }
+html.dark .cs-right { background: #0B0B0B; }
 html.dark .cs-close,
 html.dark .cs-source,
 html.dark .cs-headline,
