@@ -9,6 +9,7 @@
   var _slideEls            = [];
   var _onCsEnteredHeadline = null;
   var _onCsEnteredTagRow   = null;
+  var _onCsEnteredAboveFold = null;
   var _onSliderKeydown     = null;
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
@@ -80,9 +81,10 @@
 
   // ── teardown ──────────────────────────────────────────────────────────────
   function teardown() {
-    if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
-    if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
-    if (_onSliderKeydown)     { document.removeEventListener('keydown',    _onSliderKeydown);      _onSliderKeydown     = null; }
+    if (_onCsEnteredHeadline)  { document.removeEventListener('cs-entered', _onCsEnteredHeadline);  _onCsEnteredHeadline  = null; }
+    if (_onCsEnteredTagRow)    { document.removeEventListener('cs-entered', _onCsEnteredTagRow);    _onCsEnteredTagRow    = null; }
+    if (_onCsEnteredAboveFold) { document.removeEventListener('cs-entered', _onCsEnteredAboveFold); _onCsEnteredAboveFold = null; }
+    if (_onSliderKeydown)      { document.removeEventListener('keydown',    _onSliderKeydown);       _onSliderKeydown      = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
     if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
@@ -434,9 +436,10 @@
   // Tears down and re-registers the reveal observer + cs-entered listeners.
   // Called on initial load (via initScrollAndReveals) and on each project swap.
   function rewireReveals(sw) {
-    if (_onCsEnteredHeadline) { document.removeEventListener('cs-entered', _onCsEnteredHeadline); _onCsEnteredHeadline = null; }
-    if (_onCsEnteredTagRow)   { document.removeEventListener('cs-entered', _onCsEnteredTagRow);   _onCsEnteredTagRow   = null; }
-    if (_observer)            { _observer.disconnect(); _observer = null; }
+    if (_onCsEnteredHeadline)  { document.removeEventListener('cs-entered', _onCsEnteredHeadline);  _onCsEnteredHeadline  = null; }
+    if (_onCsEnteredTagRow)    { document.removeEventListener('cs-entered', _onCsEnteredTagRow);    _onCsEnteredTagRow    = null; }
+    if (_onCsEnteredAboveFold) { document.removeEventListener('cs-entered', _onCsEnteredAboveFold); _onCsEnteredAboveFold = null; }
+    if (_observer)             { _observer.disconnect(); _observer = null; }
 
     _onCsEnteredHeadline = function () {
       if (!window.gsap) return;
@@ -454,6 +457,19 @@
     }
 
     var revealEls = Array.from(document.querySelectorAll('.cs-reveal:not(.cs-headline):not(.cs-tag-row)'));
+
+    // Split above-the-fold from below. The scroll wrapper is translated off-screen
+    // during the entrance glide, so an IntersectionObserver rooted on it would
+    // fire for above-fold blocks before the panel arrives — revealing them while
+    // still hidden and leaving only the (cs-entered-timed) headline to animate.
+    // Above-fold blocks instead cascade on cs-entered; below-fold stay on scroll.
+    var foldBottom  = sw.getBoundingClientRect().top + sw.clientHeight;
+    var aboveFold   = [];
+    var belowFold   = [];
+    revealEls.forEach(function (el) {
+      (el.getBoundingClientRect().top < foldBottom ? aboveFold : belowFold).push(el);
+    });
+
     _observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
@@ -461,7 +477,14 @@
         _observer.unobserve(entry.target);
       });
     }, { root: sw, threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-    revealEls.forEach(function (el) { _observer.observe(el); });
+    belowFold.forEach(function (el) { _observer.observe(el); });
+
+    _onCsEnteredAboveFold = function () {
+      if (!window.gsap || !aboveFold.length) return;
+      gsap.to(aboveFold, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out',
+        stagger: 0.09, delay: 0.18 });
+    };
+    document.addEventListener('cs-entered', _onCsEnteredAboveFold);
 
     _onCsEnteredTagRow = function () {
       if (!window.gsap) return;
