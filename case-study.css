@@ -672,6 +672,13 @@
   transform: translateY(28px);
 }
 
+/* Split-text reveals (meta + summary): container stays visible; the inner
+   char/word spans do the same rising motion as the headline. */
+.cs-reveal.cs-split { opacity: 1; transform: none; }
+.cs-split .cs-word { display: inline-block; white-space: nowrap; }
+.cs-split .cs-char,
+.cs-split .cs-splitword { display: inline-block; }
+
 /* ── Mobile adjustments ── */
 @media (max-width: 900px) {
   .cs-meta-row {

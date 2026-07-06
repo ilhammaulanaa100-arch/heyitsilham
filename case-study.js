@@ -96,8 +96,7 @@
     if (window.gsap) {
       _slideEls.forEach(function (el) { gsap.killTweensOf(el); });
       if (_detailEl) {
-        gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal'));
-        gsap.killTweensOf(_detailEl.querySelectorAll('.cs-char'));
+        gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal, .cs-char, .cs-splitword'));
       }
     }
     _slideEls = [];
@@ -329,28 +328,48 @@
     function span(cls, text) { return mkEl('span', cls, text); }
     function p(cls, text)    { return mkEl('p',    cls, text); }
 
+    // Split an element's text into .cs-word > .cs-char spans (title-style reveal).
+    function splitChars(el) {
+      var text = el.textContent;
+      el.textContent = '';
+      text.split(/(\s+)/).forEach(function (token) {
+        if (token === '') return;
+        if (/^\s+$/.test(token)) { el.appendChild(document.createTextNode(' ')); return; }
+        var wordEl = document.createElement('span');
+        wordEl.className = 'cs-word';
+        token.split('').forEach(function (ch) {
+          var charEl = document.createElement('span');
+          charEl.className = 'cs-char';
+          charEl.textContent = ch;
+          wordEl.appendChild(charEl);
+        });
+        el.appendChild(wordEl);
+      });
+    }
+    // Split into per-word spans — same rising motion, but readable for body copy.
+    function splitWords(el) {
+      var text = el.textContent;
+      el.textContent = '';
+      text.split(/(\s+)/).forEach(function (token) {
+        if (token === '') return;
+        if (/^\s+$/.test(token)) { el.appendChild(document.createTextNode(' ')); return; }
+        var w = document.createElement('span');
+        w.className = 'cs-splitword';
+        w.textContent = token;
+        el.appendChild(w);
+      });
+    }
+
     // ── 1. Headline with char-split ──────────────────────
     var headlineEl = document.createElement('h1');
     headlineEl.className = 'cs-headline cs-reveal';
-    var titleText = p_data.title || p_data.subtitle || '';
-    titleText.split(/(\s+)/).forEach(function (token) {
-      if (token === '') return;
-      if (/^\s+$/.test(token)) { headlineEl.appendChild(document.createTextNode(' ')); return; }
-      var wordEl = document.createElement('span');
-      wordEl.className = 'cs-word';
-      token.split('').forEach(function (ch) {
-        var charEl = document.createElement('span');
-        charEl.className = 'cs-char';
-        charEl.textContent = ch;
-        wordEl.appendChild(charEl);
-      });
-      headlineEl.appendChild(wordEl);
-    });
+    headlineEl.textContent = p_data.title || p_data.subtitle || '';
+    splitChars(headlineEl);
     detail.appendChild(headlineEl);
     if (window.gsap) gsap.set(headlineEl.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
     // ── 2. Meta row (Role / Client / Year) ────────────────
-    var metaRow = div('cs-meta-row cs-reveal');
+    var metaRow = div('cs-meta-row cs-reveal cs-split');
     var metaFields = [
       { label: 'Role',   value: p_data.meta && p_data.meta.role   ? p_data.meta.role   : '—' },
       { label: 'Client', value: p_data.meta && p_data.meta.client ? p_data.meta.client : '—' },
@@ -358,19 +377,27 @@
     ];
     metaFields.forEach(function (f) {
       var item = div('cs-meta-item');
-      item.appendChild(span('cs-meta-item-label', f.label));
-      item.appendChild(span('cs-meta-item-value', f.value));
+      var labelEl = span('cs-meta-item-label', f.label);
+      var valueEl = span('cs-meta-item-value', f.value);
+      splitChars(labelEl);
+      splitChars(valueEl);
+      item.appendChild(labelEl);
+      item.appendChild(valueEl);
       metaRow.appendChild(item);
     });
     detail.appendChild(metaRow);
+    if (window.gsap) gsap.set(metaRow.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
     detail.appendChild(div('cs-meta-divider'));
 
     // ── 3. Summary (single short paragraph) ──────────────
     var summaryText = p_data.summary || (p_data.body && p_data.body[0]) || '';
     if (summaryText) {
-      var bodyBlock = div('cs-body-block cs-reveal');
-      bodyBlock.appendChild(p('cs-body-para', summaryText));
+      var bodyBlock = div('cs-body-block cs-reveal cs-split');
+      var para = p('cs-body-para', summaryText);
+      splitWords(para);
+      bodyBlock.appendChild(para);
       detail.appendChild(bodyBlock);
+      if (window.gsap) gsap.set(bodyBlock.querySelectorAll('.cs-splitword'), { opacity: 0, yPercent: 60 });
     }
 
     // ── 4. Video showcase (if media.video exists) ────────
@@ -432,6 +459,21 @@
 
   } // end buildDetail
 
+  // ── playReveal ────────────────────────────────────────────────────────────
+  // Reveals a block: staggers its inner char/word spans (title-style rise) when
+  // present, otherwise fades the whole block up.
+  function playReveal(el, delay) {
+    if (!window.gsap) { el.style.opacity = '1'; el.style.transform = 'none'; return; }
+    var units = el.querySelectorAll('.cs-char, .cs-splitword');
+    if (units.length) {
+      gsap.to(units, { opacity: 1, yPercent: 0, duration: 0.6, ease: 'power3.out',
+        stagger: 0.012, delay: delay || 0 });
+    } else {
+      gsap.to(el, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out',
+        delay: (delay != null ? delay : 0.04) });
+    }
+  }
+
   // ── rewireReveals ─────────────────────────────────────────────────────────
   // Tears down and re-registers the reveal observer + cs-entered listeners.
   // Called on initial load (via initScrollAndReveals) and on each project swap.
@@ -473,7 +515,7 @@
     _observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        gsap.to(entry.target, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out', delay: 0.04 });
+        playReveal(entry.target, 0.04);
         _observer.unobserve(entry.target);
       });
     }, { root: sw, threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
@@ -481,8 +523,7 @@
 
     _onCsEnteredAboveFold = function () {
       if (!window.gsap || !aboveFold.length) return;
-      gsap.to(aboveFold, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out',
-        stagger: 0.09, delay: 0.18 });
+      aboveFold.forEach(function (el, i) { playReveal(el, 0.15 + i * 0.14); });
     };
     document.addEventListener('cs-entered', _onCsEnteredAboveFold);
 
@@ -516,7 +557,7 @@
       document.title = (project.subtitle || project.title || 'Case Study') + ' — Ilham';
       history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
 
-      if (window.gsap) { gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal')); gsap.killTweensOf(_detailEl.querySelectorAll('.cs-char')); }
+      if (window.gsap) { gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal, .cs-char, .cs-splitword')); }
       _detailEl.innerHTML = '';
       buildDetail(project, _detailEl, _exitFn);
 
