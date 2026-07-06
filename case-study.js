@@ -392,29 +392,37 @@
       detail.appendChild(videoBlock);
     }
 
-    // ── 5. Scattered gallery from media.grid (3–7 images) ─
-    // Shape is decided by SLOT position, not the image (design option B):
-    // first image is always the landscape hero. Whole gallery reveals as ONE
-    // .cs-reveal block — per-figure reveal fights the negative-margin interlock.
-    var SLOTS = ['s1 ls', 's2 sq', 's3 sq', 's4 ls', 's5 sq', 's6 ls', 's7 ls'];
+    // ── 5. Editorial scatter gallery from media.grid (3–7 images) ─
+    // Shape is decided by SLOT position, not the image (design option B).
+    // Geometry measured from the 99¢ reference: pair → solo → pair rhythm,
+    // shapes square/landscape/portrait. Whole gallery reveals as ONE
+    // .cs-reveal block — per-figure reveal fights the negative-margin offsets.
+    var SLOTS = ['s1 sq', 's2 sq', 's3 ls', 's4 pt', 's5 pt', 's6 sq', 's7 ls'];
     var gridItems = (p_data.media && p_data.media.grid) ? p_data.media.grid.slice(0, 7) : [];
     if (gridItems.length) {
       var gallery = div('cs-gallery cs-reveal');
       gridItems.forEach(function (item, i) {
-        var src = (typeof item === 'string') ? item : (item.src || '');
+        var src     = (typeof item === 'string') ? item : (item.src     || '');
+        var caption = (typeof item === 'string') ? ''   : (item.caption || '');
         var fig = document.createElement('figure');
         fig.className = 'cs-g-fig ' + SLOTS[i];
+        var frame = div('cs-g-frame');
         var ph = div('cs-g-ph');
         ph.style.background = p_data.color || '#f0f0f0';
-        fig.appendChild(ph);
+        frame.appendChild(ph);
         if (src) {
           var img = document.createElement('img');
           img.className = 'cs-g-img';
           img.src = src;
-          img.alt = '';
+          img.alt = caption;
           img.onerror = function () { this.style.display = 'none'; };
-          fig.appendChild(img);
+          frame.appendChild(img);
         }
+        fig.appendChild(frame);
+        var cap = div('cs-g-cap');
+        cap.appendChild(span('cs-g-cap-num', String(i + 1).padStart(2, '0')));
+        cap.appendChild(span('', caption));
+        fig.appendChild(cap);
         gallery.appendChild(fig);
       });
       detail.appendChild(gallery);

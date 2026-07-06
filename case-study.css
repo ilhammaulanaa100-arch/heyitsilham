@@ -387,30 +387,42 @@
   color: rgba(0, 0, 0, 0.82);
 }
 
-/* ── Scattered gallery (replaces numbered image insets) ──
-   Fixed 7-slot pattern. Two shapes only: landscape (homepage ratio) + square.
-   Dense + interlocking: big images with negative margin-top so a right-lane
-   image sits BESIDE a shorter left-lane image, killing white space. "Rapih"
-   comes from the lane — left images align at ml≈2%, right images hug the right
-   edge. Collision-safe: left lane ≤54% / right lane ≥52%. */
+/* ── Editorial scatter gallery (replaces numbered image insets) ──
+   Geometry MEASURED from tlb.betteroff.studio/articles/99-cents-only-store-
+   gallery-exhibition (right panel image bounding boxes, normalized to panel
+   width). Rhythm: pair (big left + smaller right, offset down) → solo center
+   → pair. Three shapes: square 1:1, landscape 5:4, portrait 4:5.
+   margin-top uses % so it resolves against container WIDTH — the whole
+   composition scales with the panel. */
 .cs-gallery { position: relative; }
-.cs-g-fig { margin: 0; position: relative; overflow: hidden; background: #f0f0f0; }
-.cs-g-fig.ls { aspect-ratio: 580 / 420; }
-.cs-g-fig.sq { aspect-ratio: 1 / 1; }
+.cs-g-fig { margin: 0; position: relative; }
+/* Image frame is the thing that clips — the caption sits BELOW it, outside
+   the clip, or overflow:hidden on the figure would cut the caption off. */
+.cs-g-frame { position: relative; overflow: hidden; background: #f0f0f0; }
+.cs-g-fig.sq .cs-g-frame { aspect-ratio: 1 / 1; }
+.cs-g-fig.ls .cs-g-frame { aspect-ratio: 5 / 4; }
+.cs-g-fig.pt .cs-g-frame { aspect-ratio: 4 / 5; }
 .cs-g-ph { position: absolute; inset: 0; }
 .cs-g-img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
+.cs-g-cap {
+  display: flex; justify-content: space-between; gap: 12px; padding-top: 9px;
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+}
+.cs-g-cap-num { color: rgba(0, 0, 0, 0.4); }
 
-.s1 { width: 54%; margin-left: 0;    }
-.s2 { width: 38%; margin-left: 62%;  margin-top: -140px; }
-.s3 { width: 38%; margin-left: 2%;   margin-top: 10px;   }
-.s4 { width: 48%; margin-left: 52%;  margin-top: -120px; }
-.s5 { width: 40%; margin-left: 2%;   margin-top: -70px;  }
-.s6 { width: 46%; margin-left: 54%;  margin-top: -120px; }
-.s7 { width: 50%; margin-left: 2%;   margin-top: -70px;  }
+.s1 { width: 39%; margin-left: 0;   }                   /* sq  kiri atas          */
+.s2 { width: 26%; margin-left: 72%; margin-top: -34%; } /* sq  kanan, turun dikit */
+.s3 { width: 40%; margin-left: 29%; margin-top: 13%;  } /* ls  solo tengah        */
+.s4 { width: 45%; margin-left: 0;   margin-top: 13%;  } /* pt  gede kiri          */
+.s5 { width: 33%; margin-left: 65%; margin-top: -49%; } /* pt  kanan, turun dikit */
+.s6 { width: 26%; margin-left: 43%; margin-top: 12%;  } /* sq  solo tengah kecil  */
+.s7 { width: 42%; margin-left: 6%;  margin-top: 12%;  } /* ls  penutup kiri       */
 
 /* ── Full-bleed video showcase ── */
 .cs-video-block {
@@ -638,13 +650,10 @@
     margin-left: 0;
   }
 
-  .s1 { width: 92%; margin-left: 4%;  margin-top: 0;    }
-  .s2 { width: 58%; margin-left: 42%; margin-top: 32px; }
-  .s3 { width: 66%; margin-left: 0;   margin-top: 32px; }
-  .s4 { width: 88%; margin-left: 12%; margin-top: 40px; }
-  .s5 { width: 54%; margin-left: 4%;  margin-top: 32px; }
-  .s6 { width: 60%; margin-left: 38%; margin-top: 32px; }
-  .s7 { width: 92%; margin-left: 4%;  margin-top: 40px; }
+  /* No separate slot values here: s1-s7 are defined in %, which are relative
+     to container width and already self-scale correctly at any screen size —
+     a hand-tuned mobile override risks reintroducing horizontal collisions
+     that the desktop values were specifically verified against. */
 
   .cs-headline {
     font-size: clamp(32px, 9vw, 56px);
@@ -714,6 +723,8 @@ html.dark .cs-tldr-bullet {
 }
 html.dark .cs-next-thumb,
 html.dark .cs-g-fig { background: #1c1b1b; }
+html.dark .cs-g-cap { color: rgba(255, 255, 255, 0.55); }
+html.dark .cs-g-cap-num { color: rgba(255, 255, 255, 0.4); }
 /* ══ Responsive additions ═════════════════════════════════ */
 
 /* ── Tablet (901–1200px): narrower article gutters ── */

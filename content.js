@@ -60,13 +60,13 @@ const PROJECTS = [
       video: 'assets/projects/byond/byond-showcase.mp4',
       fullImage: '',
       grid: [
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png',
-        'assets/projects/byond/byond-thumbnail.png'
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Home Dashboard' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Design System' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Onboarding' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'QRIS Payment' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Research Session' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Component Audit' },
+        { src: 'assets/projects/byond/byond-thumbnail.png', caption: 'Final Handoff' }
       ]
     },
     meta: {
