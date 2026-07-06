@@ -317,7 +317,6 @@
   function buildDetail(p_data, detail, exitFn) {
     if (!detail) return;
 
-    // ── Helpers ─────────────────────────────────────────
     function mkEl(tag, cls, text) {
       var e = document.createElement(tag);
       if (cls)  e.className = cls;
@@ -328,15 +327,7 @@
     function span(cls, text) { return mkEl('span', cls, text); }
     function p(cls, text)    { return mkEl('p',    cls, text); }
 
-    // ── 1. Tag row: pill + period ────────────────────────
-    var tagRow = div('cs-tag-row cs-reveal');
-    var cat = p_data.category || 'CASE STUDY';
-    var per = p_data.period   || (p_data.meta && p_data.meta.year) || '';
-    tagRow.appendChild(span('cs-tag-pill', cat));
-    if (per) tagRow.appendChild(span('cs-tag-period', '( ' + per + ' )'));
-    detail.appendChild(tagRow);
-
-    // ── 2. Headline with char-split ──────────────────────
+    // ── 1. Headline with char-split ──────────────────────
     var headlineEl = document.createElement('h1');
     headlineEl.className = 'cs-headline cs-reveal';
     var titleText = p_data.title || p_data.subtitle || '';
@@ -356,7 +347,7 @@
     detail.appendChild(headlineEl);
     if (window.gsap) gsap.set(headlineEl.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
-    // ── 3. Meta grid (Timeline / Role / Client / Year) ───
+    // ── 2. Meta grid (Timeline / Role / Client / Year) ───
     var metaGrid = div('cs-meta-grid cs-reveal');
     var metaFields = [
       { label: 'Timeline', value: p_data.meta && p_data.meta.timeline ? p_data.meta.timeline : '—' },
@@ -372,21 +363,15 @@
     });
     detail.appendChild(metaGrid);
 
-    // ── 4. Body paragraphs ───────────────────────────────
-    var bodyParas = (p_data.body && p_data.body.length)
-      ? p_data.body
-      : [p_data.tldr && p_data.tldr.intro ? p_data.tldr.intro : ''];
-
-    if (bodyParas.length) {
+    // ── 3. Summary (single short paragraph) ──────────────
+    var summaryText = p_data.summary || (p_data.body && p_data.body[0]) || '';
+    if (summaryText) {
       var bodyBlock = div('cs-body-block cs-reveal');
-      bodyParas.forEach(function (text) {
-        if (!text) return;
-        bodyBlock.appendChild(p('cs-body-para', text));
-      });
+      bodyBlock.appendChild(p('cs-body-para', summaryText));
       detail.appendChild(bodyBlock);
     }
 
-    // ── 5. Video showcase (if media.video exists) ────────
+    // ── 4. Video showcase (if media.video exists) ────────
     if (p_data.media && p_data.media.video) {
       var videoBlock = div('cs-video-block cs-reveal');
       var vph = div('cs-video-ph');
@@ -407,109 +392,33 @@
       detail.appendChild(videoBlock);
     }
 
-    // ── 6. Numbered image insets from media.grid ─────────
-    var gridItems = (p_data.media && p_data.media.grid) ? p_data.media.grid : [];
-    gridItems.forEach(function (item, i) {
-      var src     = (typeof item === 'string') ? item : (item.src     || '');
-      var caption = (typeof item === 'string') ? ''   : (item.caption || '');
-
-      var inset = div('cs-img-inset cs-reveal');
-      var inner = div('cs-img-inset-inner');
-
-      // Color placeholder
-      var iph = div('cs-img-inset-ph');
-      iph.style.background = p_data.color || '#f0f0f0';
-      iph.appendChild(span('cs-img-inset-ph-label', caption || 'IMAGE'));
-      inner.appendChild(iph);
-
-      // Image
-      if (src) {
-        var img = document.createElement('img');
-        img.src = src; img.alt = caption;
-        img.onerror = function () { this.style.display = 'none'; };
-        inner.appendChild(img);
-      }
-
-      inset.appendChild(inner);
-      inset.appendChild(span('cs-img-inset-num', String(i + 1).padStart(2, '0')));
-      detail.appendChild(inset);
-    });
-
-    // ── 7. TL;DR block ───────────────────────────────────
-    if (p_data.tldr && (p_data.tldr.title || (p_data.tldr.bullets && p_data.tldr.bullets.length))) {
-      var tldrBlock = div('cs-tldr-block cs-reveal');
-      tldrBlock.appendChild(span('cs-tldr-eyebrow', 'TL;DR'));
-      if (p_data.tldr.title)
-        tldrBlock.appendChild(p('cs-tldr-title', p_data.tldr.title));
-      if (p_data.tldr.intro)
-        tldrBlock.appendChild(p('cs-tldr-intro', p_data.tldr.intro));
-      if (p_data.tldr.bullets && p_data.tldr.bullets.length) {
-        var bulletList = div('cs-tldr-bullets');
-        p_data.tldr.bullets.forEach(function (b) {
-          bulletList.appendChild(p('cs-tldr-bullet', b));
-        });
-        tldrBlock.appendChild(bulletList);
-      }
-      detail.appendChild(tldrBlock);
-    }
-
-    // ── 8. Reflections ───────────────────────────────────
-    if (p_data.reflections && p_data.reflections.items && p_data.reflections.items.length) {
-      var reflBlock = div('cs-reflections-block cs-reveal');
-      reflBlock.appendChild(span('cs-reflections-eyebrow', 'Reflections'));
-      if (p_data.reflections.title)
-        reflBlock.appendChild(p('cs-reflections-title', p_data.reflections.title));
-      var reflItems = div('cs-refl-items');
-      p_data.reflections.items.forEach(function (r) {
-        var item = div('cs-refl-item');
-        item.appendChild(p('cs-refl-heading', r.heading));
-        item.appendChild(p('cs-refl-body',    r.body));
-        reflItems.appendChild(item);
+    // ── 5. Scattered gallery from media.grid (3–7 images) ─
+    // Shape is decided by SLOT position, not the image (design option B):
+    // first image is always the landscape hero. Whole gallery reveals as ONE
+    // .cs-reveal block — per-figure reveal fights the negative-margin interlock.
+    var SLOTS = ['s1 ls', 's2 sq', 's3 sq', 's4 ls', 's5 sq', 's6 ls', 's7 ls'];
+    var gridItems = (p_data.media && p_data.media.grid) ? p_data.media.grid.slice(0, 7) : [];
+    if (gridItems.length) {
+      var gallery = div('cs-gallery cs-reveal');
+      gridItems.forEach(function (item, i) {
+        var src = (typeof item === 'string') ? item : (item.src || '');
+        var fig = document.createElement('figure');
+        fig.className = 'cs-g-fig ' + SLOTS[i];
+        var ph = div('cs-g-ph');
+        ph.style.background = p_data.color || '#f0f0f0';
+        fig.appendChild(ph);
+        if (src) {
+          var img = document.createElement('img');
+          img.className = 'cs-g-img';
+          img.src = src;
+          img.alt = '';
+          img.onerror = function () { this.style.display = 'none'; };
+          fig.appendChild(img);
+        }
+        gallery.appendChild(fig);
       });
-      reflBlock.appendChild(reflItems);
-      detail.appendChild(reflBlock);
+      detail.appendChild(gallery);
     }
-
-    // ── 9. What's Next ───────────────────────────────────
-    var pIdx  = PROJECTS.indexOf(p_data);
-    var nextIdx = (pIdx + 1) % PROJECTS.length;
-    var nextP = PROJECTS[nextIdx];
-
-    var nextBlock = div('cs-next-block cs-reveal');
-    nextBlock.appendChild(span('cs-next-eyebrow', "What's Next"));
-
-    var nextLink = document.createElement('a');
-    nextLink.className = 'cs-next-link';
-    nextLink.href = 'case-study.html?p=' + slugOf(nextP, nextIdx);
-    nextLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      exitFn('case-study.html?p=' + slugOf(nextP, nextIdx));
-    });
-
-    var thumb = div('cs-next-thumb');
-    var thumbPh = div('cs-next-thumb-ph');
-    thumbPh.style.background = nextP.color;
-    thumb.appendChild(thumbPh);
-    nextLink.appendChild(thumb);
-    nextLink.appendChild(span('cs-next-name', nextP.subtitle));
-
-    var arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    arrowSvg.setAttribute('class',   'cs-next-arrow');
-    arrowSvg.setAttribute('width',   '80');
-    arrowSvg.setAttribute('height',  '16');
-    arrowSvg.setAttribute('viewBox', '0 0 80 16');
-    arrowSvg.setAttribute('fill',    'none');
-    var arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    arrowPath.setAttribute('d',               'M0 8H77M77 8L70 2M77 8L70 14');
-    arrowPath.setAttribute('stroke',          '#000');
-    arrowPath.setAttribute('stroke-width',    '1.2');
-    arrowPath.setAttribute('stroke-linecap',  'round');
-    arrowPath.setAttribute('stroke-linejoin', 'round');
-    arrowSvg.appendChild(arrowPath);
-    nextLink.appendChild(arrowSvg);
-
-    nextBlock.appendChild(nextLink);
-    detail.appendChild(nextBlock);
 
   } // end buildDetail
 
