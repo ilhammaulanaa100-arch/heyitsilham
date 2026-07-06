@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Apply saved theme before render (mirrors index.html) so html.dark styles activate -->
+  <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+
   <title>Case Study — Ilham</title>
   <meta name="description" content="A case study from Ilham's design portfolio — editorial, cinematic product design." />
   <meta name="author" content="Ilham" />
@@ -67,7 +70,6 @@
 
     <!-- LEFT: sticky slider panel -->
     <div class="cs-left" id="cs-left">
-      <a class="cs-close" id="cs-close" href="index.html">← Close</a>
       <!-- Slider: image cards, captions, and navigation controls -->
       <div class="cs-slider" id="cs-slider"></div>
     </div>
@@ -75,7 +77,15 @@
     <!-- RIGHT: scrolling article panel -->
     <div class="cs-right" id="cs-right">
       <div id="cs-right-content">
-        <a class="cs-source" id="cs-source" href="" target="_blank" rel="noopener noreferrer">Source ↗</a>
+        <div class="cs-top-row">
+          <a class="cs-right-close" id="cs-right-close" href="index.html">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+            Close
+          </a>
+          <a class="cs-source" id="cs-source" href="" target="_blank" rel="noopener noreferrer">Source ↗</a>
+        </div>
         <!-- Article content populated by buildDetail() -->
         <div class="cs-detail" id="cs-detail"></div>
       </div>
@@ -123,8 +133,8 @@
         }
       }
 
-      // Close → homepage
-      document.getElementById('cs-close').addEventListener('click', function(e) {
+      // Close → homepage (X control in right panel)
+      document.getElementById('cs-right-close').addEventListener('click', function(e) {
         e.preventDefault();
         exitPage('index.html');
       });

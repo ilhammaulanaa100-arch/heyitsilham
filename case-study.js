@@ -347,21 +347,21 @@
     detail.appendChild(headlineEl);
     if (window.gsap) gsap.set(headlineEl.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
-    // ── 2. Meta grid (Timeline / Role / Client / Year) ───
-    var metaGrid = div('cs-meta-grid cs-reveal');
+    // ── 2. Meta row (Role / Client / Year) ────────────────
+    var metaRow = div('cs-meta-row cs-reveal');
     var metaFields = [
-      { label: 'Timeline', value: p_data.meta && p_data.meta.timeline ? p_data.meta.timeline : '—' },
-      { label: 'Role',     value: p_data.meta && p_data.meta.role     ? p_data.meta.role     : '—' },
-      { label: 'Client',   value: p_data.meta && p_data.meta.client   ? p_data.meta.client   : '—' },
-      { label: 'Year',     value: p_data.meta && p_data.meta.year     ? p_data.meta.year     : '—' }
+      { label: 'Role',   value: p_data.meta && p_data.meta.role   ? p_data.meta.role   : '—' },
+      { label: 'Client', value: p_data.meta && p_data.meta.client ? p_data.meta.client : '—' },
+      { label: 'Year',   value: p_data.meta && p_data.meta.year   ? p_data.meta.year   : '—' }
     ];
     metaFields.forEach(function (f) {
-      var cell = div('cs-meta-cell');
-      cell.appendChild(span('cs-meta-cell-label', f.label));
-      cell.appendChild(span('cs-meta-cell-value', f.value));
-      metaGrid.appendChild(cell);
+      var item = div('cs-meta-item');
+      item.appendChild(span('cs-meta-item-label', f.label));
+      item.appendChild(span('cs-meta-item-value', f.value));
+      metaRow.appendChild(item);
     });
-    detail.appendChild(metaGrid);
+    detail.appendChild(metaRow);
+    detail.appendChild(div('cs-meta-divider'));
 
     // ── 3. Summary (single short paragraph) ──────────────
     var summaryText = p_data.summary || (p_data.body && p_data.body[0]) || '';
