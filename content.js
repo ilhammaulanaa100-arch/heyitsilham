@@ -4,6 +4,7 @@ const PROJECTS = [
     category: 'PERSONAL',
     period: '2025',
     sourceUrl: '',
+    summary: "A portfolio built to perform, not just display — cinematic scroll, an editorial grid, and motion that earns its place. Designed and coded end-to-end in vanilla HTML/CSS/JS with GSAP.",
     subtitle: 'heyitsilham',
     title: 'An Editorial Portfolio Built to Feel Alive',
     color: 'linear-gradient(160deg,#9f4bed 0%,#7b49a9 100%)',
@@ -49,6 +50,7 @@ const PROJECTS = [
     category: 'PRODUCT',
     period: '2024',
     sourceUrl: '',
+    summary: "BYOND rethinks what Islamic banking can feel like — modern without giving up the trust of its Syariah foundation. I owned the product end-to-end for over a year, from research to developer handoff.",
     subtitle: 'BYOND\nby BSI',
     title: 'Redesigning Islamic Banking for Indonesia',
     color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
@@ -57,8 +59,15 @@ const PROJECTS = [
       hero: 'assets/projects/byond/byond-thumbnail.png',
       video: 'assets/projects/byond/byond-showcase.mp4',
       fullImage: '',
-      // grid shape: [{ src: '', caption: '' }, ...]
-      grid: []
+      grid: [
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png',
+        'assets/projects/byond/byond-thumbnail.png'
+      ]
     },
     meta: {
       timeline: '12 Month',
@@ -95,6 +104,7 @@ const PROJECTS = [
     category: 'COMING SOON',
     period: '2025',
     sourceUrl: '',
+    summary: "Case study coming soon.",
     subtitle: 'Project 03',
     title: 'Coming Soon',
     color: 'linear-gradient(160deg,#e05c45,#a03020)',
@@ -113,6 +123,7 @@ const PROJECTS = [
     category: 'COMING SOON',
     period: '2025',
     sourceUrl: '',
+    summary: "Case study coming soon.",
     subtitle: 'Project 04',
     title: 'Coming Soon',
     color: 'linear-gradient(160deg,#2db8a3,#1a7a6e)',
@@ -131,6 +142,7 @@ const PROJECTS = [
     category: 'COMING SOON',
     period: '2025',
     sourceUrl: '',
+    summary: "Case study coming soon.",
     subtitle: 'Project 05',
     title: 'Coming Soon',
     color: 'linear-gradient(160deg,#4b63e8,#2a3db0)',
@@ -149,6 +161,7 @@ const PROJECTS = [
     category: 'COMING SOON',
     period: '2025',
     sourceUrl: '',
+    summary: "Case study coming soon.",
     subtitle: 'Project 06',
     title: 'Coming Soon',
     color: 'linear-gradient(160deg,#e8a52b,#b07815)',
