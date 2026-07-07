@@ -140,7 +140,7 @@ setInterval(updateTime, 1000);
   });
 })();
 
-// ── Whisper-fade text reveal (see docs/.../2026-07-07-whisper-fade...) ──
+// ── Whisper-fade text reveal (docs/superpowers/plans/2026-07-07-whisper-fade-text-motion.md) ──
 (function () {
   if (typeof Motion === 'undefined') return;
 

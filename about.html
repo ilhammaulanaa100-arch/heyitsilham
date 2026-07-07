@@ -7,7 +7,7 @@
   <title>About — Ilham</title>
   <meta name="description" content="About Ilham — product designer crafting editorial, cinematic digital experiences." />
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
-  <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) document.documentElement.classList.add('motion-on'); } catch (e) {}</script>
+  <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Any nav from here to the homepage must arrive splash-less, and the flag
        must exist BEFORE the prerender below parses index.html -->
   <script>try { sessionStorage.setItem('porto-skip-splash', '1'); } catch (e) {}</script>
