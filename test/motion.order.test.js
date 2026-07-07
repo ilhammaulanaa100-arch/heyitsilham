@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { execSync } = require('child_process');
 
 // Load motion.js in a minimal global shim (no DOM needed for orderByTop).
 global.window = { matchMedia: () => ({ matches: false }) };
