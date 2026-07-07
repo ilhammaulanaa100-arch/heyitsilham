@@ -7,6 +7,7 @@
   <title>About — Ilham</title>
   <meta name="description" content="About Ilham — product designer crafting editorial, cinematic digital experiences." />
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+  <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) document.documentElement.classList.add('motion-on'); } catch (e) {}</script>
   <!-- Any nav from here to the homepage must arrive splash-less, and the flag
        must exist BEFORE the prerender below parses index.html -->
   <script>try { sessionStorage.setItem('porto-skip-splash', '1'); } catch (e) {}</script>
@@ -78,9 +79,9 @@
 
     <!-- ── Hero ── -->
     <section class="ab-hero">
-      <p class="ab-hero-name">[Ilham]</p>
-      <h1 class="ab-hero-headline">Designing calm, cinematic products for a loud digital world.</h1>
-      <div class="ab-hero-media">
+      <p class="ab-hero-name" data-reveal>[Ilham]</p>
+      <h1 class="ab-hero-headline" data-reveal data-reveal-lines>Designing calm, cinematic products for a loud digital world.</h1>
+      <div class="ab-hero-media" data-reveal>
         <img src="assets/images/image-placeholder.png" alt="Ilham — portrait" />
       </div>
     </section>
@@ -88,9 +89,9 @@
     <!-- ── About ── -->
     <section class="ab-split">
       <div class="ab-split-left">
-        <h2 class="ab-split-title">About</h2>
+        <h2 class="ab-split-title" data-reveal-scroll>About</h2>
       </div>
-      <div class="ab-split-right">
+      <div class="ab-split-right" data-reveal-scroll>
         <p class="ab-lead">I'm a product designer based in Jakarta, focused on editorial, cinematic digital experiences — the kind of interfaces that feel considered rather than assembled.</p>
         <p>Over the years I've worked across fintech, e-commerce, and creative tooling, always chasing the same thing: clarity. I believe good design is mostly about removing, not adding, and that the best interactions are the ones you barely notice.</p>
         <p>When I'm not pushing pixels I'm probably reading about typography, collecting film stills, or overthinking the border radius of something.</p>
@@ -101,32 +102,32 @@
     <section class="ab-split ab-work">
       <div class="ab-split-left">
         <div class="ab-work-sticky">
-          <h2 class="ab-split-title">Work<br/>Experience</h2>
+          <h2 class="ab-split-title" data-reveal-scroll>Work<br/>Experience</h2>
           <div class="ab-work-counter"><span id="work-counter">1</span><span class="ab-work-total">/5</span></div>
         </div>
       </div>
       <div class="ab-split-right ab-work-list">
-        <article class="ab-work-item" data-index="1">
+        <article class="ab-work-item" data-index="1" data-reveal-scroll>
           <h3>Byond by BSI</h3>
           <p class="ab-work-role">Senior Product Designer · 2024 — Now</p>
           <p>Leading design for the mobile banking super-app: onboarding, daily transactions, and the design system that keeps 40+ screens consistent.</p>
         </article>
-        <article class="ab-work-item" data-index="2">
+        <article class="ab-work-item" data-index="2" data-reveal-scroll>
           <h3>Tokopedia</h3>
           <p class="ab-work-role">Product Designer · 2022 — 2024</p>
           <p>Owned the discovery and search experience. Shipped experiments that lifted conversion while cutting visual noise across the funnel.</p>
         </article>
-        <article class="ab-work-item" data-index="3">
+        <article class="ab-work-item" data-index="3" data-reveal-scroll>
           <h3>Gojek</h3>
           <p class="ab-work-role">Product Designer · 2020 — 2022</p>
           <p>Worked on GoPay flows — transfers, top-ups, and the little moments of trust that make people comfortable moving money.</p>
         </article>
-        <article class="ab-work-item" data-index="4">
+        <article class="ab-work-item" data-index="4" data-reveal-scroll>
           <h3>Traveloka</h3>
           <p class="ab-work-role">UI Designer · 2019 — 2020</p>
           <p>Designed booking flows for flights and hotels, from wireframe to polished handoff, with a focus on mobile-first layouts.</p>
         </article>
-        <article class="ab-work-item" data-index="5">
+        <article class="ab-work-item" data-index="5" data-reveal-scroll>
           <h3>Freelance</h3>
           <p class="ab-work-role">Designer · 2017 — 2019</p>
           <p>Brand and web work for local studios and startups — where I learned to ship fast, talk to clients, and defend whitespace.</p>
@@ -164,6 +165,7 @@
     </div>
   </footer>
 
+  <script src="motion.js"></script>
   <script src="about.js"></script>
 </body>
 </html>

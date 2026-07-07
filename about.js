@@ -139,3 +139,30 @@ setInterval(updateTime, 1000);
     }
   });
 })();
+
+// ── Whisper-fade text reveal (see docs/.../2026-07-07-whisper-fade...) ──
+(function () {
+  if (typeof Motion === 'undefined') return;
+
+  // Split the hero headline into lines so it fades line-by-line.
+  document.querySelectorAll('[data-reveal-lines]').forEach(function (el) {
+    Motion.splitLines(el);
+  });
+
+  // Entrance: hero fades in top→bottom on load.
+  Motion.enter(document.querySelector('.ab-hero'));
+
+  // Below-the-fold: fade each marked block in on scroll.
+  Motion.observe(document);
+
+  // Plain nav links (no structural transition) → whisper the page out first.
+  document.querySelectorAll('.nav-links a[href]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#') return;    // skip in-page/placeholder
+      if (href.indexOf('index.html') !== -1) return;  // Work → home uses peek glide path elsewhere
+      e.preventDefault();
+      Motion.exit(function () { window.location.href = href; });
+    });
+  });
+})();

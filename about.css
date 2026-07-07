@@ -192,3 +192,7 @@ html.dark .ab-peek {
 
 /* Opt in to cross-document view transitions (both pages must opt in). */
 @view-transition { navigation: auto; }
+
+/* Whisper-fade: reveal targets start hidden only when JS motion is on. */
+html.motion-on [data-reveal],
+html.motion-on [data-reveal-scroll] { opacity: 0; }
