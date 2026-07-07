@@ -119,7 +119,7 @@
       var caption = (cat || per)
         ? (cat + (per ? ' (' + per + ')' : ''))
         : (pr.subtitle || '');
-      return { src: src, caption: caption, color: pr.color, num: String(i + 1).padStart(2, '0') };
+      return { src: src, caption: caption, color: pr.color, name: pr.subtitle || pr.title || '' };
     });
 
     var TOTAL     = slides.length;
@@ -137,11 +137,11 @@
       wrapper.className = 'cs-slide' + (i === activeIndex ? ' is-active' : '');
       wrapper.setAttribute('data-index', i);
 
-      // Zero-padded project number above card
-      var numEl = document.createElement('span');
-      numEl.className = 'cs-slide-num';
-      numEl.textContent = slide.num;
-      wrapper.appendChild(numEl);
+      // Project name above card (Figma left-panel title)
+      var titleEl = document.createElement('span');
+      titleEl.className = 'cs-slide-title';
+      titleEl.textContent = slide.name;
+      wrapper.appendChild(titleEl);
 
       // Card
       var card = document.createElement('div');
@@ -165,14 +165,6 @@
 
       wrapper.appendChild(card);
 
-      // Caption below card
-      if (slide.caption) {
-        var capEl = document.createElement('span');
-        capEl.className = 'cs-slide-caption';
-        capEl.textContent = slide.caption;
-        wrapper.appendChild(capEl);
-      }
-
       sliderEl.appendChild(wrapper);
       slideEls.push(wrapper);
     });
@@ -185,17 +177,11 @@
       btn.type = 'button';
       btn.className = 'cs-slider-arrow ' + (isPrev ? 'cs-arrow-prev' : 'cs-arrow-next');
       btn.setAttribute('aria-label', label);
-      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width', '32'); svg.setAttribute('height', '12');
-      svg.setAttribute('viewBox', '0 0 32 12'); svg.setAttribute('fill', 'none');
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', isPrev ? 'M32 6H3M3 6L8.5 1.5M3 6L8.5 10.5' : 'M0 6H29M29 6L23.5 1.5M29 6L23.5 10.5');
-      path.setAttribute('stroke', '#000');
-      path.setAttribute('stroke-width', '1.2');
-      path.setAttribute('stroke-linecap', 'round');
-      path.setAttribute('stroke-linejoin', 'round');
-      svg.appendChild(path);
-      btn.appendChild(svg);
+      // Solid arrow-right (Figma); the prev button rotates it 180° via CSS.
+      btn.innerHTML =
+        '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
+        '<path d="M10.6607 4.33926C10.3353 4.01382 10.3353 3.48618 10.6607 3.16074C10.9862 2.83531 11.5138 2.83531 11.8393 3.16074L18.0893 9.41074C18.4147 9.73618 18.4147 10.2638 18.0893 10.5893L11.8393 16.8393C11.5138 17.1647 10.9862 17.1647 10.6607 16.8393C10.3353 16.5138 10.3353 15.9862 10.6607 15.6607L15.4882 10.8333H2.5C2.03976 10.8333 1.66667 10.4602 1.66667 10C1.66667 9.53976 2.03976 9.16667 2.5 9.16667H15.4882L10.6607 4.33926Z" fill="currentColor"/>' +
+        '</svg>';
       return btn;
     }
 
@@ -207,7 +193,7 @@
       var nextBtn = mkArrow('Next project', false);
       counterEl = document.createElement('span');
       counterEl.className = 'cs-slider-counter';
-      counterEl.textContent = pad(current + 1) + ' / ' + pad(TOTAL);
+      counterEl.textContent = pad(current + 1) + '/' + pad(TOTAL);
       prevBtn.addEventListener('click', function () { if (!animating) goTo((current - 1 + TOTAL) % TOTAL, -1); });
       nextBtn.addEventListener('click', function () { if (!animating) goTo((current + 1) % TOTAL, 1); });
       navEl.appendChild(prevBtn);
@@ -239,7 +225,7 @@
       current   = next;
 
       slideEls.forEach(function (el, i) { el.classList.toggle('is-active', i === current); });
-      if (counterEl) counterEl.textContent = pad(current + 1) + ' / ' + pad(TOTAL);
+      if (counterEl) counterEl.textContent = pad(current + 1) + '/' + pad(TOTAL);
 
       // Crossfade right panel to new project
       setActiveProject(current);

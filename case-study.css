@@ -235,37 +235,24 @@
   justify-content: center;
 }
 
-/* Slide number — mono, top-left of each slide */
-.cs-slide-num {
+/* Project name — display font, centred above the card (Figma) */
+.cs-slide-title {
   position: absolute;
-  top: -28px;
-  left: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  color: rgba(0, 0, 0, 0.4);
-  user-select: none;
-}
-
-/* Caption — mono, below the card */
-.cs-slide-caption {
-  position: absolute;
-  top: 100%;
+  bottom: calc(100% + 24px);
   left: 0;
   right: 0;
-  margin-top: 12px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.4);
-  line-height: 1.4;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-align: center;
+  white-space: pre-line; /* render the "\n" in subtitle as a line break */
+  color: #1a1a1a;
   user-select: none;
 }
 
-/* Arrow nav + counter — bottom centre of left panel */
+/* Arrow nav + counter — bottom centre of left panel (Figma) */
 .cs-slider-nav {
   position: absolute;
   bottom: 32px;
@@ -273,38 +260,41 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 32px;
   z-index: 5;
 }
 
+/* Rounded-square arrow buttons — dark fill, white arrow, both themes */
 .cs-slider-arrow {
   -webkit-appearance: none;
   appearance: none;
-  background: none;
   border: none;
-  padding: 10px 8px; /* generous hit area */
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #282828;
+  color: #fff; /* arrow fill = currentColor */
   display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  opacity: 0.4;
-  transition: opacity 0.18s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.18s;
 }
 .cs-slider-arrow svg { display: block; }
-.cs-slider-arrow:hover { opacity: 1; }
-.cs-arrow-prev:hover { transform: translateX(-4px); }
-.cs-arrow-next:hover { transform: translateX(4px); }
+.cs-arrow-prev svg { transform: rotate(180deg); }
+.cs-slider-arrow:hover { opacity: 0.85; }
 .cs-slider-arrow:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
 .cs-slider-counter {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  color: rgba(0, 0, 0, 0.55);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1a1a1a;
   user-select: none;
-  min-width: 62px;
   text-align: center;
 }
 
@@ -780,10 +770,8 @@ html.dark .cs-tldr-title,
 html.dark .cs-reflections-title,
 html.dark .cs-refl-heading,
 html.dark .cs-next-name { color: #fff; }
-html.dark .cs-slide-num,
-html.dark .cs-slide-caption { color: rgba(255, 255, 255, 0.45); }
-html.dark .cs-slider-counter { color: rgba(255, 255, 255, 0.6); }
-html.dark .cs-slider-arrow svg path,
+html.dark .cs-slide-title { color: #d9d9d9; }
+html.dark .cs-slider-counter { color: #d9d9d9; }
 html.dark .cs-next-arrow path { stroke: #fff; }
 html.dark .cs-tag-period,
 html.dark .cs-meta-item-label,
@@ -829,7 +817,7 @@ html.dark .cs-g-cap-num { color: rgba(255, 255, 255, 0.4); }
   .cs-slide .proj-card { width: 260px; height: 280px; }
   /* num + caption duplicate the counter and tag pill, and collide with
      the close link / arrows in the short stacked panel */
-  .cs-slide-num, .cs-slide-caption { display: none; }
+  .cs-slide-title { display: none; }
   .cs-slider-nav { bottom: 10px; }
   .cs-close { top: 20px; left: 20px; }
   .cs-top-row { margin-bottom: 32px; margin-left: 0; width: auto; }
