@@ -114,6 +114,27 @@
           { duration: DUR * 0.5, delay: i * (STEP * 0.5), easing: EASE, fill: 'forwards' });
       });
       if (cb) setTimeout(cb, DUR * 0.5 + els.length * (STEP * 0.5));
+    },
+
+    // Fade an explicit list of elements in (opacity 0->1, staggered top->bottom).
+    // For content GSAP/other code owns (e.g. the slider title + nav) that can't
+    // use the [data-reveal] anti-FOUC gate. Caller sets opacity:0 beforehand.
+    reveal: function (els, opts) {
+      opts = opts || {};
+      var list = orderByTop(els);
+      var base = opts.delay || 0;
+      list.forEach(function (el, i) { fadeIn(el, base + i * STEP); });
+    },
+
+    // Fade an explicit list of elements out (opacity->0), concurrent with a
+    // structural transition. No callback — the structural layer owns navigation.
+    hide: function (els) {
+      var list = orderByTop(els);
+      if (RM || !list.length || !list[0].animate) return;
+      list.forEach(function (el, i) {
+        el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: 0 }],
+          { duration: DUR * 0.5, delay: i * (STEP * 0.5), easing: EASE, fill: 'forwards' });
+      });
     }
   };
 

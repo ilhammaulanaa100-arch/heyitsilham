@@ -8,6 +8,8 @@
   var _detailEl            = null;
   var _slideEls            = [];
   var _onCsEntered         = null;
+  var _onCsEnteredLeft     = null;
+  var _onCsExitLeft        = null;
   var _onSliderKeydown     = null;
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
@@ -80,6 +82,8 @@
   // ── teardown ──────────────────────────────────────────────────────────────
   function teardown() {
     if (_onCsEntered)          { document.removeEventListener('cs-entered', _onCsEntered);           _onCsEntered          = null; }
+    if (_onCsEnteredLeft)      { document.removeEventListener('cs-entered', _onCsEnteredLeft);       _onCsEnteredLeft      = null; }
+    if (_onCsExitLeft)         { document.removeEventListener('cs-exit',    _onCsExitLeft);          _onCsExitLeft         = null; }
     if (_onSliderKeydown)      { document.removeEventListener('keydown',    _onSliderKeydown);       _onSliderKeydown      = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
@@ -277,6 +281,29 @@
       gsap.set(slideEls[current], { x: 0, scale: 1 });
     };
     window.addEventListener('resize', _onWindowResize);
+
+    // ── Whisper-fade the left-panel title + nav on entrance/exit ──
+    // Consistent with the right panel. Slide-to-slide nav is a structural
+    // crossfade that owns the title's opacity during goTo, so we whisper the
+    // left panel ONLY on the initial entrance (once) and on exit — never per swap.
+    if (typeof Motion !== 'undefined' && !Motion.reduced) {
+      var leftEls = function () {
+        var arr = [];
+        var t = slideEls[current] && slideEls[current].querySelector('.cs-slide-title');
+        if (t) arr.push(t);
+        if (navEl) arr.push(navEl);
+        return arr;
+      };
+      var activeTitle = slideEls[activeIndex] && slideEls[activeIndex].querySelector('.cs-slide-title');
+      if (activeTitle) activeTitle.style.opacity = '0';
+      if (navEl) navEl.style.opacity = '0';
+
+      _onCsEnteredLeft = function () { Motion.reveal(leftEls()); };
+      document.addEventListener('cs-entered', _onCsEnteredLeft, { once: true });
+
+      _onCsExitLeft = function () { Motion.hide(leftEls()); };
+      document.addEventListener('cs-exit', _onCsExitLeft);
+    }
 
   } // end buildSlider
 

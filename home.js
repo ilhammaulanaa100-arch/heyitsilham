@@ -513,6 +513,7 @@
   function hideOverlay() {
     releaseOverlayFocus();
     killGlides();
+    document.dispatchEvent(new Event('cs-exit')); // whisper the left-panel title + nav out during the glide-back
 
     var D = GLIDE_DURATION;
     var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -875,8 +876,20 @@
     };
 
     _replayHeroReveal = function () {
-      _hideHeroForClose();
-      revealText(gsap.timeline(), sectionText(current));
+      var sec = sections[current];
+      // Return-from-case-study reveal = whisper fade (matches home first paint
+      // and the case-study panel), NOT the section-nav char-rise.
+      if (typeof Motion !== 'undefined' && sec) {
+        if (window.gsap) gsap.set(sec.querySelectorAll('.ph-label .char, .ph-title .char'), { opacity: 1, yPercent: 0 });
+        sec.querySelectorAll('.ph-label, .ph-title').forEach(function (el) {
+          el.setAttribute('data-reveal', '');
+          el.style.opacity = '0';
+        });
+        Motion.enter(sec);
+      } else {
+        _hideHeroForClose();
+        revealText(gsap.timeline(), sectionText(current));
+      }
     };
 
     function go(dir) {

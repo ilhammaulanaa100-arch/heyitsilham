@@ -126,6 +126,7 @@
       function exitPage(href) {
         var wipe = document.getElementById('page-wipe');
         if (typeof Motion !== 'undefined') Motion.exit(null, document.getElementById('cs-detail'));
+        document.dispatchEvent(new Event('cs-exit')); // whisper the left-panel title + nav out too
         if (window.gsap && wipe) {
           gsap.set(wipe, { display: 'block', autoAlpha: 1, xPercent: 100 });
           gsap.to(wipe, { xPercent: 0, duration: 0.6, ease: 'power4.inOut',
