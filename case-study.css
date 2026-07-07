@@ -689,18 +689,9 @@
   opacity: 0.35;
 }
 
-/* ── Reveal targets — start hidden (animated on scroll) ── */
-.cs-reveal {
-  opacity: 0;
-  transform: translateY(28px);
-}
-
-/* Split-text reveals (meta + summary): container stays visible; the inner
-   char/word spans do the same rising motion as the headline. */
-.cs-reveal.cs-split { opacity: 1; transform: none; }
-.cs-split .cs-word { display: inline-block; white-space: nowrap; }
-.cs-split .cs-char,
-.cs-split .cs-splitword { display: inline-block; }
+/* ── Whisper-fade: reveal targets start hidden only when JS motion is on. ── */
+html.motion-on [data-reveal],
+html.motion-on [data-reveal-scroll] { opacity: 0; }
 
 /* ── Mobile adjustments ── */
 @media (max-width: 900px) {
@@ -735,17 +726,6 @@ html.lenis {
 
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
-}
-
-/* Headline container must be visible — char animation handles the reveal */
-.cs-headline.cs-reveal {
-  opacity: 1;
-  transform: none;
-}
-
-/* Entrance: headline chars start hidden (animated via GSAP) */
-.cs-headline .cs-char {
-  display: inline-block;
 }
 
 .cs-close:focus-visible,

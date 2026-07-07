@@ -7,9 +7,7 @@
   var _sliderEl            = null;
   var _detailEl            = null;
   var _slideEls            = [];
-  var _onCsEnteredHeadline = null;
-  var _onCsEnteredTagRow   = null;
-  var _onCsEnteredAboveFold = null;
+  var _onCsEntered         = null;
   var _onSliderKeydown     = null;
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
@@ -81,9 +79,7 @@
 
   // ── teardown ──────────────────────────────────────────────────────────────
   function teardown() {
-    if (_onCsEnteredHeadline)  { document.removeEventListener('cs-entered', _onCsEnteredHeadline);  _onCsEnteredHeadline  = null; }
-    if (_onCsEnteredTagRow)    { document.removeEventListener('cs-entered', _onCsEnteredTagRow);    _onCsEnteredTagRow    = null; }
-    if (_onCsEnteredAboveFold) { document.removeEventListener('cs-entered', _onCsEnteredAboveFold); _onCsEnteredAboveFold = null; }
+    if (_onCsEntered)          { document.removeEventListener('cs-entered', _onCsEntered);           _onCsEntered          = null; }
     if (_onSliderKeydown)      { document.removeEventListener('keydown',    _onSliderKeydown);       _onSliderKeydown      = null; }
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
@@ -95,9 +91,7 @@
     if (_observer) { _observer.disconnect(); _observer = null; }
     if (window.gsap) {
       _slideEls.forEach(function (el) { gsap.killTweensOf(el); });
-      if (_detailEl) {
-        gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal, .cs-char, .cs-splitword'));
-      }
+      if (_detailEl) { gsap.killTweensOf(_detailEl); }
     }
     _slideEls = [];
     if (_sliderEl) _sliderEl.innerHTML = '';
@@ -300,48 +294,17 @@
     function span(cls, text) { return mkEl('span', cls, text); }
     function p(cls, text)    { return mkEl('p',    cls, text); }
 
-    // Split an element's text into .cs-word > .cs-char spans (title-style reveal).
-    function splitChars(el) {
-      var text = el.textContent;
-      el.textContent = '';
-      text.split(/(\s+)/).forEach(function (token) {
-        if (token === '') return;
-        if (/^\s+$/.test(token)) { el.appendChild(document.createTextNode(' ')); return; }
-        var wordEl = document.createElement('span');
-        wordEl.className = 'cs-word';
-        token.split('').forEach(function (ch) {
-          var charEl = document.createElement('span');
-          charEl.className = 'cs-char';
-          charEl.textContent = ch;
-          wordEl.appendChild(charEl);
-        });
-        el.appendChild(wordEl);
-      });
-    }
-    // Split into per-word spans — same rising motion, but readable for body copy.
-    function splitWords(el) {
-      var text = el.textContent;
-      el.textContent = '';
-      text.split(/(\s+)/).forEach(function (token) {
-        if (token === '') return;
-        if (/^\s+$/.test(token)) { el.appendChild(document.createTextNode(' ')); return; }
-        var w = document.createElement('span');
-        w.className = 'cs-splitword';
-        w.textContent = token;
-        el.appendChild(w);
-      });
-    }
-
-    // ── 1. Headline with char-split ──────────────────────
+    // ── 1. Headline (whisper fades per line via Motion.splitLines) ──
     var headlineEl = document.createElement('h1');
-    headlineEl.className = 'cs-headline cs-reveal';
+    headlineEl.className = 'cs-headline';
+    headlineEl.setAttribute('data-reveal', '');
+    headlineEl.setAttribute('data-reveal-lines', '');
     headlineEl.textContent = p_data.title || p_data.subtitle || '';
-    splitChars(headlineEl);
     detail.appendChild(headlineEl);
-    if (window.gsap) gsap.set(headlineEl.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
-    // ── 2. Meta row (Role / Client / Year) ────────────────
-    var metaRow = div('cs-meta-row cs-reveal cs-split');
+    // ── 2. Meta row (Role / Client / Year) ──
+    var metaRow = div('cs-meta-row');
+    metaRow.setAttribute('data-reveal', '');
     var metaFields = [
       { label: 'Role',   value: p_data.meta && p_data.meta.role   ? p_data.meta.role   : '—' },
       { label: 'Client', value: p_data.meta && p_data.meta.client ? p_data.meta.client : '—' },
@@ -349,20 +312,16 @@
     ];
     metaFields.forEach(function (f) {
       var item = div('cs-meta-item');
-      var labelEl = span('cs-meta-item-label', f.label);
-      var valueEl = span('cs-meta-item-value', f.value);
-      splitChars(labelEl);
-      splitChars(valueEl);
-      item.appendChild(labelEl);
-      item.appendChild(valueEl);
+      item.appendChild(span('cs-meta-item-label', f.label));
+      item.appendChild(span('cs-meta-item-value', f.value));
       metaRow.appendChild(item);
     });
     detail.appendChild(metaRow);
-    if (window.gsap) gsap.set(metaRow.querySelectorAll('.cs-char'), { opacity: 0, yPercent: 60 });
 
     // ── App link — "Link Apps →" (Figma), between meta row and divider ──
     var appLink = document.createElement('a');
-    appLink.className = 'cs-applink cs-reveal';
+    appLink.className = 'cs-applink';
+    appLink.setAttribute('data-reveal', '');
     appLink.href = p_data.sourceUrl || '#';
     appLink.target = '_blank';
     appLink.rel = 'noopener noreferrer';
@@ -373,22 +332,23 @@
       '</svg>');
     detail.appendChild(appLink);
 
-    detail.appendChild(div('cs-meta-divider'));
+    var divider = div('cs-meta-divider');
+    divider.setAttribute('data-reveal', '');
+    detail.appendChild(divider);
 
-    // ── 3. Summary (single short paragraph) ──────────────
+    // ── 3. Summary ──
     var summaryText = p_data.summary || (p_data.body && p_data.body[0]) || '';
     if (summaryText) {
-      var bodyBlock = div('cs-body-block cs-reveal cs-split');
-      var para = p('cs-body-para', summaryText);
-      splitWords(para);
-      bodyBlock.appendChild(para);
+      var bodyBlock = div('cs-body-block');
+      bodyBlock.setAttribute('data-reveal', '');
+      bodyBlock.appendChild(p('cs-body-para', summaryText));
       detail.appendChild(bodyBlock);
-      if (window.gsap) gsap.set(bodyBlock.querySelectorAll('.cs-splitword'), { opacity: 0, yPercent: 60 });
     }
 
     // ── 4. Video showcase (if media.video exists) ────────
     if (p_data.media && p_data.media.video) {
-      var videoBlock = div('cs-video-block cs-reveal');
+      var videoBlock = div('cs-video-block');
+      videoBlock.setAttribute('data-reveal-scroll', '');
       var vph = div('cs-video-ph');
       vph.appendChild(span('cs-video-ph-label', 'Video Showcase'));
       videoBlock.appendChild(vph);
@@ -411,11 +371,12 @@
     // Shape is decided by SLOT position, not the image (design option B).
     // Geometry measured from the 99¢ reference: pair → solo → pair rhythm,
     // shapes square/landscape/portrait. Whole gallery reveals as ONE
-    // .cs-reveal block — per-figure reveal fights the negative-margin offsets.
+    // scroll-reveal block — per-figure reveal fights the negative-margin offsets.
     var SLOTS = ['s1 sq', 's2 sq', 's3 ls', 's4 pt', 's5 pt', 's6 sq', 's7 ls'];
     var gridItems = (p_data.media && p_data.media.grid) ? p_data.media.grid.slice(0, 7) : [];
     if (gridItems.length) {
-      var gallery = div('cs-gallery cs-reveal');
+      var gallery = div('cs-gallery');
+      gallery.setAttribute('data-reveal-scroll', '');
       gridItems.forEach(function (item, i) {
         var src     = (typeof item === 'string') ? item : (item.src     || '');
         var caption = (typeof item === 'string') ? ''   : (item.caption || '');
@@ -445,80 +406,26 @@
 
   } // end buildDetail
 
-  // ── playReveal ────────────────────────────────────────────────────────────
-  // Reveals a block: staggers its inner char/word spans (title-style rise) when
-  // present, otherwise fades the whole block up.
-  function playReveal(el, delay) {
-    if (!window.gsap) { el.style.opacity = '1'; el.style.transform = 'none'; return; }
-    var units = el.querySelectorAll('.cs-char, .cs-splitword');
-    if (units.length) {
-      gsap.to(units, { opacity: 1, yPercent: 0, duration: 0.6, ease: 'power3.out',
-        stagger: 0.012, delay: delay || 0 });
-    } else {
-      gsap.to(el, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out',
-        delay: (delay != null ? delay : 0.04) });
-    }
-  }
-
-  // ── rewireReveals ─────────────────────────────────────────────────────────
-  // Tears down and re-registers the reveal observer + cs-entered listeners.
-  // Called on initial load (via initScrollAndReveals) and on each project swap.
+  // ── rewireReveals ──────────────────────────────────────────────────────────
+  // Above-fold text whisper-fades on the `cs-entered` entrance event (fired by
+  // both the standalone page and the homepage overlay). Below-fold blocks fade
+  // on scroll. Split hero headline into lines first.
   function rewireReveals(sw) {
-    if (_onCsEnteredHeadline)  { document.removeEventListener('cs-entered', _onCsEnteredHeadline);  _onCsEnteredHeadline  = null; }
-    if (_onCsEnteredTagRow)    { document.removeEventListener('cs-entered', _onCsEnteredTagRow);    _onCsEnteredTagRow    = null; }
-    if (_onCsEnteredAboveFold) { document.removeEventListener('cs-entered', _onCsEnteredAboveFold); _onCsEnteredAboveFold = null; }
-    if (_observer)             { _observer.disconnect(); _observer = null; }
-
-    _onCsEnteredHeadline = function () {
-      if (!window.gsap) return;
-      var chars = document.querySelectorAll('.cs-headline .cs-char');
-      if (!chars.length) return;
-      gsap.to(chars, { opacity: 1, yPercent: 0, duration: 0.7, ease: 'power3.out', stagger: { each: 0.018, from: 'start' } });
-    };
-    document.addEventListener('cs-entered', _onCsEnteredHeadline);
-
-    if (!window.gsap) {
-      document.querySelectorAll('.cs-reveal').forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
-      _onCsEnteredTagRow = function () {};
-      document.addEventListener('cs-entered', _onCsEnteredTagRow);
+    if (_onCsEntered) { document.removeEventListener('cs-entered', _onCsEntered); _onCsEntered = null; }
+    if (_observer)    { _observer.disconnect(); _observer = null; }
+    if (typeof Motion === 'undefined') {
+      document.querySelectorAll('[data-reveal],[data-reveal-scroll]').forEach(function (el) { el.style.opacity = '1'; });
       return;
     }
 
-    var revealEls = Array.from(document.querySelectorAll('.cs-reveal:not(.cs-headline):not(.cs-tag-row)'));
-
-    // Split above-the-fold from below. The scroll wrapper is translated off-screen
-    // during the entrance glide, so an IntersectionObserver rooted on it would
-    // fire for above-fold blocks before the panel arrives — revealing them while
-    // still hidden and leaving only the (cs-entered-timed) headline to animate.
-    // Above-fold blocks instead cascade on cs-entered; below-fold stay on scroll.
-    var foldBottom  = sw.getBoundingClientRect().top + sw.clientHeight;
-    var aboveFold   = [];
-    var belowFold   = [];
-    revealEls.forEach(function (el) {
-      (el.getBoundingClientRect().top < foldBottom ? aboveFold : belowFold).push(el);
+    (_detailEl || document).querySelectorAll('[data-reveal-lines]').forEach(function (el) {
+      Motion.splitLines(el);
     });
 
-    _observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        playReveal(entry.target, 0.04);
-        _observer.unobserve(entry.target);
-      });
-    }, { root: sw, threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-    belowFold.forEach(function (el) { _observer.observe(el); });
+    _onCsEntered = function () { Motion.enter(_detailEl); };
+    document.addEventListener('cs-entered', _onCsEntered);
 
-    _onCsEnteredAboveFold = function () {
-      if (!window.gsap || !aboveFold.length) return;
-      aboveFold.forEach(function (el, i) { playReveal(el, 0.15 + i * 0.14); });
-    };
-    document.addEventListener('cs-entered', _onCsEnteredAboveFold);
-
-    _onCsEnteredTagRow = function () {
-      if (!window.gsap) return;
-      var tagRow = document.querySelector('.cs-tag-row');
-      if (tagRow) gsap.to(tagRow, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' });
-    };
-    document.addEventListener('cs-entered', _onCsEnteredTagRow);
+    _observer = Motion.observe(_detailEl);
   }
 
   // ── setActiveProject ──────────────────────────────────────────────────────
@@ -543,7 +450,7 @@
       document.title = (project.subtitle || project.title || 'Case Study') + ' — Ilham';
       history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
 
-      if (window.gsap) { gsap.killTweensOf(_detailEl.querySelectorAll('.cs-reveal, .cs-char, .cs-splitword')); }
+      if (window.gsap) { gsap.killTweensOf(_detailEl); }
       _detailEl.innerHTML = '';
       buildDetail(project, _detailEl, _exitFn);
 

@@ -6,6 +6,7 @@
 
   <!-- Apply saved theme before render (mirrors index.html) so html.dark styles activate -->
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+  <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
 
   <title>Case Study — Ilham</title>
   <meta name="description" content="A case study from Ilham's design portfolio — editorial, cinematic product design." />
@@ -95,6 +96,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="content.js"></script>
+  <script src="motion.js"></script>
   <script src="case-study.js"></script>
   <script>
     // ── Guard against content.js failing to load ───
@@ -123,6 +125,7 @@
 
       function exitPage(href) {
         var wipe = document.getElementById('page-wipe');
+        if (typeof Motion !== 'undefined') Motion.exit(null, document.getElementById('cs-detail'));
         if (window.gsap && wipe) {
           gsap.set(wipe, { display: 'block', autoAlpha: 1, xPercent: 100 });
           gsap.to(wipe, { xPercent: 0, duration: 0.6, ease: 'power4.inOut',
