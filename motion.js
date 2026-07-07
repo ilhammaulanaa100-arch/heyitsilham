@@ -4,7 +4,7 @@
   var mq = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)');
   var RM = !!(mq && mq.matches);
 
-  var DUR  = 900;                                // ms, fade per unit
+  var DUR  = 1100;                               // ms, fade per unit
   var STEP = 80;                                 // ms, delay between units
   var EASE = 'cubic-bezier(0.33, 0, 0.2, 1)';
 
