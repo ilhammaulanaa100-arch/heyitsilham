@@ -128,12 +128,18 @@
 
     // Fade an explicit list of elements out (opacity->0), concurrent with a
     // structural transition. No callback — the structural layer owns navigation.
-    hide: function (els) {
+    // opts.duration / opts.stagger / opts.delay (ms) override the defaults, so a
+    // caller can make content lead the structural transition (disappear first).
+    hide: function (els, opts) {
+      opts = opts || {};
+      var dur  = opts.duration != null ? opts.duration : DUR * 0.5;
+      var step = opts.stagger  != null ? opts.stagger  : STEP * 0.5;
+      var base = opts.delay || 0;
       var list = orderByTop(els);
       if (RM || !list.length || !list[0].animate) return;
       list.forEach(function (el, i) {
         el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: 0 }],
-          { duration: DUR * 0.5, delay: i * (STEP * 0.5), easing: EASE, fill: 'forwards' });
+          { duration: dur, delay: base + i * step, easing: EASE, fill: 'forwards' });
       });
     }
   };

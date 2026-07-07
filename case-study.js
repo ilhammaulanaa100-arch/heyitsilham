@@ -301,7 +301,9 @@
       _onCsEnteredLeft = function () { Motion.reveal(leftEls()); };
       document.addEventListener('cs-entered', _onCsEnteredLeft, { once: true });
 
-      _onCsExitLeft = function () { Motion.hide(leftEls()); };
+      // Exit: the left panel leads — fade out fast and first so it's gone
+      // before the wipe/glide sweeps across, instead of lagging behind it.
+      _onCsExitLeft = function () { Motion.hide(leftEls(), { duration: 280, stagger: 40 }); };
       document.addEventListener('cs-exit', _onCsExitLeft);
     }
 
