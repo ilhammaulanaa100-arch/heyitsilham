@@ -258,20 +258,6 @@
     };
     document.addEventListener('keydown', _onSliderKeydown);
 
-    // ── Wheel on left panel → carousel nav (debounced by time) ──
-    _leftPanelEl = leftPanel;
-    var _lastWheelNav = 0;
-    _onWheelLeft = function (e) {
-      if (animating || TOTAL < 2) return;
-      var now = Date.now();
-      if (now - _lastWheelNav < 600) return;
-      if (Math.abs(e.deltaY) < 20) return;
-      _lastWheelNav = now;
-      if (e.deltaY > 0) goTo((current + 1) % TOTAL, 1);
-      else              goTo((current - 1 + TOTAL) % TOTAL, -1);
-    };
-    if (_leftPanelEl) _leftPanelEl.addEventListener('wheel', _onWheelLeft, { passive: true });
-
     // ── Swipe (touch) ────────────────────────────────────
     var touchStartX = null;
     _onSliderTouchStart = function (e) {

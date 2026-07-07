@@ -1,0 +1,194 @@
+/* About page — standalone (index's home.css locks body overflow, so we don't reuse it).
+   Navbar styles are duplicated from home.css to keep the two pages visually identical. */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #fff; color: #000;
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+html.dark body { background: #0B0B0B; color: #D9D9D9; }
+img { display: block; max-width: 100%; }
+
+/* ── Navbar (same as home.css) ── */
+.navbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 56px; z-index: 1000;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.navbar-left { display: flex; align-items: center; gap: 24px; }
+.logo { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+.logo svg { width: 100%; height: 100%; display: block; }
+.logo-mark { fill: #000; }
+html.dark .logo-mark { fill: #fff; }
+
+.loc-info {
+  display: flex; align-items: center; gap: 12px;
+  font-weight: 400; font-size: 13px; line-height: 1;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: #000; opacity: 0.5; white-space: nowrap;
+}
+.loc-dot { width: 5px; height: 5px; border-radius: 50%; background: #000; flex-shrink: 0; }
+html.dark .loc-info { color: #D9D9D9; opacity: 0.6; }
+html.dark .loc-dot { background: #D9D9D9; }
+
+.navbar-right { display: flex; align-items: center; gap: 40px; }
+.nav-links { display: flex; align-items: center; gap: 40px; }
+.nav-link {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-weight: 400; font-size: 18px; line-height: 1; letter-spacing: -0.36px;
+  color: #000; opacity: 0.35; text-decoration: none; white-space: nowrap;
+  transition: opacity 0.18s, color 0.18s;
+}
+.nav-link:hover { opacity: 0.7; }
+.nav-link.is-active, .nav-link.is-active:hover { opacity: 1; }
+.nav-dot { width: 4px; height: 4px; border-radius: 50%; background: #FF7028; opacity: 0; }
+.nav-link.is-active .nav-dot { opacity: 1; }
+html.dark .nav-link { color: #474747; opacity: 1; }
+html.dark .nav-link.is-active { color: #D9D9D9; }
+
+.theme-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: none; border: none; padding: 0;
+  cursor: pointer; transition: opacity 0.2s ease;
+}
+.theme-toggle:hover { opacity: 0.7; }
+.theme-toggle svg { width: 18px; height: 18px; display: block; }
+.theme-toggle svg path { fill: #000; }
+html.dark .theme-toggle svg path { fill: #fff; }
+/* light mode shows the moon, dark mode shows the sun */
+.theme-toggle .icon-sun { display: none; }
+html.dark .theme-toggle .icon-sun { display: block; }
+html.dark .theme-toggle .icon-moon { display: none; }
+
+/* circular reveal on theme switch (view transition, driven from JS) */
+::view-transition-old(root) { animation: none; z-index: 1; }
+::view-transition-new(root) { animation: none; z-index: 2; mix-blend-mode: normal; }
+
+/* ── Page shell ── */
+.about-page { padding: 0 56px 160px; }
+
+/* ── Hero ── */
+.ab-hero { padding-top: 180px; }
+.ab-hero-name {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 20px; letter-spacing: -0.2px; margin-bottom: 24px;
+}
+.ab-hero-headline {
+  font-weight: 600; font-size: clamp(48px, 6.5vw, 96px);
+  line-height: 1.05; letter-spacing: -0.02em;
+  max-width: 18ch; margin-bottom: 72px;
+}
+.ab-hero-media { width: 600px; height: 400px; max-width: 100%; overflow: hidden; }
+.ab-hero-media img, .ab-hero-media video { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Split sections (About / Work Experience) ── */
+.ab-split {
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 56px;
+  padding-top: 160px;
+}
+.ab-split-title {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 40px; line-height: 1.15; letter-spacing: -0.4px;
+}
+.ab-split-right p { font-size: 20px; line-height: 1.55; opacity: 0.75; }
+.ab-split-right p + p { margin-top: 24px; }
+.ab-split-right .ab-lead { font-size: 28px; line-height: 1.4; opacity: 1; }
+
+/* ── Work experience ── */
+.ab-work-sticky { position: sticky; top: 160px; }
+.ab-work-counter {
+  margin-top: 32px;
+  font-weight: 600; font-size: 96px; line-height: 1; letter-spacing: -0.02em;
+}
+.ab-work-total { font-size: 24px; font-weight: 400; opacity: 0.35; margin-left: 8px; }
+
+.ab-work-item + .ab-work-item { margin-top: 180px; }
+.ab-work-item h3 { font-weight: 600; font-size: 32px; letter-spacing: -0.02em; margin-bottom: 8px; }
+.ab-work-role {
+  font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em;
+  opacity: 0.5; margin-bottom: 16px;
+}
+.ab-work-item > p:last-child { font-size: 18px; line-height: 1.55; opacity: 0.75; max-width: 52ch; }
+
+/* ── Outside Design ── */
+.ab-outside { padding-top: 160px; }
+.ab-outside-sub {
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: 20px; letter-spacing: -0.2px; margin-bottom: 24px;
+}
+.ab-outside-title {
+  font-weight: 600; font-size: clamp(36px, 4.5vw, 64px);
+  line-height: 1.1; letter-spacing: -0.02em;
+  max-width: 24ch; margin-bottom: 72px;
+}
+.ab-gallery {
+  display: flex; gap: 24px; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-padding-left: 56px;
+  padding-bottom: 8px; /* room for scrollbar */
+  -ms-overflow-style: none; scrollbar-width: none;
+}
+.ab-gallery::-webkit-scrollbar { display: none; }
+.ab-gallery figure {
+  flex: 0 0 auto; width: calc((100% - 48px) / 3 * 0.8);
+  aspect-ratio: 3 / 5; overflow: hidden; scroll-snap-align: start;
+}
+.ab-gallery img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Footer: back to homepage ── */
+.ab-footer { padding-top: 40px; text-align: center; }
+.ab-footer-sub {
+  font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em;
+  opacity: 0.5; margin-bottom: 20px;
+}
+.ab-footer-link {
+  display: inline-block; text-decoration: none; color: inherit;
+  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
+  font-size: clamp(56px, 9vw, 128px); line-height: 1.05; letter-spacing: -0.02em;
+}
+.ab-footer-arrow {
+  display: block; margin: 40px auto 0;
+  width: 28px; height: 28px; opacity: 0.7;
+  transition: transform 0.3s ease;
+}
+.ab-footer-link:hover .ab-footer-arrow { transform: translateY(6px); }
+
+/* Cut-off box: drawn 85vh tall but the wrapper only shows the top 19vh,
+   so the page ends mid-box — the "torn edge" invitation to keep scrolling.
+   padding-top gives the upward shadow room to render inside the
+   overflow:hidden clip instead of being cut off. */
+.ab-peek-wrap { height: 19vh; margin-top: 30px; padding-top: 80px; overflow: hidden; }
+/* Plain placeholder frame — no homepage replica inside, so nothing
+   can mismatch (blink) against the real homepage on arrival. */
+.ab-peek {
+  height: 85vh; margin: 0 56px; cursor: pointer;
+  position: relative; overflow: hidden;
+  background: #fafafa;
+  box-shadow: 0 -8px 56px 4px rgba(0, 0, 0, 0.14);
+}
+html.dark .ab-peek {
+  background: #0E0E0E;
+  /* from the Figma spec: white glow lifting the box off the dark page */
+  box-shadow: -4px -4px 56px 4px rgba(255, 255, 255, 0.16);
+}
+
+/* ── Mobile ── */
+@media (max-width: 900px) {
+  .navbar { padding: 16px 24px; }
+  .loc-coords, .loc-gmt { display: none; }
+  .about-page { padding: 0 24px 96px; }
+  .ab-hero { padding-top: 140px; }
+  .ab-split { grid-template-columns: 1fr; gap: 32px; padding-top: 96px; }
+  .ab-work-sticky { position: static; display: flex; align-items: baseline; justify-content: space-between; }
+  .ab-work-counter { margin-top: 0; font-size: 48px; }
+  .ab-outside { padding-top: 96px; }
+  .ab-gallery { gap: 12px; scroll-padding-left: 24px; }
+  .ab-gallery figure { width: calc((100% - 12px) / 2 * 0.8); }
+  .ab-footer { padding-top: 24px; }
+  .ab-peek-wrap { margin-top: 0; height: 16vh; padding-top: 64px; }
+  .ab-peek { margin: 0 24px; }
+}
+
+/* Opt in to cross-document view transitions (both pages must opt in). */
+@view-transition { navigation: auto; }

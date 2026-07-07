@@ -34,7 +34,7 @@ window.GridView = (function () {
   var parX = 0, parY = 0;     // eased parallax offset, applied at render + click/glide
 
   // PROJECTS tiled as PCOLS × PROWS, repeated infinitely both axes
-  var PCOLS = 3, PROWS = 2;
+  var PCOLS = 4, PROWS = 3;
 
   // Media square sits this fraction of the cell height above centre,
   // leaving room for the name/year lines under it

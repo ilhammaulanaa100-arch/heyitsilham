@@ -10,6 +10,16 @@
   <link rel="canonical" href="https://heyitsilham.vercel.app/" />
   <meta name="theme-color" content="#ffffff" />
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+  <!-- Arriving from the about-page footer glide: suppress the splash and show
+       section 0 from the very first paint (class removed by home.js at load) -->
+  <script>try { if (sessionStorage.getItem('porto-skip-splash') === '1') {
+    document.documentElement.classList.add('skip-splash');
+    // Hold rendering (and the view-transition's old-page snapshot) until the
+    // parser reaches #page-ready at the end of body — i.e. until home.js has
+    // built the sections — so the first painted frame already has the fold.
+    // Arrival-only: normal loads keep progressive paint for the splash.
+    document.write('<link rel="expect" href="#page-ready" blocking="render">');
+  } } catch (e) {}</script>
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -124,12 +134,11 @@
       <div class="navbar-right">
         <div class="nav-links">
           <a class="nav-link is-active" href="#">Work<span class="nav-dot"></span></a>
-          <a class="nav-link" href="#">About<span class="nav-dot"></span></a>
+          <a class="nav-link" href="about.html">About<span class="nav-dot"></span></a>
           <a class="nav-link" href="#">Contact<span class="nav-dot"></span></a>
         </div>
-        <div class="nav-pill" id="theme-switch">
-          <div class="nav-item theme-item" data-theme="light" role="button" tabindex="0" aria-label="Light mode">
-            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <button class="theme-toggle" id="theme-switch" type="button" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g clip-path="url(#clip0_304_7676)">
                 <path d="M8.43751 3.375C8.43751 3.68566 8.68935 3.9375 9.00001 3.9375C9.31067 3.9375 9.56251 3.68566 9.56251 3.375V1.5C9.56251 1.18934 9.31067 0.9375 9.00001 0.9375C8.68935 0.9375 8.43751 1.18934 8.43751 1.5V3.375Z"/>
                 <path d="M0.9375 9C0.9375 9.31066 1.18934 9.5625 1.5 9.5625H3.375C3.68566 9.5625 3.9375 9.31066 3.9375 9C3.9375 8.68934 3.68566 8.4375 3.375 8.4375H1.5C1.18934 8.4375 0.9375 8.68934 0.9375 9Z"/>
@@ -143,13 +152,10 @@
               </g>
               <defs><clipPath id="clip0_304_7676"><rect width="18" height="18" fill="white"/></clipPath></defs>
             </svg>
-          </div>
-          <div class="nav-item theme-item" data-theme="dark" role="button" tabindex="0" aria-label="Dark mode">
-            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="icon-moon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8.93211 2.69968C8.85209 2.64449 8.76832 2.63119 8.71732 2.62704C8.66312 2.62263 8.60868 2.62604 8.56153 2.63086C8.47094 2.64013 8.35337 2.66095 8.22001 2.68457L8.2078 2.68673C5.03484 3.24856 2.625 6.01939 2.625 9.35373C2.625 13.0932 5.65646 16.1247 9.39596 16.1247C12.7313 16.1247 15.5028 13.7134 16.0635 10.539L16.0656 10.5268C16.0892 10.3935 16.11 10.2759 16.1192 10.1853C16.124 10.1381 16.1274 10.0837 16.1229 10.0295C16.1188 9.97847 16.1054 9.89471 16.0502 9.81471C15.9525 9.67314 15.7903 9.59534 15.6187 9.60771C15.5155 9.61515 15.4384 9.66316 15.3987 9.69114C15.3539 9.72268 15.3125 9.76098 15.2768 9.79665C15.2074 9.86598 15.1212 9.96427 15.0207 10.0789L15.0129 10.0878C14.1874 11.0293 12.9767 11.6229 11.627 11.6229C9.14106 11.6229 7.12578 9.60767 7.12578 7.12169C7.12578 5.77268 7.71881 4.56257 8.65947 3.73711L8.66843 3.72925C8.78296 3.62874 8.88121 3.54253 8.95051 3.47306C8.98616 3.43733 9.02444 3.39597 9.05597 3.35115C9.08393 3.3114 9.1319 3.23427 9.1393 3.13106C9.1516 2.95949 9.07372 2.79734 8.93211 2.69968Z"/>
             </svg>
-          </div>
-        </div>
+        </button>
       </div>
     </nav>
 
@@ -193,5 +199,7 @@
   <script src="content.js"></script>
   <script src="grid.js"></script>
   <script src="home.js"></script>
+  <!-- rel="expect" target: parsed only after every script above has run -->
+  <div id="page-ready" hidden></div>
 </body>
 </html>

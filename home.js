@@ -20,7 +20,7 @@
     }
     var wrap = document.getElementById('sections-wrap');
     PROJECTS.forEach(function (proj, i) {
-      var shape  = i < 2 ? 'is-square' : 'is-landscape';
+      var shape  = proj.shape || (i < 2 ? 'is-square' : 'is-landscape');
       var imgTag = (proj.media && proj.media.hero)
         ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" onerror="this.style.display=\'none\'" />'
         : '';
@@ -58,29 +58,35 @@
   updateTime();
   setInterval(updateTime, 1000);
 
-  // ── Theme switcher (Light / Dark pill in the navbar) ───
+  // ── Theme toggle (single icon, circular view-transition reveal) ───
   (function () {
-    var root  = document.documentElement;
-    var items = document.querySelectorAll('.theme-item');
-    function apply(dark) {
-      root.classList.toggle('dark', dark);
-      items.forEach(function (b) {
-        b.classList.toggle('active', (b.getAttribute('data-theme') === 'dark') === dark);
-      });
+    var root = document.documentElement;
+    var btn  = document.getElementById('theme-switch');
+    if (!btn) return;
+    function apply() {
+      var dark = root.classList.toggle('dark');
       try { localStorage.setItem('porto-theme', dark ? 'dark' : 'light'); } catch (e) {}
       if (window.GridView && GridView.setTheme) GridView.setTheme();
     }
-    items.forEach(function (b) {
-      var pick = function () { apply(b.getAttribute('data-theme') === 'dark'); };
-      b.addEventListener('click', pick);
-      b.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+    btn.addEventListener('click', function () {
+      if (!document.startViewTransition) { apply(); return; }
+      var r = btn.getBoundingClientRect();
+      var x = r.left + r.width / 2;
+      var y = r.top + r.height / 2;
+      var endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+      document.startViewTransition(apply).ready.then(function () {
+        root.animate(
+          { clipPath: [
+              'circle(0px at ' + x + 'px ' + y + 'px)',
+              'circle(' + endRadius + 'px at ' + x + 'px ' + y + 'px)'
+            ] },
+          { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+            pseudoElement: '::view-transition-new(root)' }
+        );
       });
-    });
-    // reflect the class set by the inline <head> script
-    items.forEach(function (b) {
-      b.classList.toggle('active',
-        (b.getAttribute('data-theme') === 'dark') === root.classList.contains('dark'));
     });
   })();
 
@@ -139,7 +145,32 @@
     }
     setTimeout(tickCounter, 30);
   }
-  setTimeout(tickCounter, 60);
+
+  // Arriving via the about-page footer glide — the expanded box already covers
+  // the screen, so skip the splash and let the intro reveal run immediately.
+  var skipSplash = false;
+  try {
+    skipSplash = sessionStorage.getItem('porto-skip-splash') === '1';
+    if (skipSplash) {
+      // Prerendered copy (speculation rules on about.html): consume the flag
+      // only when actually shown, else a discarded prerender would eat it and
+      // the real navigation would splash-blink again.
+      if (document.prerendering) {
+        document.addEventListener('prerenderingchange', function () {
+          try { sessionStorage.removeItem('porto-skip-splash'); } catch (e) {}
+        });
+      } else {
+        sessionStorage.removeItem('porto-skip-splash');
+      }
+    }
+  } catch (e) {}
+  if (skipSplash) {
+    var splashSkipEl = document.getElementById('splash');
+    if (splashSkipEl) splashSkipEl.style.display = 'none';
+    splashCounterDone = true;
+  } else {
+    setTimeout(tickCounter, 60);
+  }
 
   // ── Section navigator ───────────────────────────────────
   var NAV_TOTAL = PROJECTS.length;
@@ -651,9 +682,12 @@
     var sections = Array.from(document.querySelectorAll('.page-section'));
 
     // ── Initial hidden states ──
-    sections.forEach(function (sec) {
+    sections.forEach(function (sec, i) {
       var label = sec.querySelector('.ph-label');
       if (label) gsap.set(label, { opacity: 1 });
+      // Seamless arrival from about: fold 0 is already painted — hiding its
+      // chars here just to re-reveal them would be the blink we're avoiding.
+      if (skipSplash && i === 0) return;
       gsap.set(sec.querySelectorAll('.ph-label .char, .ph-title .char'), { yPercent: 40, opacity: 0 });
     });
 
@@ -972,6 +1006,37 @@
       });
     });
 
+    // ── bfcache restore ──
+    // The about-page footer glide returns here via history.back(): this DOM
+    // is restored exactly as the user left it, but the about page promised a
+    // landing on fold 0 — snap the whole engine there before the frame paints.
+    window.addEventListener('pageshow', function (e) {
+      if (!e.persisted) return;
+      if (window.GridView && GridView.isOpen()) {
+        viewTabs.forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-view') === 'vertical'); });
+        GridView.hide(true);
+        if (convObserver && !isOverlayOpen) convObserver.enable();
+      }
+      animating = false;
+      current = 0;
+      gsap.killTweensOf('.porto');
+      gsap.set('.porto', { opacity: 1 });
+      sections.forEach(function (s, i) {
+        gsap.killTweensOf(s);
+        gsap.set(s, sectionPos(i, 0));
+        s.style.zIndex = sectionZ(i % TOTAL);
+        s.style.willChange = 'auto';
+        s.classList.toggle('is-active', i === 0);
+        var t = sectionText(i);
+        var vis = i === 0;
+        if (t.big && t.big.length)     { gsap.killTweensOf(t.big);   gsap.set(t.big,   { yPercent: vis ? 0 : 40, opacity: vis ? 1 : 0 }); }
+        if (t.small && t.small.length) { gsap.killTweensOf(t.small); gsap.set(t.small, { yPercent: vis ? 0 : 40, opacity: vis ? 1 : 0 }); }
+      });
+      syncActiveCardTab();
+      updateNav(0);
+      syncScanToActive();
+    });
+
     document.addEventListener('grid-open-project', function (e) {
       if (isOverlayOpen) return;
       var p = PROJECTS[e.detail.index];
@@ -1029,6 +1094,14 @@
       if (splashExited) return;
       splashExited = true;
       var splashEl = document.getElementById('splash');
+      if (skipSplash) {
+        // Seamless arrival: everything is already painted — no intro, no fade.
+        if (splashEl) splashEl.style.display = 'none';
+        gsap.set('.porto', { opacity: 1 });
+        document.documentElement.classList.remove('skip-splash');
+        animating = false;
+        return;
+      }
       var introTl = gsap.timeline({ onComplete: function () { animating = false; } });
       introTl
         .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)

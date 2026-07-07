@@ -176,3 +176,38 @@ const PROJECTS = [
     reflections: { title: '', items: [] }
   }
 ];
+
+// ponytail: dummy projects 07–12 — flat-color placeholders, swap for real entries
+(function () {
+  var dummies = [
+    'linear-gradient(160deg,#e8578f,#a02560)',
+    'linear-gradient(160deg,#57c1e8,#2568a0)',
+    'linear-gradient(160deg,#8fe857,#4ea020)',
+    'linear-gradient(160deg,#b457e8,#6a20a0)',
+    'linear-gradient(160deg,#e8d557,#a08c20)',
+    'linear-gradient(160deg,#e87b57,#a04020)'
+  ];
+  dummies.forEach(function (d, i) {
+    var n = String(i + 7).padStart(2, '0');
+    PROJECTS.push({
+      slug: 'project-' + n,
+      category: 'COMING SOON',
+      period: '2025',
+      sourceUrl: '',
+      summary: 'Case study coming soon.',
+      subtitle: 'Project ' + n,
+      title: 'Coming Soon',
+      color: d,
+      shape: 'is-square',
+      media: {},
+      meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
+      tldr: {
+        title: 'Case study coming soon.',
+        intro: 'This placeholder represents an upcoming project.',
+        bullets: []
+      },
+      body: ['Case study coming soon.'],
+      reflections: { title: '', items: [] }
+    });
+  });
+})();

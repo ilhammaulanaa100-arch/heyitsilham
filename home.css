@@ -100,25 +100,24 @@ html.dark .loc-dot { background: #D9D9D9; }
 html.dark .nav-link { color: #474747; opacity: 1; }
 html.dark .nav-link.is-active { color: #D9D9D9; }
 
-.nav-pill {
-  display: flex; align-items: center; background: rgba(0,0,0,0.06);
-  border-radius: 999px; flex-shrink: 0;
-}
-.nav-item {
+.theme-toggle {
   display: flex; align-items: center; justify-content: center;
-  width: 56px; height: 34px; border-radius: 9999px;
-  cursor: pointer; transition: background 0.18s;
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: none; border: none; padding: 0;
+  cursor: pointer; transition: opacity 0.2s ease;
 }
-.nav-item svg { width: 18px; height: 18px; display: block; }
-.nav-item svg path { fill: #000; opacity: 0.35; transition: opacity 0.18s; }
-.nav-item.active svg path { opacity: 1; }
-.nav-item.active { background: #fff; }
-.nav-item:hover:not(.active) { background: rgba(0,0,0,0.08); }
-html.dark .nav-pill { background: rgba(255,255,255,0.09); }
-html.dark .nav-item svg path { fill: #fff; opacity: 0.35; }
-html.dark .nav-item.active svg path { opacity: 1; }
-html.dark .nav-item.active { background: #505050; }
-html.dark .nav-item:hover:not(.active) { background: rgba(255,255,255,0.14); }
+.theme-toggle:hover { opacity: 0.7; }
+.theme-toggle svg { width: 18px; height: 18px; display: block; }
+.theme-toggle svg path { fill: #000; }
+html.dark .theme-toggle svg path { fill: #fff; }
+/* light mode shows the moon, dark mode shows the sun */
+.theme-toggle .icon-sun { display: none; }
+html.dark .theme-toggle .icon-sun { display: block; }
+html.dark .theme-toggle .icon-moon { display: none; }
+
+/* circular reveal on theme switch (view transition, driven from JS) */
+::view-transition-old(root) { animation: none; z-index: 1; }
+::view-transition-new(root) { animation: none; z-index: 2; mix-blend-mode: normal; }
 
 .line-mask {
   display: block; overflow: visible;
@@ -141,6 +140,7 @@ html.dark .nav-item:hover:not(.active) { background: rgba(255,255,255,0.14); }
 }
 .proj-card.is-landscape { width: 580px; height: 420px; }
 .proj-card.is-square    { width: 480px; height: 480px; }
+.proj-card.is-portrait  { width: 420px; height: 560px; }
 .proj-card img {
   position: absolute;
   inset: 0;
@@ -203,6 +203,18 @@ html.dark .nav-row.is-current { color: #F65302; }
 }
 /* Pre-GSAP hide (prevents flash before load) */
 .page-placeholder .ph-label { opacity: 0; }
+
+/* ── Seamless arrival from the about-page footer glide ──
+   html.skip-splash is set pre-paint by an inline <head> script when the
+   sessionStorage flag is present: no loader, and the first paint already
+   shows section 0 exactly as the footer box rendered it. Sections 1+ are
+   parked hidden until the load handler lays them out (pre-load they all
+   stack at CSS defaults). home.js removes the class once initialised. */
+html.skip-splash #splash { display: none; }
+html.skip-splash .porto { opacity: 1; }
+html.skip-splash .page-section:first-child .ph-label { opacity: 1; }
+html.skip-splash .page-section:not(:first-child) { visibility: hidden; }
+html.skip-splash .scan-grid { visibility: hidden; }
 
 /* ── Splash Screen ── */
 #splash {
@@ -410,6 +422,7 @@ html.dark #cs-right { background: #0B0B0B; }
   .ph-media { width: min(44vw, 580px); }
   .proj-card.is-landscape { width: min(44vw, 580px); height: auto; aspect-ratio: 580 / 420; }
   .proj-card.is-square    { width: min(40vw, 480px); height: auto; aspect-ratio: 1; }
+  .proj-card.is-portrait  { width: min(32vw, 420px); height: auto; aspect-ratio: 420 / 560; }
 }
 
 /* ── Small tablet (≤1100px): the fixed section-nav starts crowding the card ── */
@@ -417,6 +430,7 @@ html.dark #cs-right { background: #0B0B0B; }
   .ph-media { width: min(38vw, 580px); }
   .proj-card.is-landscape { width: min(38vw, 580px); }
   .proj-card.is-square    { width: min(34vw, 480px); }
+  .proj-card.is-portrait  { width: min(28vw, 420px); }
 }
 
 /* ── Mobile (≤900px): stacked hero, compact chrome ── */
@@ -437,6 +451,7 @@ html.dark #cs-right { background: #0B0B0B; }
   /* vh caps keep cards on screen in landscape phones too */
   .proj-card.is-landscape { width: min(100%, 63vh); height: auto; aspect-ratio: 580 / 420; }
   .proj-card.is-square    { width: min(100%, 48vh); height: auto; aspect-ratio: 1; }
+  .proj-card.is-portrait  { width: min(100%, 40vh); height: auto; aspect-ratio: 420 / 560; }
 
   .navbar { padding: 14px 20px; }
   .logo { width: 34px; height: 34px; }
@@ -477,3 +492,9 @@ html.dark #cs-right { background: #0B0B0B; }
   .splash-name { font-size: clamp(48px, 14vw, 72px); }
   .splash-bar-track { width: 160px; }
 }
+
+/* Cross-document view transition: the browser holds the previous page's
+   pixels until this page is ready to render, then crossfades — kills the
+   blank flash on about→home (and any same-origin nav). No-op where
+   unsupported. */
+@view-transition { navigation: auto; }
