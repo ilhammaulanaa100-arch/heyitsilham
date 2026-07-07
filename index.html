@@ -10,6 +10,7 @@
   <link rel="canonical" href="https://heyitsilham.vercel.app/" />
   <meta name="theme-color" content="#ffffff" />
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+  <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Arriving from the about-page footer glide: suppress the splash and show
        section 0 from the very first paint (class removed by home.js at load) -->
   <script>try { if (sessionStorage.getItem('porto-skip-splash') === '1') {
@@ -195,6 +196,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@2.0.0/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <script src="motion.js"></script>
   <script src="case-study.js"></script>
   <script src="content.js"></script>
   <script src="grid.js"></script>

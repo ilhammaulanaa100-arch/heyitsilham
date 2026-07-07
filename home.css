@@ -498,3 +498,7 @@ html.dark #cs-right { background: #0B0B0B; }
    blank flash on about→home (and any same-origin nav). No-op where
    unsupported. */
 @view-transition { navigation: auto; }
+
+/* Whisper-fade: home first-paint hero targets hidden only when JS motion on.
+   Scoped to [data-reveal] so section-nav char reveals are unaffected. */
+html.motion-on .page-section:first-child [data-reveal] { opacity: 0; }

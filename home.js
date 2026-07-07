@@ -1106,7 +1106,18 @@
       introTl
         .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)
         .to('.porto',  { opacity: 1,    duration: 0.5,  ease: 'power2.out' }, 0.3);
-      revealText(introTl, sectionText(0));
+      // First paint = whisper fade (section-nav still uses revealText untouched).
+      if (typeof Motion !== 'undefined') {
+        var sec0 = document.querySelector('.page-section:first-child');
+        if (sec0) {
+          // cancel the char-hidden state GSAP set on section 0 so the container fade shows text
+          if (window.gsap) gsap.set(sec0.querySelectorAll('.ph-label .char, .ph-title .char'), { opacity: 1, yPercent: 0 });
+          sec0.querySelectorAll('.ph-label, .ph-title').forEach(function (el) { el.setAttribute('data-reveal', ''); });
+          Motion.enter(sec0, { delay: 500 }); // start after the .porto fade begins
+        }
+      } else {
+        revealText(introTl, sectionText(0));
+      }
     };
 
     if (splashCounterDone) doExitSplash();
