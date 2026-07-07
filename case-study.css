@@ -350,15 +350,6 @@
   overflow: hidden;
 }
 
-/* char-split spans — same pattern as index.html */
-.cs-headline .cs-word {
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.cs-headline .cs-char {
-  display: inline-block;
-}
 
 /* ── Meta row — Role / Client / Year ── */
 .cs-meta-row {

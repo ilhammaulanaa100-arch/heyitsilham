@@ -72,7 +72,19 @@
     enter: function (root, opts) {
       opts = opts || {};
       var scope = root || document;
-      var els = orderByTop(scope.querySelectorAll('[data-reveal]'));
+      // Expand line-split headlines into their .m-line spans so they fade
+      // line-by-line, interleaved top->bottom with the other reveal units.
+      var targets = [];
+      Array.prototype.forEach.call(scope.querySelectorAll('[data-reveal]'), function (el) {
+        var lines = el.querySelectorAll('.m-line');
+        if (lines.length) {
+          el.style.opacity = '1';               // parent visible; lines do the fading
+          Array.prototype.push.apply(targets, lines);
+        } else {
+          targets.push(el);
+        }
+      });
+      var els = orderByTop(targets);
       var base = opts.delay || 0;
       els.forEach(function (el, i) { fadeIn(el, base + i * STEP); });
     },
