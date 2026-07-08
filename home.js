@@ -757,22 +757,41 @@
         .to(scanEls.h2, { top: rect.top + rect.height + SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos);
     }
 
-    var PEEK_BELOW = 0.64;   // next section peeking from the bottom
-    var PEEK_ABOVE = -0.58;  // previous section peeking from the top
+    // Desktop vertical: cards are TOP-anchored (.ph-layout top: 181px), so the
+    // visible gap to the card peeking below is offset − activeCardHeight, and to
+    // the card above it's |offset| − peekCardHeight. Card heights now vary per
+    // project (portrait/square/landscape shapes), so the constant is the EDGE
+    // GAP, not the section offset — a portrait card never crowds the square
+    // next to it. Fractions reproduce the old square-card rhythm
+    // (offsets 0.64 / −0.58 · VH with 480px cards).
+    var GAP_BELOW = 0.105;   // active bottom edge → next card top edge, of VH
+    var GAP_ABOVE = 0.047;   // prev card bottom edge → active top edge, of VH
     var PARK_BELOW = 1.5;    // parked just below the viewport
     var PARK_ABOVE = -1.5;   // parked just above the viewport
 
     // Mobile carousel: next/prev cards peek in from the sides (0.8·VW offset)
+    // ponytail: fixed X offsets kept — peeking cards sit mostly offscreen on
+    // phones, so mixed widths only change the sliver; apply the edge-gap
+    // treatment here too if that ever reads as uneven.
     var PEEK_NEXT_X = 0.8;
     var PEEK_PREV_X = -0.8;
+
+    var _cardH = []; // per-section card heights — cleared on resize
+    function cardH(i) {
+      if (_cardH[i] == null) {
+        var c = sections[i] && sections[i].querySelector('.proj-card');
+        _cardH[i] = c ? c.getBoundingClientRect().height : VH * 0.53;
+      }
+      return _cardH[i];
+    }
 
     function sectionOffset(i, cur) {
       var fd = (i - cur + TOTAL) % TOTAL;
       var horiz = isMobileFlow();
       var span  = horiz ? VW : VH;
       if (fd === 0)         return 0;
-      if (fd === 1)         return span * (horiz ? PEEK_NEXT_X : PEEK_BELOW);
-      if (fd === TOTAL - 1) return span * (horiz ? PEEK_PREV_X : PEEK_ABOVE);
+      if (fd === 1)         return horiz ? span * PEEK_NEXT_X : cardH(cur) + VH * GAP_BELOW;
+      if (fd === TOTAL - 1) return horiz ? span * PEEK_PREV_X : -(cardH(i) + VH * GAP_ABOVE);
       if (fd === TOTAL - 2) return span * PARK_ABOVE;
       return span * PARK_BELOW;
     }
@@ -979,6 +998,7 @@
     window.addEventListener('resize', function () {
       VH = window.innerHeight;
       VW = window.innerWidth;
+      _cardH = []; // breakpoints resize the cards — re-measure
       sections.forEach(function (el, i) { gsap.set(el, sectionPos(i, current)); });
       if (!animating) syncScanToActive();
     });
