@@ -36,6 +36,33 @@ window.GridView = (function () {
   // PROJECTS tiled as PCOLS × PROWS, repeated infinitely both axes
   var PCOLS = 4, PROWS = 3;
 
+  // ── Staggered layout ──
+  // Columns get a stable pseudo-random vertical shift, and each project's media
+  // box takes its shape from proj.shape — the SAME field that sizes the vertical
+  // view's .proj-card (is-portrait / is-square / is-landscape), so both views
+  // show every project in the same proportions.
+  var STAGGER = 0.55; // max column shift, fraction of CELL_H
+  // width fraction + aspect (w/h) per shape — proportions mirror home.css
+  // (.proj-card 420×560 / 480×480 / 580×420)
+  var SHAPES = {
+    'is-portrait':  { w: 0.62, ar: 420 / 560 },
+    'is-square':    { w: 0.70, ar: 1 },
+    'is-landscape': { w: 0.84, ar: 580 / 420 }
+  };
+  function hash01(n) { var h = Math.sin(n * 127.1 + 311.7) * 43758.5453; return h - Math.floor(h); }
+  function colShift(col) { return hash01(col) * CELL_H * STAGGER; }
+  // Media box (px) inside a W×H cell — mirrored by cellScreenRect for the glide.
+  // Shape fallback matches the vertical view's default in home.js.
+  function mediaDims(pIdx, W, H) {
+    var p = PROJECTS[pIdx];
+    var shape = (p && p.shape) || (pIdx < 2 ? 'is-square' : 'is-landscape');
+    var s = SHAPES[shape] || SHAPES['is-square'];
+    var mw = W * s.w, mh = mw / s.ar;
+    var maxH = H * 0.78; // leave room for the label
+    if (mh > maxH) { mw *= maxH / mh; mh = maxH; }
+    return { mw: Math.round(mw), mh: Math.round(mh) };
+  }
+
   // Media square sits this fraction of the cell height above centre,
   // leaving room for the name/year lines under it
   var MEDIA_Y_SHIFT = 0.026;
@@ -70,7 +97,6 @@ window.GridView = (function () {
   }
 
   function drawCell(ctx, p, W, H, img, blankMedia) {
-    var MONO = "500 13px 'SF Mono', Menlo, 'Courier New', monospace";
     var th = theme();
 
     ctx.clearRect(0, 0, W, H);
@@ -83,33 +109,34 @@ window.GridView = (function () {
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
 
-    // Media — centred square, nudged up (MEDIA_Y_SHIFT) to make room for the
-    // name/year lines below. cellScreenRect() mirrors this rect for the glide.
-    var mw = Math.round(W * 0.74);
-    var mx = (W - mw) / 2, my = (H - mw) / 2 - Math.round(H * MEDIA_Y_SHIFT);
+    // Media — per-project shape (portrait/square/landscape via proj.shape),
+    // centred, nudged up (MEDIA_Y_SHIFT). cellScreenRect() mirrors this rect.
+    var d = mediaDims(PROJECTS.indexOf(p), W, H);
+    var mw = d.mw, mh = d.mh;
+    var mx = (W - mw) / 2, my = (H - mh) / 2 - Math.round(H * MEDIA_Y_SHIFT);
     if (blankMedia) {
-      // media square intentionally left empty — the DOM glide clone owns the
+      // media box intentionally left empty — the DOM glide clone owns the
       // media while a card is in flight to/from this cell
     } else if (img) {
-      var s = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, mx, my, mw, mw);
+      // cover-crop the image into the mw×mh box
+      var ar = mw / mh, sw = img.width, sh = sw / ar;
+      if (sh > img.height) { sh = img.height; sw = sh * ar; }
+      ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, mx, my, mw, mh);
     } else {
-      var g = ctx.createLinearGradient(mx, my, mx + mw, my + mw);
+      var g = ctx.createLinearGradient(mx, my, mx + mw, my + mh);
       var cols = gradColors(p.color);
       g.addColorStop(0, cols[0]);
       g.addColorStop(1, cols[1]);
       ctx.fillStyle = g;
-      ctx.fillRect(mx, my, mw, mw);
+      ctx.fillRect(mx, my, mw, mh);
     }
 
-    // Below the media: project name + year, nothing else
-    ctx.font = MONO;
+    // Below the media: one quiet label — the work leads, the text whispers
+    ctx.font = "500 11px 'SF Mono', Menlo, 'Courier New', monospace";
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
-    ctx.fillStyle = th.text;
-    ctx.fillText(String(p.title || '').toUpperCase(), mx, my + mw + 18);
     ctx.fillStyle = th.dim;
-    ctx.fillText(String(p.period || '').toUpperCase(), mx, my + mw + 40);
+    ctx.fillText(String(p.title || '').toUpperCase(), mx, my + mh + 16);
   }
 
   function makeTexture(p) {
@@ -251,16 +278,17 @@ window.GridView = (function () {
   // corner fit overshoots the visible edges by several px (measured ~7px at
   // DISTORTION 0.25). Edge midpoints track what the eye reads as the border.
   function cellScreenRect(col, row) {
-    var mw = CELL_W * 0.74; // matches the media size drawn in the cell texture
+    var pIdx = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
+    var d = mediaDims(pIdx, CELL_W, CELL_H); // matches the media box drawn in the cell texture
     // parallax offset is baked into the rendered position — include it so the
     // measured rect matches where the cell actually sits on screen
-    var x0 = col * CELL_W - (sx + parX) + (CELL_W - mw) / 2;
-    var y0 = row * CELL_H - (sy + parY) + (CELL_H - mw) / 2 - CELL_H * MEDIA_Y_SHIFT;
-    var xc = x0 + mw / 2, yc = y0 + mw / 2;
+    var x0 = col * CELL_W - (sx + parX) + (CELL_W - d.mw) / 2;
+    var y0 = row * CELL_H + colShift(col) - (sy + parY) + (CELL_H - d.mh) / 2 - CELL_H * MEDIA_Y_SHIFT;
+    var xc = x0 + d.mw / 2, yc = y0 + d.mh / 2;
     var L = gridToScreen(x0, yc).x;
-    var R = gridToScreen(x0 + mw, yc).x;
+    var R = gridToScreen(x0 + d.mw, yc).x;
     var T = gridToScreen(xc, y0).y;
-    var B = gridToScreen(xc, y0 + mw).y;
+    var B = gridToScreen(xc, y0 + d.mh).y;
     return { left: L, top: T, width: R - L, height: B - T };
   }
 
@@ -276,7 +304,7 @@ window.GridView = (function () {
   }
   function dolly(col, row, zFrom, zTo, zRef, duration) {
     var gx = col * CELL_W + CELL_W / 2;
-    var gy = row * CELL_H + CELL_H / 2;
+    var gy = row * CELL_H + colShift(col) + CELL_H / 2;
     var cx = (gx - sx - GW / 2) * zRef;
     var cy = (gy - sy - GH / 2) * zRef;
     var proxy = { z: zFrom };
@@ -348,7 +376,7 @@ window.GridView = (function () {
     CELL_H = Math.round(CELL_W * 1.06);
     // pool sized for the widest view (hold-zoom shows GW / HOLD_ZOOM of world)
     NX = Math.ceil(GW / HOLD_ZOOM / CELL_W) + 3;
-    NY = Math.ceil(GH / HOLD_ZOOM / CELL_H) + 3;
+    NY = Math.ceil(GH / HOLD_ZOOM / CELL_H) + 4; // +1 row buffer for colShift
 
     var pr = Math.min(window.devicePixelRatio || 1, 2);
     renderer.setPixelRatio(pr);
@@ -421,7 +449,7 @@ window.GridView = (function () {
     if (!dragging && pX >= 0) {
       var gpt = screenToGrid(pX, pY);
       hCol = Math.floor((gpt.x + sxE) / CELL_W);
-      hRow = Math.floor((gpt.y + syE) / CELL_H);
+      hRow = Math.floor((gpt.y + syE - colShift(hCol)) / CELL_H);
     }
 
     for (var i = 0; i < meshes.length; i++) {
@@ -432,7 +460,7 @@ window.GridView = (function () {
       if (m._key !== pIdx) { m._key = pIdx; m.material.map = textures[pIdx]; }
       // grid px (y down) → world (y up, origin centre)
       m.position.x = col * CELL_W - sxE + CELL_W / 2 - GW / 2;
-      m.position.y = -(row * CELL_H - syE + CELL_H / 2 - GH / 2);
+      m.position.y = -(row * CELL_H + colShift(col) - syE + CELL_H / 2 - GH / 2);
       // ease the tint toward hover colour (or back to white)
       var tint = (col === hCol && row === hRow) ? hoverColors[pIdx] : whiteColor;
       m.material.color.lerp(tint, HOVER_LERP);
@@ -490,7 +518,7 @@ window.GridView = (function () {
     if (moved > 6) return; // it was a drag, not a click
     var g = screenToGrid(e.clientX, e.clientY);
     var col = Math.floor((g.x + sx + parX) / CELL_W);
-    var row = Math.floor((g.y + sy + parY) / CELL_H);
+    var row = Math.floor((g.y + sy + parY - colShift(col)) / CELL_H);
     var pIdx = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
 
     // Keep the lens curved — freeze the grid exactly where it is (scroll +

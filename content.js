@@ -7,6 +7,9 @@ const PROJECTS = [
     summary: "A portfolio built to perform, not just display — cinematic scroll, an editorial grid, and motion that earns its place. Designed and coded end-to-end in vanilla HTML/CSS/JS with GSAP.",
     subtitle: 'heyitsilham',
     title: 'An Editorial Portfolio Built to Feel Alive',
+    // shape drives BOTH the vertical card and the grid tile — one truth per project.
+    // Curated so every grid column (4×3 tiling) mixes all three shapes.
+    shape: 'is-portrait',
     color: 'linear-gradient(160deg,#9f4bed 0%,#7b49a9 100%)',
     media: {
       hero: '',
@@ -53,6 +56,7 @@ const PROJECTS = [
     summary: "BYOND rethinks what Islamic banking can feel like — modern without giving up the trust of its Syariah foundation. I owned the product end-to-end for over a year, from research to developer handoff.",
     subtitle: 'BYOND\nby BSI',
     title: 'Redesigning Islamic Banking for Indonesia',
+    shape: 'is-square', // hero asset is 1680×1680 — square is its native shape
     color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
     hoverColor: '#a9dcb8', // grid-view hover tint (soft green)
     media: {
@@ -107,6 +111,7 @@ const PROJECTS = [
     summary: "Case study coming soon.",
     subtitle: 'Project 03',
     title: 'Coming Soon',
+    shape: 'is-landscape',
     color: 'linear-gradient(160deg,#e05c45,#a03020)',
     media: {},
     meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
@@ -126,6 +131,7 @@ const PROJECTS = [
     summary: "Case study coming soon.",
     subtitle: 'Project 04',
     title: 'Coming Soon',
+    shape: 'is-portrait',
     color: 'linear-gradient(160deg,#2db8a3,#1a7a6e)',
     media: {},
     meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
@@ -145,6 +151,7 @@ const PROJECTS = [
     summary: "Case study coming soon.",
     subtitle: 'Project 05',
     title: 'Coming Soon',
+    shape: 'is-square',
     color: 'linear-gradient(160deg,#4b63e8,#2a3db0)',
     media: {},
     meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
@@ -164,6 +171,7 @@ const PROJECTS = [
     summary: "Case study coming soon.",
     subtitle: 'Project 06',
     title: 'Coming Soon',
+    shape: 'is-landscape',
     color: 'linear-gradient(160deg,#e8a52b,#b07815)',
     media: {},
     meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
@@ -187,6 +195,8 @@ const PROJECTS = [
     'linear-gradient(160deg,#e8d557,#a08c20)',
     'linear-gradient(160deg,#e87b57,#a04020)'
   ];
+  // continues the portrait→square→landscape cycle from projects 01–06
+  var shapes = ['is-portrait', 'is-square', 'is-landscape'];
   dummies.forEach(function (d, i) {
     var n = String(i + 7).padStart(2, '0');
     PROJECTS.push({
@@ -198,7 +208,7 @@ const PROJECTS = [
       subtitle: 'Project ' + n,
       title: 'Coming Soon',
       color: d,
-      shape: 'is-square',
+      shape: shapes[i % 3],
       media: {},
       meta: { timeline: '—', role: 'Design', client: '—', year: '2025' },
       tldr: {
