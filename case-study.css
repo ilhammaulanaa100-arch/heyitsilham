@@ -204,27 +204,34 @@
   overflow: hidden;
 }
 
-/* Each slide wrapper — positioned absolutely, stacked/offset by JS */
+/* Each slide wrapper — positioned absolutely, stacked/offset by JS.
+   Negative margins = half the card size (keeps the centre intact when GSAP
+   overwrites transform); set per shape to match the card sizes below. */
 .cs-slide {
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-left: -160px;
-  /* half of .proj-card width (320px) — keeps center intact when GSAP overwrites transform */
+  margin-left: -160px;  /* fallback: legacy 320×380 */
   margin-top: -190px;
-  /* half of .proj-card height (380px) */
   display: flex;
   flex-direction: column;
   gap: 16px;
   pointer-events: auto;
 }
+.cs-slide.is-portrait  { margin-left: -150px; margin-top: -200px; }
+.cs-slide.is-square    { margin-left: -170px; margin-top: -170px; }
+.cs-slide.is-landscape { margin-left: -210px; margin-top: -152px; }
 
-/* The image card itself — reuse .proj-card from index.html */
-/* Force consistent size inside the left panel */
+/* The image card itself — reuse .proj-card from index.html.
+   Sized per proj.shape in the SAME proportions as the homepage cards
+   (420×560 / 480×480 / 580×420), scaled to fit the left panel. */
 .cs-slide .proj-card {
-  width: 320px;
+  width: 320px;   /* fallback when a project has no shape */
   height: 380px;
 }
+.cs-slide .proj-card.is-portrait  { width: 300px; height: 400px; }
+.cs-slide .proj-card.is-square    { width: 340px; height: 340px; }
+.cs-slide .proj-card.is-landscape { width: 420px; height: 304px; }
 
 /* Color/gradient placeholder shown when no image src */
 .cs-slide .proj-card-ph {
@@ -789,6 +796,13 @@ html.dark .cs-g-cap-num { color: rgba(255, 255, 255, 0.4); }
   }
   .cs-slide { margin-left: -130px; margin-top: -140px; }
   .cs-slide .proj-card { width: 260px; height: 280px; }
+  /* same homepage proportions, shrunk for the short stacked panel */
+  .cs-slide.is-portrait  { margin-left: -105px; margin-top: -140px; }
+  .cs-slide.is-square    { margin-left: -125px; margin-top: -125px; }
+  .cs-slide.is-landscape { margin-left: -150px; margin-top: -108px; }
+  .cs-slide .proj-card.is-portrait  { width: 210px; height: 280px; }
+  .cs-slide .proj-card.is-square    { width: 250px; height: 250px; }
+  .cs-slide .proj-card.is-landscape { width: 300px; height: 217px; }
   /* num + caption duplicate the counter and tag pill, and collide with
      the close link / arrows in the short stacked panel */
   .cs-slide-title { display: none; }

@@ -117,7 +117,8 @@
       var caption = (cat || per)
         ? (cat + (per ? ' (' + per + ')' : ''))
         : (pr.subtitle || '');
-      return { src: src, caption: caption, color: pr.color, name: pr.subtitle || pr.title || '' };
+      return { src: src, caption: caption, color: pr.color, name: pr.subtitle || pr.title || '',
+               shape: pr.shape || 'is-square' }; // same field that sizes the homepage card
     });
 
     var TOTAL     = slides.length;
@@ -131,8 +132,9 @@
     _slideEls    = slideEls; // expose for teardown
 
     slides.forEach(function (slide, i) {
+      // shape class on the wrapper drives the centring margins, on the card its size
       var wrapper = document.createElement('div');
-      wrapper.className = 'cs-slide' + (i === activeIndex ? ' is-active' : '');
+      wrapper.className = 'cs-slide ' + slide.shape + (i === activeIndex ? ' is-active' : '');
       wrapper.setAttribute('data-index', i);
 
       // Project name above card (Figma left-panel title)
@@ -143,7 +145,7 @@
 
       // Card
       var card = document.createElement('div');
-      card.className = 'proj-card';
+      card.className = 'proj-card ' + slide.shape;
 
       // Gradient placeholder always present behind the image
       var ph = document.createElement('div');
