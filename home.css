@@ -68,9 +68,7 @@ body { background: #fff; overflow: hidden; }
 body.cs-open .navbar { display: none; }
 .navbar-left { display: flex; align-items: center; gap: 24px; }
 .logo { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
-.logo svg { width: 100%; height: 100%; display: block; }
-.logo-mark { fill: #000; }
-html.dark .logo-mark { fill: #fff; }
+.logo img { width: 100%; height: 100%; display: block; object-fit: contain; }
 
 .loc-info {
   display: flex; align-items: center; gap: 12px;

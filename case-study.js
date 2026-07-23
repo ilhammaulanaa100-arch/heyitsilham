@@ -41,12 +41,14 @@
     // Intentionally mutates the shared PROJECTS entry in place; harmless because
     // case-study.html only ever loads one project per page load.
     p.sourceUrl = p.sourceUrl || '';
-    p.body      = p.body      || [];
-    p.category  = p.category  || '';
     p.period    = p.period    || (p.meta && p.meta.year) || '';
-    if (p.media && p.media.grid && p.media.grid.length) {
-      p.media.grid = p.media.grid.map(function (item) {
-        return (typeof item === 'string') ? { src: item, caption: '' } : item;
+    if (p.media && Array.isArray(p.media.gallery)) {
+      p.media.gallery = p.media.gallery.map(function (section) {
+        if (!section || !Array.isArray(section.items)) return section;
+        section.items = section.items.map(function (item) {
+          return (typeof item === 'string') ? { src: item } : item;
+        });
+        return section;
       });
     }
     return p;
@@ -112,11 +114,8 @@
 
     var slides = allProjects.map(function (pr, i) {
       var src = (pr.media && pr.media.hero) ? pr.media.hero : '';
-      var cat = pr.category || '';
       var per = pr.period   || (pr.meta && pr.meta.year) || '';
-      var caption = (cat || per)
-        ? (cat + (per ? ' (' + per + ')' : ''))
-        : (pr.subtitle || '');
+      var caption = per || pr.subtitle || '';
       return { src: src, caption: caption, color: pr.color, name: pr.subtitle || pr.title || '',
                shape: pr.shape || 'is-square' }; // same field that sizes the homepage card
     });
@@ -368,11 +367,13 @@
     detail.appendChild(divider);
 
     // ── 3. Summary ──
-    var summaryText = p_data.summary || (p_data.body && p_data.body[0]) || '';
+    var summaryText = p_data.summary || '';
     if (summaryText) {
       var bodyBlock = div('cs-body-block');
       bodyBlock.setAttribute('data-reveal', '');
-      bodyBlock.appendChild(p('cs-body-para', summaryText));
+      summaryText.split(/\n\s*\n/).forEach(function (paragraph) {
+        if (paragraph.trim()) bodyBlock.appendChild(p('cs-body-para', paragraph.trim()));
+      });
       detail.appendChild(bodyBlock);
     }
 
@@ -398,39 +399,55 @@
       detail.appendChild(videoBlock);
     }
 
-    // ── 5. Editorial scatter gallery from media.grid (3–7 images) ─
-    // Shape is decided by SLOT position, not the image (design option B).
-    // Geometry measured from the 99¢ reference: pair → solo → pair rhythm,
-    // shapes square/landscape/portrait. Whole gallery reveals as ONE
-    // scroll-reveal block — per-figure reveal fights the negative-margin offsets.
-    var SLOTS = ['s1 sq', 's2 sq', 's3 ls', 's4 pt', 's5 pt', 's6 sq', 's7 ls'];
-    var gridItems = (p_data.media && p_data.media.grid) ? p_data.media.grid.slice(0, 7) : [];
-    if (gridItems.length) {
+    // ── 5. Section-based gallery ─────────────────────────
+    // content.js owns the composition. Adding/reordering a section there does
+    // not require a JS or CSS change. Split items are left-to-right.
+    var gallerySections = (p_data.media && Array.isArray(p_data.media.gallery))
+      ? p_data.media.gallery
+      : [];
+    if (gallerySections.length) {
       var gallery = div('cs-gallery');
       gallery.setAttribute('data-reveal-scroll', '');
-      gridItems.forEach(function (item, i) {
-        var src     = (typeof item === 'string') ? item : (item.src     || '');
-        var caption = (typeof item === 'string') ? ''   : (item.caption || '');
-        var fig = document.createElement('figure');
-        fig.className = 'cs-g-fig ' + SLOTS[i];
-        var frame = div('cs-g-frame');
-        var ph = div('cs-g-ph');
-        ph.style.background = p_data.color || '#f0f0f0';
-        frame.appendChild(ph);
-        if (src) {
-          var img = document.createElement('img');
-          img.className = 'cs-g-img';
-          img.src = src;
-          img.alt = caption;
-          img.onerror = function () { this.style.display = 'none'; };
-          frame.appendChild(img);
-        }
-        fig.appendChild(frame);
-        var cap = div('cs-g-cap');
-        cap.appendChild(span('cs-g-cap-num', String(i + 1).padStart(2, '0')));
-        cap.appendChild(span('', caption));
-        fig.appendChild(cap);
-        gallery.appendChild(fig);
+      gallerySections.forEach(function (section) {
+        if (!section) return;
+        var allowedLayouts = ['full', 'split-square-left', 'split-square-right'];
+        var layout = allowedLayouts.indexOf(section.layout) > -1 ? section.layout : 'full';
+        var items = Array.isArray(section.items) ? section.items : [];
+        var requiredItems = layout === 'full' ? 1 : 2;
+        items = items.slice(0, requiredItems);
+        if (!items.length) return;
+
+        var row = div('cs-gallery-section cs-gallery-section--' + layout);
+        if (section.background) row.style.setProperty('--section-bg', section.background);
+        if (section.gap) row.style.setProperty('--section-gap', section.gap);
+
+        items.forEach(function (item) {
+          item = (typeof item === 'string') ? { src: item } : (item || {});
+          var caption = item.caption || '';
+          var fig = document.createElement('figure');
+          fig.className = 'cs-g-fig';
+
+          var frame = div('cs-g-frame');
+          var ph = div('cs-g-ph');
+          ph.style.background = item.background || section.background || p_data.color || '#f0f0f0';
+          frame.appendChild(ph);
+
+          if (item.src) {
+            var img = document.createElement('img');
+            img.className = 'cs-g-img';
+            img.src = item.src;
+            img.alt = item.alt || caption;
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            if (item.fit === 'contain') img.classList.add('is-contain');
+            img.onerror = function () { this.style.display = 'none'; };
+            frame.appendChild(img);
+          }
+
+          fig.appendChild(frame);
+          row.appendChild(fig);
+        });
+        gallery.appendChild(row);
       });
       detail.appendChild(gallery);
     }

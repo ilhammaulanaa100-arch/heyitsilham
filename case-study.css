@@ -89,7 +89,7 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 32px 140px 120px;
+  padding: 32px 140px 0;
 }
 
 /* Row holding the right-panel close control + "Source ↗" link */
@@ -180,7 +180,7 @@
   }
 
   #cs-right-content {
-    padding: 24px 24px 80px;
+    padding: 24px 24px 0;
   }
 }
 
@@ -314,37 +314,6 @@
   gap: 0;
 }
 
-/* ── Tag pill + period row ── */
-.cs-tag-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.cs-tag-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  background: rgba(255, 62, 207, 0.12);
-  border: 1px solid rgba(255, 62, 207, 0.25);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border-radius: 2px;
-}
-
-.cs-tag-period {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  color: rgba(0, 0, 0, 0.35);
-}
-
 /* ── Headline ── */
 .cs-headline {
   font-family: var(--font-display);
@@ -441,43 +410,47 @@
   color: rgba(0, 0, 0, 0.7);
 }
 
-/* ── Editorial scatter gallery (replaces numbered image insets) ──
-   Geometry MEASURED from tlb.betteroff.studio/articles/99-cents-only-store-
-   gallery-exhibition (right panel image bounding boxes, normalized to panel
-   width). Rhythm: pair (big left + smaller right, offset down) → solo center
-   → pair. Three shapes: square 1:1, landscape 5:4, portrait 4:5.
-   margin-top uses % so it resolves against container WIDTH — the whole
-   composition scales with the panel. */
-.cs-gallery { position: relative; }
-.cs-g-fig { margin: 0; position: relative; }
-/* Image frame is the thing that clips — the caption sits BELOW it, outside
-   the clip, or overflow:hidden on the figure would cut the caption off. */
-.cs-g-frame { position: relative; overflow: hidden; background: #f0f0f0; }
-.cs-g-fig.sq .cs-g-frame { aspect-ratio: 1 / 1; }
-.cs-g-fig.ls .cs-g-frame { aspect-ratio: 5 / 4; }
-.cs-g-fig.pt .cs-g-frame { aspect-ratio: 4 / 5; }
+/* ── Section-based gallery ─────────────────────────────
+   Three content presets: full, square-left and square-right. The split grid
+   follows the source-art ratio (1010:1564), so the square and landscape
+   frames keep the same height as the Figma composition. */
+.cs-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: calc(100% + 184px);
+  margin-left: -92px;
+  padding-bottom: 120px;
+}
+.cs-gallery-section {
+  --section-gap: 12px;
+  --section-bg: transparent;
+  display: grid;
+  gap: var(--section-gap);
+  background: var(--section-bg);
+}
+.cs-gallery-section--full { grid-template-columns: 1fr; }
+.cs-gallery-section--split-square-left { grid-template-columns: 1010fr 1564fr; }
+.cs-gallery-section--split-square-right { grid-template-columns: 1564fr 1010fr; }
+.cs-g-fig { min-width: 0; margin: 0; }
+.cs-g-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+.cs-gallery-section--full .cs-g-frame { aspect-ratio: 16 / 9; }
+.cs-gallery-section--split-square-left .cs-g-fig:first-child .cs-g-frame,
+.cs-gallery-section--split-square-right .cs-g-fig:last-child .cs-g-frame { aspect-ratio: 1 / 1; }
+.cs-gallery-section--split-square-left .cs-g-fig:last-child .cs-g-frame,
+.cs-gallery-section--split-square-right .cs-g-fig:first-child .cs-g-frame { aspect-ratio: 1564 / 1010; }
 .cs-g-ph { position: absolute; inset: 0; }
 .cs-g-img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
-.cs-g-cap {
-  display: flex; justify-content: space-between; gap: 12px; padding-top: 9px;
-  font-family: var(--font-mono);
-  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.55);
-}
-.cs-g-cap-num { color: rgba(0, 0, 0, 0.4); }
-
-.s1 { width: 39%; margin-left: 0;   }                   /* sq  kiri atas          */
-.s2 { width: 26%; margin-left: 72%; margin-top: -34%; } /* sq  kanan, turun dikit */
-.s3 { width: 40%; margin-left: 29%; margin-top: 13%;  } /* ls  solo tengah        */
-.s4 { width: 45%; margin-left: 0;   margin-top: 13%;  } /* pt  gede kiri          */
-.s5 { width: 33%; margin-left: 65%; margin-top: -49%; } /* pt  kanan, turun dikit */
-.s6 { width: 26%; margin-left: 43%; margin-top: 12%;  } /* sq  solo tengah kecil  */
-.s7 { width: 42%; margin-left: 6%;  margin-top: 12%;  } /* ls  penutup kiri       */
-
+.cs-g-img.is-contain { object-fit: contain; }
 /* ── Video showcase — inset 48px from the panel's true edges ── */
 .cs-video-block {
   width: calc(100% + 184px);
@@ -486,7 +459,7 @@
   overflow: hidden;
   position: relative;
   background: #111;
-  margin-bottom: 64px;
+  margin-bottom: 24px;
 }
 
 .cs-video-block video {
@@ -515,178 +488,6 @@
   color: rgba(255, 255, 255, 0.2);
 }
 
-/* ── TL;DR block ── */
-.cs-tldr-block {
-  border-top: 1px solid var(--divider);
-  padding-top: 40px;
-  margin-bottom: 64px;
-}
-
-.cs-tldr-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.35);
-  margin-bottom: 16px;
-  display: block;
-}
-
-.cs-tldr-title {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 22px;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  color: #000;
-  margin-bottom: 12px;
-}
-
-.cs-tldr-intro {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.7;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.6);
-  white-space: pre-line;
-  margin-bottom: 24px;
-}
-
-.cs-tldr-bullets {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cs-tldr-bullet {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.6;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.75);
-  padding: 14px 20px;
-  background: rgba(0, 0, 0, 0.03);
-  border-left: 2px solid var(--accent);
-}
-
-/* ── Reflections block ── */
-.cs-reflections-block {
-  border-top: 1px solid var(--divider);
-  padding-top: 40px;
-  margin-bottom: 80px;
-}
-
-.cs-reflections-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.35);
-  margin-bottom: 16px;
-  display: block;
-}
-
-.cs-reflections-title {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 22px;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  color: #000;
-  margin-bottom: 32px;
-}
-
-.cs-refl-items {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.cs-refl-item {}
-
-.cs-refl-heading {
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: #000;
-  margin-bottom: 6px;
-}
-
-.cs-refl-body {
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.65;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.6);
-}
-
-/* ── What's Next ── */
-.cs-next-block {
-  border-top: 1px solid var(--divider);
-  padding-top: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.cs-next-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.35);
-  display: block;
-}
-
-.cs-next-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 20px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.cs-next-thumb {
-  width: 80px;
-  height: 80px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: #f0f0f0;
-  position: relative;
-}
-
-.cs-next-thumb-ph {
-  position: absolute;
-  inset: 0;
-}
-
-.cs-next-name {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: #000;
-  transition: opacity 0.2s;
-}
-
-.cs-next-arrow {
-  flex-shrink: 0;
-  transition: transform 0.28s ease, opacity 0.2s;
-}
-
-.cs-next-link:hover .cs-next-name {
-  opacity: 0.35;
-}
-
-.cs-next-link:hover .cs-next-arrow {
-  transform: translateX(8px);
-  opacity: 0.35;
-}
-
 /* ── Whisper-fade: reveal targets start hidden only when JS motion is on. ── */
 html.motion-on [data-reveal],
 html.motion-on [data-reveal-scroll] { opacity: 0; }
@@ -702,10 +503,15 @@ html.motion-on [data-reveal-scroll] { opacity: 0; }
     margin-left: 0;
   }
 
-  /* No separate slot values here: s1-s7 are defined in %, which are relative
-     to container width and already self-scale correctly at any screen size —
-     a hand-tuned mobile override risks reintroducing horizontal collisions
-     that the desktop values were specifically verified against. */
+  .cs-gallery {
+    width: 100%;
+    margin-left: 0;
+    gap: 16px;
+  }
+  .cs-gallery-section--split-square-left,
+  .cs-gallery-section--split-square-right { grid-template-columns: 1fr; }
+  .cs-gallery-section--split-square-left .cs-g-frame,
+  .cs-gallery-section--split-square-right .cs-g-frame { aspect-ratio: auto; min-height: 62vw; }
 
   .cs-headline {
     font-size: clamp(32px, 9vw, 56px);
@@ -728,8 +534,7 @@ html.lenis {
 
 .cs-close:focus-visible,
 .cs-right-close:focus-visible,
-.cs-source:focus-visible,
-.cs-next-link:focus-visible {
+.cs-source:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   opacity: 1;
@@ -746,36 +551,19 @@ html.dark .cs-right-close,
 html.dark .cs-source,
 html.dark .cs-applink,
 html.dark .cs-headline,
-html.dark .cs-meta-item-value,
-html.dark .cs-tldr-title,
-html.dark .cs-reflections-title,
-html.dark .cs-refl-heading,
-html.dark .cs-next-name { color: #fff; }
+html.dark .cs-meta-item-value { color: #fff; }
 html.dark .cs-slide-title { color: #d9d9d9; }
 html.dark .cs-slider-counter { color: #d9d9d9; }
-html.dark .cs-next-arrow path { stroke: #fff; }
-html.dark .cs-tag-period,
-html.dark .cs-meta-item-label,
-html.dark .cs-tldr-eyebrow,
-html.dark .cs-reflections-eyebrow,
-html.dark .cs-next-eyebrow { color: rgba(255, 255, 255, 0.4); }
+html.dark .cs-meta-item-label { color: rgba(255, 255, 255, 0.4); }
 html.dark .cs-body-para { color: rgba(255, 255, 255, 0.82); }
-html.dark .cs-tldr-intro,
-html.dark .cs-refl-body { color: rgba(255, 255, 255, 0.6); }
-html.dark .cs-tldr-bullet {
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.05);
-}
-html.dark .cs-next-thumb,
 html.dark .cs-g-fig { background: #1c1b1b; }
-html.dark .cs-g-cap { color: rgba(255, 255, 255, 0.55); }
-html.dark .cs-g-cap-num { color: rgba(255, 255, 255, 0.4); }
 /* ══ Responsive additions ═════════════════════════════════ */
 
 /* ── Tablet (901–1200px): narrower article gutters ── */
 @media (max-width: 1200px) and (min-width: 901px) {
-  #cs-right-content { padding: 32px 48px 100px; }
+  #cs-right-content { padding: 32px 48px 0; }
   .cs-video-block { width: calc(100% + 96px); margin-left: -48px; }
+  .cs-gallery { width: calc(100% + 96px); margin-left: -48px; }
   .cs-top-row { width: calc(100% + 48px); margin-left: -48px; }
 }
 
@@ -810,5 +598,6 @@ html.dark .cs-g-cap-num { color: rgba(255, 255, 255, 0.4); }
   .cs-close { top: 20px; left: 20px; }
   .cs-top-row { margin-bottom: 32px; margin-left: 0; width: auto; }
   .cs-headline { margin-bottom: 32px; }
-  .cs-body-block, .cs-video-block, .cs-tldr-block { margin-bottom: 48px; }
+  .cs-body-block { margin-bottom: 48px; }
+  .cs-video-block { margin-bottom: 16px; }
 }
