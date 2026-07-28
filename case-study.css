@@ -544,8 +544,8 @@ html.lenis {
 html.dark { --divider: rgba(255, 255, 255, 0.14); }
 /* Standalone page: home.css isn't loaded here, so darken body/wipe ourselves */
 html.dark body,
-html.dark #page-wipe { background: #0B0B0B; }
-html.dark .cs-right { background: #0B0B0B; }
+html.dark #page-wipe { background: #020202; }
+html.dark .cs-right { background: #020202; }
 html.dark .cs-close,
 html.dark .cs-right-close,
 html.dark .cs-source,

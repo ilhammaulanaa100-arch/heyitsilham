@@ -33,8 +33,9 @@ window.GridView = (function () {
   var PMAG = 30;              // max parallax offset (px)
   var parX = 0, parY = 0;     // eased parallax offset, applied at render + click/glide
 
-  // PROJECTS tiled as PCOLS × PROWS, repeated infinitely both axes
-  var PCOLS = 4, PROWS = 3;
+  // All 14 PROJECTS tiled as 7 × 2, repeated infinitely on both axes.
+  // Keeping the cycle exact prevents empty or mismatched clickable cells.
+  var PCOLS = 7, PROWS = 2;
 
   // ── Staggered layout ──
   // Columns get a stable pseudo-random vertical shift, and each project's media
@@ -58,7 +59,7 @@ window.GridView = (function () {
     var shape = (p && p.shape) || (pIdx < 2 ? 'is-square' : 'is-landscape');
     var s = SHAPES[shape] || SHAPES['is-square'];
     var mw = W * s.w, mh = mw / s.ar;
-    var maxH = H * 0.78; // leave room for the label
+    var maxH = H * 0.78; // keep the media comfortably inside each grid cell
     if (mh > maxH) { mw *= maxH / mh; mh = maxH; }
     return { mw: Math.round(mw), mh: Math.round(mh) };
   }
@@ -86,11 +87,11 @@ window.GridView = (function () {
   // Cell palette follows the global theme (html.dark, toggled in home.js)
   function theme() {
     return document.documentElement.classList.contains('dark')
-      ? { bg: '#0B0B0B', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
+      ? { bg: '#020202', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
       : { bg: '#ffffff', line: 'rgba(34,32,32,0.07)',    text: '#000', dim: 'rgba(0,0,0,0.8)' };
   }
 
-  // ── Cell texture (canvas): scan-line outline, media, name + year ──
+  // ── Cell texture (canvas): scan-line outline + media ──
   function gradColors(str) {
     var m = String(str).match(/#[0-9a-fA-F]{3,8}/g) || [];
     return [m[0] || '#333', m[1] || m[0] || '#111'];
@@ -131,12 +132,6 @@ window.GridView = (function () {
       ctx.fillRect(mx, my, mw, mh);
     }
 
-    // Below the media: one quiet label — the work leads, the text whispers
-    ctx.font = "500 11px 'SF Mono', Menlo, 'Courier New', monospace";
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = th.dim;
-    ctx.fillText(String(p.title || '').toUpperCase(), mx, my + mh + 16);
   }
 
   function makeTexture(p) {
