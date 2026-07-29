@@ -13,7 +13,9 @@
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Bai Jamjuree', sans-serif;
   --font-body: 'Recoleta', Georgia, serif;
-  --accent: #FF3ECF;
+  --brand-teal: #58F0E0;
+  --brand-teal-deep: #178B84;
+  --accent: var(--brand-teal);
   --divider: #e0e0e0;
 }
 
@@ -388,7 +390,7 @@
 .cs-applink-arrow {
   display: block;
   flex-shrink: 0;
-  color: #FF3D3D;
+  color: var(--brand-teal-deep);
 }
 
 .cs-applink:hover { opacity: 0.7; }

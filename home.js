@@ -48,15 +48,159 @@
     });
   })();
 
-  // ── Clock ───────────────────────────────────────────────
-  function updateTime() {
-    var t = new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Jakarta'
-    }).format(new Date());
-    document.getElementById('jakarta-time').textContent = t.replace(/^0/, '');
-  }
-  updateTime();
-  setInterval(updateTime, 1000);
+  // ── Full-screen menu ────────────────────────────────────
+  (function () {
+    var trigger = document.getElementById('menu-trigger');
+    var menu = document.getElementById('site-menu');
+    var panel = document.getElementById('site-menu-panel');
+    var worksButton = menu && menu.querySelector('[data-menu-action="works"]');
+    var previousFocus = null;
+    var closeTimer = null;
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!trigger || !menu || !panel) return;
+
+    function focusableItems() {
+      return [trigger].concat(Array.prototype.slice.call(
+        panel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+      ));
+    }
+
+    function untransformedTriggerRect() {
+      var rect = trigger.getBoundingClientRect();
+      var transform = window.getComputedStyle(trigger).transform;
+      var translateX = 0;
+      var translateY = 0;
+
+      if (transform && transform !== 'none') {
+        var matrix = transform.match(/^matrix\((.+)\)$/);
+        var matrix3d = transform.match(/^matrix3d\((.+)\)$/);
+        if (matrix) {
+          var values = matrix[1].split(',').map(parseFloat);
+          translateX = values[4] || 0;
+          translateY = values[5] || 0;
+        } else if (matrix3d) {
+          var values3d = matrix3d[1].split(',').map(parseFloat);
+          translateX = values3d[12] || 0;
+          translateY = values3d[13] || 0;
+        }
+      }
+
+      return {
+        top: rect.top - translateY,
+        right: rect.right - translateX,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function updateMorphGeometry() {
+      var triggerRect = untransformedTriggerRect();
+      var targetLeft = panel.offsetLeft;
+      var targetTop = panel.offsetTop;
+      var targetWidth = panel.offsetWidth;
+      var targetHeight = panel.offsetHeight;
+      var targetRight = targetLeft + targetWidth;
+
+      panel.style.setProperty('--menu-morph-x', (triggerRect.right - targetRight) + 'px');
+      panel.style.setProperty('--menu-morph-y', (triggerRect.top - targetTop) + 'px');
+      panel.style.setProperty('--menu-clip-left', Math.max(0, targetWidth - triggerRect.width) + 'px');
+      panel.style.setProperty('--menu-clip-bottom', Math.max(0, targetHeight - triggerRect.height) + 'px');
+      panel.style.setProperty('--menu-trigger-width', triggerRect.width + 'px');
+      panel.style.setProperty('--menu-trigger-height', triggerRect.height + 'px');
+    }
+
+    function openMenu() {
+      if (menu.classList.contains('is-open') || menu.classList.contains('is-closing')) return;
+      if (closeTimer !== null) {
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      previousFocus = document.activeElement;
+      updateMorphGeometry();
+      menu.classList.add('is-preparing');
+      menu.setAttribute('aria-hidden', 'false');
+      trigger.setAttribute('aria-expanded', 'true');
+      trigger.setAttribute('aria-label', 'Close menu');
+      document.body.classList.add('menu-open');
+      void menu.offsetWidth;
+      window.requestAnimationFrame(function () {
+        menu.classList.add('is-open');
+        menu.classList.remove('is-preparing');
+      });
+    }
+
+    function closeMenu(restoreFocus) {
+      if (!menu.classList.contains('is-open') && !menu.classList.contains('is-preparing')) return;
+      updateMorphGeometry();
+      menu.classList.add('is-closing');
+      menu.classList.remove('is-open', 'is-preparing');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-label', 'Open menu');
+      menu.setAttribute('aria-hidden', 'true');
+      if (restoreFocus !== false) {
+        var focusTarget = previousFocus && previousFocus !== document.body ? previousFocus : trigger;
+        if (focusTarget && focusTarget.focus) focusTarget.focus({ preventScroll: true });
+      }
+      closeTimer = window.setTimeout(function () {
+        menu.classList.remove('is-closing');
+        document.body.classList.remove('menu-open');
+        closeTimer = null;
+      }, reducedMotion ? 0 : 840);
+    }
+
+    trigger.addEventListener('click', function () {
+      if (menu.classList.contains('is-open') || menu.classList.contains('is-preparing')) {
+        closeMenu(true);
+      } else {
+        openMenu();
+      }
+    });
+    if (worksButton) worksButton.addEventListener('click', function () { closeMenu(true); });
+
+    menu.addEventListener('click', function (e) {
+      if (e.target === menu) closeMenu(true);
+    });
+    menu.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
+    menu.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
+
+    document.addEventListener('keydown', function (e) {
+      if (!menu.classList.contains('is-open')) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMenu(true);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      var items = focusableItems();
+      if (!items.length) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    window.addEventListener('pageshow', function () { closeMenu(false); });
+    window.addEventListener('resize', function () {
+      if (menu.classList.contains('is-open')) updateMorphGeometry();
+    }, { passive: true });
+  })();
 
   // ── Theme toggle (single icon, circular view-transition reveal) ───
   (function () {
@@ -1005,6 +1149,7 @@
 
     window.addEventListener('keydown', function (e) {
       if (isOverlayOpen) return;
+      if (document.body.classList.contains('menu-open')) return;
       if (window.GridView && GridView.isOpen()) return;
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { go(1);  e.preventDefault(); }
       else if (e.key === 'ArrowUp'   || e.key === 'PageUp')               { go(-1); e.preventDefault(); }
@@ -1017,13 +1162,19 @@
     var viewTabs = document.querySelectorAll('.view-tab');
     var returnToGrid = false; // overlay was opened from the grid → restore it on close
 
+    function syncViewTabs(view) {
+      viewTabs.forEach(function (t) {
+        var active = t.getAttribute('data-view') === view;
+        t.classList.toggle('is-active', active);
+        t.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+
     function setView(view) {
       if (!window.GridView) return;
       var isGrid = view === 'grid';
       if (isGrid === GridView.isOpen()) return;
-      viewTabs.forEach(function (t) {
-        t.classList.toggle('is-active', t.getAttribute('data-view') === view);
-      });
+      syncViewTabs(view);
       if (isGrid) {
         if (convObserver) convObserver.disable();
         GridView.show();
@@ -1046,7 +1197,7 @@
     window.addEventListener('pageshow', function (e) {
       if (!e.persisted) return;
       if (window.GridView && GridView.isOpen()) {
-        viewTabs.forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-view') === 'vertical'); });
+        syncViewTabs('vertical');
         GridView.hide(true);
         if (convObserver && !isOverlayOpen) convObserver.enable();
       }

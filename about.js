@@ -1,14 +1,4 @@
-// About page — clock, theme switcher (same behavior as home.js), work-experience counter.
-
-// ── Clock ──
-function updateTime() {
-  var t = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Jakarta'
-  }).format(new Date());
-  document.getElementById('jakarta-time').textContent = t.replace(/^0/, '');
-}
-updateTime();
-setInterval(updateTime, 1000);
+// About page — theme switcher (same behavior as home.js), work-experience counter.
 
 // ── Theme toggle (single icon, circular view-transition reveal) ──
 (function () {

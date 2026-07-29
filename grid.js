@@ -14,7 +14,10 @@ window.GridView = (function () {
   var HOLD_ZOOM  = 0.7;   // camera zoom while click is held (~30% further out)
   var THRU_ZOOM  = 1.7;   // dolly depth for the open/close camera move — deeper blows the
                           // 512px cell texture up blurry-huge; the fade tail hides the rest
-  var HOVER_LERP = 0.16;  // hover tint ease speed
+  var HOVER_LERP = 0.10;  // softer hover fill ease speed
+  var DEFAULT_HOVER_COLOR = '#BEFFF7';
+  var DEFAULT_HOVER_MOTION = 0.6;
+  var DEFAULT_HOVER_OPACITY = 0.28;
   var LERP       = 0.10;  // scroll smoothing (direct catch-up)
   var FRICTION   = 0.955; // drag momentum decay (long, weighty glide on release)
 
@@ -46,32 +49,43 @@ window.GridView = (function () {
   // width fraction + aspect (w/h) per shape — proportions mirror home.css
   // (.proj-card 420×560 / 480×480 / 580×420)
   var SHAPES = {
-    'is-portrait':  { w: 0.62, ar: 420 / 560 },
-    'is-square':    { w: 0.70, ar: 1 },
-    'is-landscape': { w: 0.84, ar: 580 / 420 }
+    'is-portrait':  { w: 0.66, ar: 420 / 560 },
+    'is-square':    { w: 0.80, ar: 1 },
+    'is-landscape': { w: 0.88, ar: 580 / 420 }
   };
   function hash01(n) { var h = Math.sin(n * 127.1 + 311.7) * 43758.5453; return h - Math.floor(h); }
   function colShift(col) { return hash01(col) * CELL_H * STAGGER; }
-  // Media box (px) inside a W×H cell — mirrored by cellScreenRect for the glide.
+  // Media box (px) inside a cell — mirrored by cellScreenRect for the glide.
   // Shape fallback matches the vertical view's default in home.js.
-  function mediaDims(pIdx, W, H) {
+  function mediaDims(pIdx, W) {
     var p = PROJECTS[pIdx];
     var shape = (p && p.shape) || (pIdx < 2 ? 'is-square' : 'is-landscape');
     var s = SHAPES[shape] || SHAPES['is-square'];
     var mw = W * s.w, mh = mw / s.ar;
-    var maxH = H * 0.78; // keep the media comfortably inside each grid cell
-    if (mh > maxH) { mw *= maxH / mh; mh = maxH; }
     return { mw: Math.round(mw), mh: Math.round(mh) };
   }
 
-  // Media square sits this fraction of the cell height above centre,
-  // leaving room for the name/year lines under it
-  var MEDIA_Y_SHIFT = 0.026;
+  // The cell hugs its media: vertical padding equals the media's horizontal
+  // padding. This keeps every visible border and hover panel content-sized.
+  function cellHeightForProject(pIdx, W) {
+    var d = mediaDims(pIdx, W);
+    return Math.round(d.mh + (W - d.mw));
+  }
+
+  // No label is rendered below the thumbnail, so keep the whitespace balanced.
+  var MEDIA_Y_SHIFT = 0;
+
+  function mediaUvRect(pIdx, W, H) {
+    var d = mediaDims(pIdx, W);
+    var mx = (W - d.mw) / 2;
+    var my = (H - d.mh) / 2 - H * MEDIA_Y_SHIFT;
+    return new THREE.Vector4(mx / W, my / H, (mx + d.mw) / W, (my + d.mh) / H);
+  }
 
   var viewEl;
   var built = false, open = false;
   var renderer, gridScene, camera, rt, postScene, postCam, postMat;
-  var meshes = [], cells = [], textures = [], hoverColors = [], whiteColor;
+  var meshes = [], cells = [], textures = [], hoverTextures = [], hoverColors = [];
   var unitGeo;
 
   var vw = 0, vh = 0, GW = 0, GH = 0, CELL_W = 0, CELL_H = 0, NX = 0, NY = 0;
@@ -83,6 +97,38 @@ window.GridView = (function () {
   var pX = -1, pY = -1; // last pointer position (hover tint); -1 = none yet
 
   function mod(n, m) { return ((n % m) + m) % m; }
+
+  function projectIndex(col, row) {
+    return mod(row, PROWS) * PCOLS + mod(col, PCOLS);
+  }
+
+  function hoverMotionForProject(pIdx) {
+    var value = PROJECTS[pIdx] && PROJECTS[pIdx].hoverMotion;
+    return typeof value === 'number' ? Math.max(0, value) : DEFAULT_HOVER_MOTION;
+  }
+
+  function hoverOpacityForProject(pIdx) {
+    var value = PROJECTS[pIdx] && PROJECTS[pIdx].hoverOpacity;
+    return typeof value === 'number'
+      ? Math.max(0, Math.min(1, value))
+      : DEFAULT_HOVER_OPACITY;
+  }
+
+  function rowTop(col, row) {
+    var h0 = cellHeightForProject(projectIndex(col, 0), CELL_W);
+    var h1 = cellHeightForProject(projectIndex(col, 1), CELL_W);
+    var pair = Math.floor(row / PROWS);
+    return pair * (h0 + h1) + (mod(row, PROWS) === 1 ? h0 : 0);
+  }
+
+  function rowAtY(col, y) {
+    var h0 = cellHeightForProject(projectIndex(col, 0), CELL_W);
+    var h1 = cellHeightForProject(projectIndex(col, 1), CELL_W);
+    var period = h0 + h1;
+    var pair = Math.floor(y / period);
+    var localY = y - pair * period;
+    return pair * PROWS + (localY >= h0 ? 1 : 0);
+  }
 
   // Cell palette follows the global theme (html.dark, toggled in home.js)
   function theme() {
@@ -112,7 +158,7 @@ window.GridView = (function () {
 
     // Media — per-project shape (portrait/square/landscape via proj.shape),
     // centred, nudged up (MEDIA_Y_SHIFT). cellScreenRect() mirrors this rect.
-    var d = mediaDims(PROJECTS.indexOf(p), W, H);
+    var d = mediaDims(PROJECTS.indexOf(p), W);
     var mw = d.mw, mh = d.mh;
     var mx = (W - mw) / 2, my = (H - mh) / 2 - Math.round(H * MEDIA_Y_SHIFT);
     if (blankMedia) {
@@ -134,25 +180,74 @@ window.GridView = (function () {
 
   }
 
-  function makeTexture(p) {
-    var W = 512, H = Math.round(512 * 1.06);
+  function drawHoverTexture(ctx, p, W, H, img) {
+    ctx.clearRect(0, 0, W, H);
+    if (!img) {
+      ctx.fillStyle = p.hoverColor || DEFAULT_HOVER_COLOR;
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
+    // Pre-blur one enlarged cover image. The shader can then animate a single
+    // smooth texture instead of blending visibly separated image samples.
+    var targetAr = W / H;
+    var sw = img.width, sh = sw / targetAr;
+    if (sh > img.height) { sh = img.height; sw = sh * targetAr; }
+    var overscan = 1.30;
+    var dw = W * overscan, dh = H * overscan;
+    ctx.save();
+    ctx.filter = 'blur(40px) saturate(108%)';
+    ctx.drawImage(
+      img,
+      (img.width - sw) / 2,
+      (img.height - sh) / 2,
+      sw,
+      sh,
+      (W - dw) / 2,
+      (H - dh) / 2,
+      dw,
+      dh
+    );
+    ctx.restore();
+  }
+
+  function makeTexture(p, pIdx) {
+    var W = 512, H = cellHeightForProject(pIdx, W);
     var cv = document.createElement('canvas');
+    var hoverCv = document.createElement('canvas');
     cv.width = W; cv.height = H;
+    hoverCv.width = W; hoverCv.height = H;
     var ctx = cv.getContext('2d');
+    var hoverCtx = hoverCv.getContext('2d');
     drawCell(ctx, p, W, H, null);
+    drawHoverTexture(hoverCtx, p, W, H, null);
     var tex = new THREE.CanvasTexture(cv);
+    var hoverTex = new THREE.CanvasTexture(hoverCv);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     tex.minFilter = THREE.LinearMipmapLinearFilter;
-    var cell = { p: p, ctx: ctx, tex: tex, img: null, hideMedia: false };
+    hoverTex.anisotropy = tex.anisotropy;
+    hoverTex.minFilter = THREE.LinearMipmapLinearFilter;
+    var cell = {
+      p: p,
+      ctx: ctx,
+      tex: tex,
+      hoverCtx: hoverCtx,
+      hoverTex: hoverTex,
+      img: null,
+      hideMedia: false
+    };
     if (p.media && p.media.hero) {
       var img = new Image();
       img.onload = function () {
         cell.img = img;
         if (!cell.hideMedia) { drawCell(ctx, p, W, H, img); tex.needsUpdate = true; }
+        drawHoverTexture(hoverCtx, p, W, H, img);
+        hoverTex.needsUpdate = true;
       };
       img.src = p.media.hero;
     }
     cells.push(cell);
+    hoverTextures.push(hoverTex);
     return tex;
   }
 
@@ -165,6 +260,8 @@ window.GridView = (function () {
     cells.forEach(function (c) {
       drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img, c.hideMedia);
       c.tex.needsUpdate = true;
+      drawHoverTexture(c.hoverCtx, c.p, c.hoverCtx.canvas.width, c.hoverCtx.canvas.height, c.img);
+      c.hoverTex.needsUpdate = true;
     });
   }
 
@@ -180,6 +277,82 @@ window.GridView = (function () {
     c.hideMedia = hidden;
     drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img, hidden);
     c.tex.needsUpdate = true;
+  }
+
+  // Full-cell hover material. The negative space uses one pre-blurred texture,
+  // softly moved and blended with the project's hoverColor. Keeping the blur
+  // outside the shader avoids the stacked/ghosted copies created by sampling
+  // the sharp thumbnail several times. The thumbnail itself remains sharp.
+  var CELL_VERT = [
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = uv;',
+    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+    '}'
+  ].join('\n');
+
+  var CELL_FRAG = [
+    'varying vec2 vUv;',
+    'uniform sampler2D uMap;',
+    'uniform sampler2D uHoverMap;',
+    'uniform vec3 uHoverColor;',
+    'uniform vec4 uMediaRect;',
+    'uniform float uMediaVisible;',
+    'uniform float uHover;',
+    'uniform float uTime;',
+    'uniform float uMotion;',
+    'uniform float uHoverOpacity;',
+    'uniform float uPhase;',
+    'void main() {',
+    '  vec4 texel = texture2D(uMap, vUv);',
+    '  if (uHover < 0.001) {',
+    '    gl_FragColor = texel;',
+    '    return;',
+    '  }',
+    '  float feather = 0.004;',
+    '  float inX = smoothstep(uMediaRect.x, uMediaRect.x + feather, vUv.x)',
+    '    * (1.0 - smoothstep(uMediaRect.z - feather, uMediaRect.z, vUv.x));',
+    '  float inY = smoothstep(uMediaRect.y, uMediaRect.y + feather, vUv.y)',
+    '    * (1.0 - smoothstep(uMediaRect.w - feather, uMediaRect.w, vUv.y));',
+    '  float mediaMask = inX * inY * uMediaVisible;',
+    '  vec2 bgUv = vUv - 0.5;',
+    '  float angle = sin(uTime * 0.22 + uPhase) * 0.020 * uMotion;',
+    '  float cs = cos(angle);',
+    '  float sn = sin(angle);',
+    '  bgUv = mat2(cs, -sn, sn, cs) * bgUv;',
+    '  bgUv *= 0.94;',
+    '  bgUv += 0.5;',
+    '  bgUv += vec2(',
+    '    sin(uTime * 0.31 + uPhase),',
+    '    cos(uTime * 0.27 + uPhase * 1.37)',
+    '  ) * 0.015 * uMotion;',
+    '  bgUv = clamp(bgUv, vec2(0.02), vec2(0.98));',
+    '  vec3 movingBg = texture2D(uHoverMap, bgUv).rgb;',
+    '  movingBg = mix(movingBg, uHoverColor, 0.24);',
+    '  vec3 filledCell = mix(texel.rgb, movingBg, uHover * uHoverOpacity);',
+    '  vec3 color = mix(filledCell, texel.rgb, mediaMask);',
+    '  gl_FragColor = vec4(color, texel.a);',
+    '}'
+  ].join('\n');
+
+  function makeCellMaterial(pIdx) {
+    var cv = cells[pIdx].ctx.canvas;
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uMap:          { value: textures[pIdx] },
+        uHoverMap:     { value: hoverTextures[pIdx] },
+        uHoverColor:   { value: hoverColors[pIdx].clone() },
+        uMediaRect:    { value: mediaUvRect(pIdx, cv.width, cv.height) },
+        uMediaVisible: { value: 1 },
+        uHover:        { value: 0 },
+        uTime:         { value: 0 },
+        uMotion:       { value: hoverMotionForProject(pIdx) },
+        uHoverOpacity: { value: hoverOpacityForProject(pIdx) },
+        uPhase:        { value: pIdx * 1.618 }
+      },
+      vertexShader: CELL_VERT,
+      fragmentShader: CELL_FRAG
+    });
   }
 
   // ── Concave (panoramic) post shader ──
@@ -273,12 +446,14 @@ window.GridView = (function () {
   // corner fit overshoots the visible edges by several px (measured ~7px at
   // DISTORTION 0.25). Edge midpoints track what the eye reads as the border.
   function cellScreenRect(col, row) {
-    var pIdx = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
-    var d = mediaDims(pIdx, CELL_W, CELL_H); // matches the media box drawn in the cell texture
+    var pIdx = projectIndex(col, row);
+    var cellH = cellHeightForProject(pIdx, CELL_W);
+    var d = mediaDims(pIdx, CELL_W); // matches the media box drawn in the cell texture
     // parallax offset is baked into the rendered position — include it so the
     // measured rect matches where the cell actually sits on screen
     var x0 = col * CELL_W - (sx + parX) + (CELL_W - d.mw) / 2;
-    var y0 = row * CELL_H + colShift(col) - (sy + parY) + (CELL_H - d.mh) / 2 - CELL_H * MEDIA_Y_SHIFT;
+    var y0 = rowTop(col, row) + colShift(col) - (sy + parY)
+      + (cellH - d.mh) / 2 - cellH * MEDIA_Y_SHIFT;
     var xc = x0 + d.mw / 2, yc = y0 + d.mh / 2;
     var L = gridToScreen(x0, yc).x;
     var R = gridToScreen(x0 + d.mw, yc).x;
@@ -298,8 +473,10 @@ window.GridView = (function () {
     if (window.gsap && viewEl) gsap.killTweensOf(viewEl);
   }
   function dolly(col, row, zFrom, zTo, zRef, duration) {
+    var pIdx = projectIndex(col, row);
+    var cellH = cellHeightForProject(pIdx, CELL_W);
     var gx = col * CELL_W + CELL_W / 2;
-    var gy = row * CELL_H + colShift(col) + CELL_H / 2;
+    var gy = rowTop(col, row) + colShift(col) + cellH / 2;
     var cx = (gx - sx - GW / 2) * zRef;
     var cy = (gy - sy - GH / 2) * zRef;
     var proxy = { z: zFrom };
@@ -368,10 +545,14 @@ window.GridView = (function () {
     GH = vh * ZOOM;
     // phones: 320px min would show barely one cell — size to ~72% of the screen
     CELL_W = vw < 700 ? Math.round(vw * 0.72) : Math.max(320, Math.round(vw / 3.5));
+    // Reference height is only used for the stable per-column stagger.
     CELL_H = Math.round(CELL_W * 1.06);
     // pool sized for the widest view (hold-zoom shows GW / HOLD_ZOOM of world)
     NX = Math.ceil(GW / HOLD_ZOOM / CELL_W) + 3;
-    NY = Math.ceil(GH / HOLD_ZOOM / CELL_H) + 4; // +1 row buffer for colShift
+    var minCellH = PROJECTS.reduce(function (minH, p, pIdx) {
+      return Math.min(minH, cellHeightForProject(pIdx, CELL_W));
+    }, Infinity);
+    NY = Math.ceil(GH / HOLD_ZOOM / minCellH) + 4; // +1 row buffer for colShift
 
     var pr = Math.min(window.devicePixelRatio || 1, 2);
     renderer.setPixelRatio(pr);
@@ -391,9 +572,9 @@ window.GridView = (function () {
     meshes.forEach(function (m) { gridScene.remove(m); m.material.dispose(); });
     meshes = [];
     for (var i = 0; i < NX * NY; i++) {
-      // own material per mesh so a single cell can tint on hover
-      var m = new THREE.Mesh(unitGeo, new THREE.MeshBasicMaterial({ map: textures[0] }));
-      m.scale.set(CELL_W, CELL_H, 1);
+      // Own material per mesh so one repeated cell can animate independently.
+      var m = new THREE.Mesh(unitGeo, makeCellMaterial(0));
+      m.scale.set(CELL_W, CELL_W, 1);
       m._key = -1;
       gridScene.add(m);
       meshes.push(m);
@@ -437,28 +618,46 @@ window.GridView = (function () {
     var padX = (GW / camera.zoom - GW) / 2;
     var padY = (GH / camera.zoom - GH) / 2;
     var firstCol = Math.floor((sxE - padX) / CELL_W) - 1;
-    var firstRow = Math.floor((syE - padY) / CELL_H) - 1;
 
     // Cell under the pointer (hover tint target); none while dragging
     var hCol = null, hRow = null;
     if (!dragging && pX >= 0) {
       var gpt = screenToGrid(pX, pY);
       hCol = Math.floor((gpt.x + sxE) / CELL_W);
-      hRow = Math.floor((gpt.y + syE - colShift(hCol)) / CELL_H);
+      hRow = rowAtY(hCol, gpt.y + syE - colShift(hCol));
     }
 
+    var hoverTime = (window.performance ? performance.now() : Date.now()) * 0.001;
     for (var i = 0; i < meshes.length; i++) {
       var col = firstCol + (i % NX);
+      var firstRow = rowAtY(col, syE - padY - colShift(col)) - 1;
       var row = firstRow + Math.floor(i / NX);
       var m = meshes[i];
-      var pIdx = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
-      if (m._key !== pIdx) { m._key = pIdx; m.material.map = textures[pIdx]; }
+      var pIdx = projectIndex(col, row);
+      var cellH = cellHeightForProject(pIdx, CELL_W);
+      var uniforms = m.material.uniforms;
+      if (m._key !== pIdx) {
+        var cv = cells[pIdx].ctx.canvas;
+        m._key = pIdx;
+        uniforms.uMap.value = textures[pIdx];
+        uniforms.uHoverMap.value = hoverTextures[pIdx];
+        uniforms.uHoverColor.value.copy(hoverColors[pIdx]);
+        uniforms.uMediaRect.value.copy(mediaUvRect(pIdx, cv.width, cv.height));
+        uniforms.uMotion.value = hoverMotionForProject(pIdx);
+        uniforms.uHoverOpacity.value = hoverOpacityForProject(pIdx);
+        uniforms.uPhase.value = pIdx * 1.618;
+        uniforms.uHover.value = 0;
+        m.scale.set(CELL_W, cellH, 1);
+      }
       // grid px (y down) → world (y up, origin centre)
       m.position.x = col * CELL_W - sxE + CELL_W / 2 - GW / 2;
-      m.position.y = -(row * CELL_H + colShift(col) - syE + CELL_H / 2 - GH / 2);
-      // ease the tint toward hover colour (or back to white)
-      var tint = (col === hCol && row === hRow) ? hoverColors[pIdx] : whiteColor;
-      m.material.color.lerp(tint, HOVER_LERP);
+      m.position.y = -(rowTop(col, row) + colShift(col) - syE + cellH / 2 - GH / 2);
+      // Ease the full-cell fill in/out; keep hidden glide media from leaving a
+      // dark rectangle in an otherwise filled hover cell.
+      var hoverTarget = (col === hCol && row === hRow) ? 1 : 0;
+      uniforms.uHover.value += (hoverTarget - uniforms.uHover.value) * HOVER_LERP;
+      uniforms.uTime.value = hoverTime;
+      uniforms.uMediaVisible.value = cells[pIdx].hideMedia ? 0 : 1;
     }
 
     renderer.setRenderTarget(rt);
@@ -513,8 +712,8 @@ window.GridView = (function () {
     if (moved > 6) return; // it was a drag, not a click
     var g = screenToGrid(e.clientX, e.clientY);
     var col = Math.floor((g.x + sx + parX) / CELL_W);
-    var row = Math.floor((g.y + sy + parY - colShift(col)) / CELL_H);
-    var pIdx = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
+    var row = rowAtY(col, g.y + sy + parY - colShift(col));
+    var pIdx = projectIndex(col, row);
 
     // Keep the lens curved — freeze the grid exactly where it is (scroll +
     // any in-flight zoom tween) and hand the cell's distorted on-screen rect
@@ -540,11 +739,11 @@ window.GridView = (function () {
     gridScene.background = new THREE.Color(theme().bg);
     camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
     unitGeo = new THREE.PlaneGeometry(1, 1);
+    hoverTextures = [];
     textures = PROJECTS.map(makeTexture);
-    whiteColor = new THREE.Color(0xffffff);
-    // per-project hover tint — set `hoverColor: '#hex'` on a project in content.js
+    // Per-project full-cell fill — set `hoverColor: '#hex'` in content.js.
     hoverColors = PROJECTS.map(function (p) {
-      return new THREE.Color(p.hoverColor || '#ffffff');
+      return new THREE.Color(p.hoverColor || DEFAULT_HOVER_COLOR);
     });
 
     postScene = new THREE.Scene();

@@ -68,7 +68,9 @@ const PROJECTS = [
     title: 'Redesigning Islamic Banking for Indonesia',
     shape: 'is-square', // hero asset is 1680×1680 — square is its native shape
     color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
-    hoverColor: '#a9dcb8', // grid-view hover tint (soft green)
+    hoverColor: '#BEFFF7', // soft blend over the animated thumbnail background
+    hoverMotion: 0.55, // optional: 0 = static, higher = more movement
+    hoverOpacity: 0.26, // optional: strength of the animated background
     media: {
       hero: 'assets/projects/byond/BYOND-Thumbnail.png',
       video: 'assets/projects/byond/byond-showcase.mp4',
@@ -141,7 +143,7 @@ const PROJECTS = [
     subtitle: 'al-yasiniqu',
     title: 'al-yasiniqu',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#e8a52b,#b07815)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Al Yasini/Al Yasini-thumbnail.png',
       gallery: [
@@ -163,7 +165,7 @@ const PROJECTS = [
     subtitle: 'MyTelkomsel Basic',
     title: 'MyTelkomsel Basic',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#e32119,#a9110c)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTB/MTB-Thumbnail.png',
       gallery: [
@@ -188,7 +190,7 @@ const PROJECTS = [
     subtitle: 'MyTelkomsel App',
     title: 'MyTelkomsel App',
     shape: 'is-portrait',
-    color: 'linear-gradient(160deg,#e32119,#a9110c)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTA/MTA.png',
       gallery: [
@@ -211,7 +213,7 @@ const PROJECTS = [
     subtitle: 'MyTelkomsel Web',
     title: 'MyTelkomsel Web',
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#e32119,#a9110c)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTW/MTW-Thumbnail.png',
       gallery: [
@@ -327,7 +329,7 @@ const PROJECTS = [
     subtitle: 'MantisGo',
     title: 'MantisGo',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#f0bd32,#ad7416)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Mango/MANGO-Thumbnail.png',
       gallery: [
@@ -373,7 +375,7 @@ const PROJECTS = [
     subtitle: 'Fatberry',
     title: 'Fatberry',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#ed547c,#a6244b)',
+    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Fatberry/Fatberry-Thumbnail.png',
       gallery: [
