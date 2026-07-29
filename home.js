@@ -338,20 +338,25 @@
   function noGsapFallback() {
     var splashEl = document.getElementById('splash');
     if (splashEl) splashEl.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = 'hidden';
     var porto = document.querySelector('.porto');
-    porto.style.opacity = '1';
-    porto.style.position = 'static';
-    porto.style.overflow = 'visible';
-    document.querySelectorAll('.page-section').forEach(function (s) {
-      s.style.position = 'relative'; s.style.height = '900px';
+    if (porto) porto.style.opacity = '1';
+    document.querySelectorAll('.page-section').forEach(function (s, i) {
+      s.style.position = '';
+      s.style.height = '';
+      s.style.transform = 'none';
+      s.style.visibility = i === 0 ? 'visible' : 'hidden';
+      s.classList.toggle('is-active', i === 0);
+      var card = s.querySelector('.proj-card');
+      if (card) card.setAttribute('tabindex', i === 0 ? '0' : '-1');
     });
     document.querySelectorAll('.section-inner').forEach(function (s) {
-      s.style.transform = 'none'; s.style.top = '0';
+      s.style.transform = ''; s.style.top = '';
     });
     document.querySelectorAll(
       '.proj-card,.page-placeholder .line,.ph-label'
     ).forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
+    document.documentElement.classList.remove('skip-splash');
   }
 
   // ── Safety timeout: force-exit splash after 6 s ─────────
@@ -819,7 +824,7 @@
   }
 
   // ── Main ────────────────────────────────────────────────
-  window.addEventListener('load', function () {
+  function initHome() {
     if (!window.gsap || !window.Observer) { noGsapFallback(); return; }
     gsap.registerPlugin(Observer);
     history.replaceState({ csOverlay: null }, '', location.href);
@@ -1305,7 +1310,16 @@
     };
 
     if (splashCounterDone) doExitSplash();
-  });
+  }
+
+  // All markup exists because this script sits at the end of <body>. Starting
+  // on DOMContentLoaded avoids waiting for the portfolio's large image assets;
+  // waiting for window.load allowed the 6 s safety fallback to win the race.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHome, { once: true });
+  } else {
+    initHome();
+  }
 
   // ── Custom proj-card cursor ───────────────────────────
   (function () {

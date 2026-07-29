@@ -66,7 +66,7 @@ body { background: #fff; overflow: hidden; }
 }
 
 /* ── Scan grid: crosshair + focus frame tracking the active proj-card ──
-   home.js positions .scan-line-v*/.scan-line-h*/.scan-focus in px to match
+   home.js positions the vertical lines, horizontal lines, and focus frame to match
    the card's live getBoundingClientRect(); it scales the focus ~20% larger
    mid-transition, then settles back onto the next card. */
 .scan-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; }

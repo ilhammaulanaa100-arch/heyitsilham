@@ -12,7 +12,7 @@
   <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Arriving from the about-page footer glide: suppress the splash and show
-       section 0 from the very first paint (class removed by home.js at load) -->
+       section 0 from the very first paint (class removed by home.js at init) -->
   <script>try { if (sessionStorage.getItem('porto-skip-splash') === '1') {
     document.documentElement.classList.add('skip-splash');
     // Hold rendering (and the view-transition's old-page snapshot) until the
@@ -51,7 +51,7 @@
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
   <link rel="stylesheet" href="case-study.css" />
-  <link rel="stylesheet" href="home.css?v=2" />
+  <link rel="stylesheet" href="home.css?v=3" />
 </head>
 <body>
   <div id="proj-cursor" aria-hidden="true">
@@ -250,7 +250,7 @@
   <script src="case-study.js"></script>
   <script src="content.js"></script>
   <script src="grid.js"></script>
-  <script src="home.js"></script>
+  <script src="home.js?v=3"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>
