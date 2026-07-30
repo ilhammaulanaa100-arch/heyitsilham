@@ -12,14 +12,19 @@
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Arriving from the about-page footer glide: suppress the splash and show
        section 0 from the very first paint (class removed by home.js at init) -->
-  <script>try { if (sessionStorage.getItem('porto-skip-splash') === '1') {
-    document.documentElement.classList.add('skip-splash');
-    // Hold rendering (and the view-transition's old-page snapshot) until the
-    // parser reaches #page-ready at the end of body — i.e. until home.js has
-    // built the sections — so the first painted frame already has the fold.
-    // Arrival-only: normal loads keep progressive paint for the splash.
-    document.write('<link rel="expect" href="#page-ready" blocking="render">');
-  } } catch (e) {}</script>
+  <script>try {
+    var fromAboutMenu = new URLSearchParams(location.search).get('from') === 'about-menu' ||
+      sessionStorage.getItem('porto-home-curtain') === '1';
+    if (fromAboutMenu) document.documentElement.classList.add('from-about-curtain');
+    if (sessionStorage.getItem('porto-skip-splash') === '1') {
+      document.documentElement.classList.add('skip-splash');
+      // Hold rendering until the parser reaches #page-ready at the end of body
+      // — i.e. until home.js has built the sections — so the first painted
+      // frame already has the fold.
+      // Arrival-only: normal loads keep progressive paint for the splash.
+      document.write('<link rel="expect" href="#page-ready" blocking="render">');
+    }
+  } catch (e) {}</script>
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -50,9 +55,73 @@
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
   <link rel="stylesheet" href="case-study.css" />
-  <link rel="stylesheet" href="home.css?v=3" />
+  <link rel="stylesheet" href="home.css?v=6" />
 </head>
 <body>
+  <div class="home-entry-curtain" id="home-entry-curtain" aria-hidden="true"></div>
+  <script>
+  // The About page can prerender this document before its menu is clicked.
+  // Arm on activation as well as on a normal load so both paths get the same
+  // opaque first frame and reveal.
+  (function () {
+    var root = document.documentElement;
+    var curtain = document.getElementById('home-entry-curtain');
+    var armed = false;
+    var released = false;
+
+    function hasRoute() {
+      try {
+        return new URLSearchParams(location.search).get('from') === 'about-menu' ||
+          sessionStorage.getItem('porto-home-curtain') === '1';
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function release() {
+      if (released) return;
+      released = true;
+      curtain.getBoundingClientRect();
+      requestAnimationFrame(function () {
+        root.classList.add('is-home-ready');
+        setTimeout(function () {
+          root.classList.remove('from-about-curtain', 'is-home-ready');
+        }, 220);
+      });
+    }
+
+    function arm() {
+      if (armed || (!root.classList.contains('from-about-curtain') && !hasRoute())) return;
+      armed = true;
+      root.classList.add('from-about-curtain');
+      try {
+        sessionStorage.removeItem('porto-home-curtain');
+        if (new URLSearchParams(location.search).get('from') === 'about-menu') {
+          history.replaceState(history.state, '', 'index.html');
+        }
+      } catch (e) {}
+
+      if (window.__portoHomeReady) release();
+      else {
+        document.addEventListener('porto:home-ready', release, { once: true });
+        setTimeout(release, 1400);
+      }
+    }
+
+    if (document.prerendering) {
+      document.addEventListener('prerenderingchange', arm, { once: true });
+    } else {
+      arm();
+    }
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted && hasRoute()) {
+        try { sessionStorage.removeItem('porto-skip-splash'); } catch (e) {}
+        arm();
+      }
+    });
+  })();
+  </script>
+
   <div id="proj-cursor" aria-hidden="true">
     <div class="proj-cursor-inner">
       <svg data-cursor-icon="explore" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -231,7 +300,7 @@
   <script src="case-study.js"></script>
   <script src="content.js"></script>
   <script src="grid.js"></script>
-  <script src="home.js?v=3"></script>
+  <script src="home.js?v=5"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>

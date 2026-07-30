@@ -290,6 +290,17 @@ body.menu-open .menu-button { pointer-events: auto; }
     -webkit-backdrop-filter 500ms ease,
     visibility 0s linear;
 }
+.site-menu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #020202;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateZ(0);
+  will-change: opacity;
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 .site-menu.is-preparing,
 .site-menu.is-closing { visibility: visible; }
 .site-menu.is-open {
@@ -303,22 +314,29 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu.is-closing {
   pointer-events: none;
 }
-.site-menu.is-selecting-about {
+.site-menu.is-selecting-about,
+.site-menu.is-selecting-works {
   pointer-events: none;
 }
-.site-menu.is-navigating-about {
+.site-menu.is-navigating-about,
+.site-menu.is-navigating-home {
   visibility: visible;
-  background-color: #020202;
-  backdrop-filter: blur(0);
-  -webkit-backdrop-filter: blur(0);
+  /* Keep the existing backdrop composite stable while a separate opaque
+     scrim hides the project card. Animating backdrop-filter over the card's
+     transformed image can make Chromium rebuild that layer for one frame. */
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   pointer-events: none;
-  transition:
-    background-color 360ms ease 260ms,
-    backdrop-filter 360ms ease 260ms,
-    -webkit-backdrop-filter 360ms ease 260ms;
+  transition: none;
+}
+.site-menu.is-navigating-about::before,
+.site-menu.is-navigating-home::before {
+  opacity: 1;
 }
 .site-menu-panel {
   position: absolute;
+  z-index: 1;
   top: 48px;
   right: 40px;
   width: 450px;
@@ -352,7 +370,8 @@ body.menu-open .menu-button { pointer-events: auto; }
   clip-path: inset(0 0 0 0);
   transform: translate3d(0, 0, 0);
 }
-.site-menu.is-navigating-about .site-menu-panel {
+.site-menu.is-navigating-about .site-menu-panel,
+.site-menu.is-navigating-home .site-menu-panel {
   top: 0;
   right: 0;
   width: 100vw;
@@ -399,7 +418,8 @@ body.menu-open .menu-button { pointer-events: auto; }
     height 800ms var(--menu-spring),
     opacity 160ms ease 60ms;
 }
-.site-menu.is-navigating-about .site-menu-panel-bg-open {
+.site-menu.is-navigating-about .site-menu-panel-bg-open,
+.site-menu.is-navigating-home .site-menu-panel-bg-open {
   width: 100%;
   height: 100%;
   opacity: 0;
@@ -461,18 +481,21 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu.is-closing .site-menu-link {
   transition-delay: 0s;
 }
-.site-menu.is-selecting-about .site-menu-active-dot {
+.site-menu.is-selecting-about .site-menu-active-dot,
+.site-menu.is-selecting-works .site-menu-active-dot {
   opacity: 0;
   transition: opacity 120ms ease;
 }
-.site-menu.is-selecting-about .site-menu-link.is-route-target {
+.site-menu.is-selecting-about .site-menu-link.is-route-target,
+.site-menu.is-selecting-works .site-menu-link.is-route-target {
   color: #fff;
   transition:
     color 120ms ease,
     opacity 220ms ease,
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.site-menu.is-navigating-about .site-menu-link {
+.site-menu.is-navigating-about .site-menu-link,
+.site-menu.is-navigating-home .site-menu-link {
   opacity: 0;
   transform: translate3d(-12px, 0, 0);
   transition:
@@ -480,7 +503,8 @@ body.menu-open .menu-button { pointer-events: auto; }
     opacity 160ms ease,
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.site-menu.is-navigating-about .site-menu-link.is-route-target {
+.site-menu.is-navigating-about .site-menu-link.is-route-target,
+.site-menu.is-navigating-home .site-menu-link.is-route-target {
   color: #fff;
   opacity: 0;
   transform: translate3d(0, -8px, 0);
@@ -529,7 +553,8 @@ body.menu-open .menu-button { pointer-events: auto; }
     opacity 220ms ease 280ms,
     transform 900ms var(--menu-spring) 280ms;
 }
-.site-menu.is-navigating-about .site-menu-connect {
+.site-menu.is-navigating-about .site-menu-connect,
+.site-menu.is-navigating-home .site-menu-connect {
   opacity: 0;
   transform: translate3d(-12px, 0, 0);
   transition:
@@ -537,12 +562,33 @@ body.menu-open .menu-button { pointer-events: auto; }
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-body.page-leaving-about .menu-button {
+body.page-leaving-about .menu-button,
+body.page-leaving-home .menu-button {
   opacity: 0;
   pointer-events: none;
   transition:
     transform 800ms var(--menu-spring),
     opacity 160ms ease 120ms;
+}
+
+/* About menu → Works handoff. Homepage fold 0 is prepared underneath this
+   cover, then revealed with the same short fade as the opposite route. */
+.home-entry-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  visibility: hidden;
+  opacity: 0;
+  background: #020202;
+  pointer-events: none;
+}
+html.from-about-curtain .home-entry-curtain {
+  visibility: visible;
+  opacity: 1;
+}
+html.from-about-curtain.is-home-ready .home-entry-curtain {
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .site-menu-connect p {
   font-family: 'Bai Jamjuree', sans-serif;
@@ -1095,6 +1141,7 @@ html.dark #cs-right { background: #020202; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-entry-curtain { display: none; }
   .site-menu,
   .site-menu-panel,
   .site-menu-panel-bg,
@@ -1107,12 +1154,6 @@ html.dark #cs-right { background: #020202; }
   .site-menu-link,
   .site-menu-connect { transition: none; }
 }
-
-/* Cross-document view transition: the browser holds the previous page's
-   pixels until this page is ready to render, then crossfades — kills the
-   blank flash on about→home (and any same-origin nav). No-op where
-   unsupported. */
-@view-transition { navigation: auto; }
 
 /* Whisper-fade: home first-paint hero targets hidden only when JS motion on.
    Scoped to [data-reveal] so section-nav char reveals are unaffected. */

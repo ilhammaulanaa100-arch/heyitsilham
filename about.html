@@ -20,7 +20,7 @@
   <!-- Prerender the homepage in the background so the footer-glide handoff is
        an instant swap of an already-rendered page (no blank navigation gap).
        Browsers without speculation rules ignore this. -->
-  <script type="speculationrules">{ "prerender": [{ "urls": ["index.html"] }] }</script>
+  <script type="speculationrules">{ "prerender": [{ "urls": ["index.html", "index.html?from=about-menu"] }] }</script>
 
   <!-- Favicons -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -35,12 +35,31 @@
 
   <!-- Reuse the homepage navigation/menu component, then layer the scrolling
        About page styles on top. -->
-  <link rel="stylesheet" href="home.css?v=3" />
-  <link rel="stylesheet" href="about.css?v=2" />
+  <link rel="stylesheet" href="home.css?v=6" />
+  <link rel="stylesheet" href="about.css?v=3" />
 </head>
 <body>
 
   <div class="about-entry-curtain" id="about-entry-curtain" aria-hidden="true"></div>
+  <script>
+  // Release the handoff cover as soon as its DOM node exists. Keeping this
+  // beside the curtain prevents the rest of the document and its scripts from
+  // extending the black frame on a cold navigation.
+  (function () {
+    var root = document.documentElement;
+    var curtain = document.getElementById('about-entry-curtain');
+    if (!curtain || !root.classList.contains('from-home-curtain')) return;
+
+    curtain.getBoundingClientRect();
+    requestAnimationFrame(function () {
+      root.classList.add('is-about-ready');
+      document.dispatchEvent(new CustomEvent('porto:about-reveal'));
+      setTimeout(function () {
+        root.classList.remove('from-home-curtain', 'is-about-ready');
+      }, 220);
+    });
+  })();
+  </script>
 
   <nav class="navbar">
     <div class="navbar-left">
@@ -73,7 +92,7 @@
       <img class="site-menu-panel-bg site-menu-panel-bg-open" src="assets/images/site-menu/menu-panel-bg.svg" alt="" aria-hidden="true" />
 
       <nav class="site-menu-nav" aria-label="Primary navigation">
-        <a class="site-menu-link" href="index.html">Works</a>
+        <a class="site-menu-link" href="index.html?from=about-menu">Works</a>
         <button class="site-menu-link is-active" type="button" data-menu-action="about">
           <span>About</span>
           <img class="site-menu-active-dot" src="assets/images/site-menu/menu-active-dot.svg" alt="" aria-hidden="true" />
@@ -192,6 +211,6 @@
   </footer>
 
   <script src="motion.js"></script>
-  <script src="about.js"></script>
+  <script src="about.js?v=4"></script>
 </body>
 </html>

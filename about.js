@@ -1,50 +1,15 @@
 // About page — full-screen menu, work-experience counter, and page transitions.
 
-// ── Home menu → About curtain release ──
-(function () {
-  var root = document.documentElement;
-  var curtain = document.getElementById('about-entry-curtain');
-  if (!curtain || !root.classList.contains('from-home-curtain')) return;
-
-  var released = false;
-
-  function release() {
-    if (released) return;
-    released = true;
-    window.requestAnimationFrame(function () {
-      window.requestAnimationFrame(function () {
-        root.classList.add('is-about-ready');
-        document.dispatchEvent(new CustomEvent('porto:about-reveal'));
-        window.setTimeout(function () {
-          root.classList.remove('from-home-curtain', 'is-about-ready');
-        }, 380);
-      });
-    });
-  }
-
-  // The same fonts already render on the homepage, so the cache normally
-  // resolves immediately. Keep a short cap for cold loads without making
-  // the black handoff feel like a pause.
-  if (document.fonts && document.fonts.ready) {
-    Promise.race([
-      document.fonts.ready,
-      new Promise(function (resolve) { window.setTimeout(resolve, 180); })
-    ]).then(release, release);
-  } else {
-    release();
-  }
-
-  window.setTimeout(release, 450);
-})();
-
 // ── Full-screen menu (same behavior as the homepage) ──
 (function () {
   var trigger = document.getElementById('menu-trigger');
   var menu = document.getElementById('site-menu');
   var panel = document.getElementById('site-menu-panel');
   var aboutButton = menu && menu.querySelector('[data-menu-action="about"]');
+  var worksLink = menu && menu.querySelector('.site-menu-nav a[href*="index.html"]');
   var previousFocus = null;
   var closeTimer = null;
+  var leavingForWorks = false;
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (!trigger || !menu || !panel) return;
@@ -100,6 +65,7 @@
   }
 
   function openMenu() {
+    if (leavingForWorks) return;
     if (menu.classList.contains('is-open') || menu.classList.contains('is-closing')) return;
     if (closeTimer !== null) {
       window.clearTimeout(closeTimer);
@@ -120,6 +86,7 @@
   }
 
   function closeMenu(restoreFocus) {
+    if (leavingForWorks) return;
     if (!menu.classList.contains('is-open') && !menu.classList.contains('is-preparing')) return;
     updateMorphGeometry();
     menu.classList.add('is-closing');
@@ -139,6 +106,7 @@
   }
 
   trigger.addEventListener('click', function () {
+    if (leavingForWorks) return;
     if (menu.classList.contains('is-open') || menu.classList.contains('is-preparing')) {
       closeMenu(true);
     } else {
@@ -146,6 +114,45 @@
     }
   });
   if (aboutButton) aboutButton.addEventListener('click', function () { closeMenu(true); });
+
+  function navigateToWorks(e) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (leavingForWorks) return;
+
+    var href = worksLink.getAttribute('href') || 'index.html';
+    try { sessionStorage.setItem('porto-skip-splash', '1'); } catch (storageError) {}
+    if (reducedMotion) {
+      window.location.href = href;
+      return;
+    }
+
+    leavingForWorks = true;
+    worksLink.classList.add('is-route-target');
+    worksLink.setAttribute('aria-current', 'page');
+    menu.classList.add('is-selecting-works');
+    menu.setAttribute('aria-hidden', 'true');
+    try { sessionStorage.setItem('porto-home-curtain', '1'); } catch (storageError) {}
+
+    window.setTimeout(function () {
+      if (!leavingForWorks) return;
+      menu.classList.add('is-navigating-home');
+      document.body.classList.add('page-leaving-home');
+    }, 140);
+
+    window.setTimeout(function () {
+      // The common Home → About → Works path can restore the already-rendered
+      // homepage from bfcache. Direct About visits keep the prepared-load
+      // fallback below.
+      if (/(index\.html|\/)$/.test(document.referrer) && history.length > 1) {
+        history.back();
+      } else {
+        window.location.href = href;
+      }
+    }, 840);
+  }
+
+  if (worksLink) worksLink.addEventListener('click', navigateToWorks);
 
   menu.addEventListener('click', function (e) {
     if (e.target === menu) closeMenu(true);
@@ -185,7 +192,24 @@
     }
   });
 
-  window.addEventListener('pageshow', function () { closeMenu(false); });
+  window.addEventListener('pageshow', function () {
+    if (leavingForWorks || menu.classList.contains('is-navigating-home')) {
+      leavingForWorks = false;
+      menu.classList.add('is-resetting');
+      menu.classList.remove('is-selecting-works', 'is-navigating-home', 'is-open', 'is-preparing', 'is-closing');
+      document.body.classList.remove('page-leaving-home', 'menu-open');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-label', 'Open menu');
+      menu.setAttribute('aria-hidden', 'true');
+      if (worksLink) {
+        worksLink.classList.remove('is-route-target');
+        worksLink.removeAttribute('aria-current');
+      }
+      window.requestAnimationFrame(function () { menu.classList.remove('is-resetting'); });
+      return;
+    }
+    closeMenu(false);
+  });
   window.addEventListener('resize', function () {
     if (menu.classList.contains('is-open')) updateMorphGeometry();
   }, { passive: true });
@@ -302,7 +326,9 @@
   // Entrance: hero fades in top→bottom. On the menu-curtain route, start it
   // exactly when the destination cover begins to clear.
   var hero = document.querySelector('.ab-hero');
-  if (document.documentElement.classList.contains('from-home-curtain')) {
+  var root = document.documentElement;
+  if (root.classList.contains('from-home-curtain') &&
+      !root.classList.contains('is-about-ready')) {
     document.addEventListener('porto:about-reveal', function () {
       Motion.enter(hero);
     }, { once: true });

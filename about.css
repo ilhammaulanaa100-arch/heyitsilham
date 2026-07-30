@@ -36,7 +36,7 @@ html.from-home-curtain .about-entry-curtain {
 }
 html.from-home-curtain.is-about-ready .about-entry-curtain {
   opacity: 0;
-  transition: opacity 320ms cubic-bezier(0.33, 0, 0.2, 1);
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ── Page shell ── */
@@ -156,9 +156,6 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
   .ab-peek-wrap { margin-top: 0; height: 16vh; padding-top: 64px; }
   .ab-peek { margin: 0 24px; }
 }
-
-/* Opt in to cross-document view transitions (both pages must opt in). */
-@view-transition { navigation: auto; }
 
 /* Whisper-fade: reveal targets start hidden only when JS motion is on. */
 html.motion-on [data-reveal],

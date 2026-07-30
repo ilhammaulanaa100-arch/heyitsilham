@@ -3,6 +3,12 @@
 (function () {
   'use strict';
 
+  function markHomeReady() {
+    if (window.__portoHomeReady) return;
+    window.__portoHomeReady = true;
+    document.dispatchEvent(new CustomEvent('porto:home-ready'));
+  }
+
   // ── Guard: abort if content.js failed / PROJECTS missing ──
   if (typeof PROJECTS === 'undefined' || !PROJECTS || !PROJECTS.length) {
     console.error('[porto] PROJECTS is undefined — content.js may have failed to load.');
@@ -10,6 +16,7 @@
     if (splashEl) splashEl.style.display = 'none';
     var portoEl = document.querySelector('.porto');
     if (portoEl) portoEl.style.opacity = '1';
+    markHomeReady();
     return;
   }
 
@@ -181,6 +188,9 @@
       }
 
       leavingForAbout = true;
+      // The current fold is already visible behind the menu. Persist that
+      // readiness into bfcache so About → Works can reveal it immediately.
+      markHomeReady();
       aboutLink.classList.add('is-route-target');
       aboutLink.setAttribute('aria-current', 'page');
       menu.classList.add('is-selecting-about');
@@ -195,11 +205,11 @@
         document.body.classList.add('page-leaving-about');
       }, 140);
 
-      // Selection beat (140 ms) + panel expansion (680 ms) + a compositor
-      // margin. Navigation only happens behind a completely solid cover.
+      // Selection beat (140 ms) + panel expansion (680 ms) + one frame.
+      // Hand off as soon as the cover is solid so black never becomes a pause.
       window.setTimeout(function () {
         window.location.href = href;
-      }, 900);
+      }, 840);
     }
 
     trigger.addEventListener('click', function () {
@@ -382,6 +392,7 @@
       '.proj-card,.page-placeholder .line,.ph-label'
     ).forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
     document.documentElement.classList.remove('skip-splash');
+    markHomeReady();
   }
 
   // ── Safety timeout: force-exit splash after 6 s ─────────
@@ -1317,9 +1328,13 @@
         gsap.set('.porto', { opacity: 1 });
         document.documentElement.classList.remove('skip-splash');
         animating = false;
+        markHomeReady();
         return;
       }
-      var introTl = gsap.timeline({ onComplete: function () { animating = false; } });
+      var introTl = gsap.timeline({ onComplete: function () {
+        animating = false;
+        markHomeReady();
+      } });
       introTl
         .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)
         .to('.porto',  { opacity: 1,    duration: 0.5,  ease: 'power2.out' }, 0.3);
