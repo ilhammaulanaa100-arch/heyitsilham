@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,8 +8,7 @@
   <meta name="description" content="Ilham — product designer crafting editorial, cinematic digital experiences. Selected work and case studies." />
   <meta name="author" content="Ilham" />
   <link rel="canonical" href="https://heyitsilham.vercel.app/" />
-  <meta name="theme-color" content="#ffffff" />
-  <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+  <meta name="theme-color" content="#020202" />
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Arriving from the about-page footer glide: suppress the splash and show
        section 0 from the very first paint (class removed by home.js at init) -->
@@ -180,44 +179,26 @@
   <div id="grid-view" aria-hidden="true"></div>
 
   <!-- View switch: List / Grid -->
-  <div class="view-tabs" id="view-tabs" role="group" aria-label="Project view">
+  <button class="view-tabs" id="view-tabs" type="button" aria-label="Switch to grid view" aria-pressed="false">
     <span class="view-switch-visual" aria-hidden="true">
-      <img class="view-switch-bg view-switch-bg-list" src="assets/images/view-switch/view-list-bg.svg" alt="" />
-      <img class="view-switch-glow-list" src="assets/images/view-switch/view-list-glow.svg" alt="" />
-      <img class="view-switch-bg view-switch-bg-grid" src="assets/images/view-switch/view-grid-bg.svg" alt="" />
+      <img class="view-switch-bg" src="assets/images/view-switch/view-toggle-bg.svg" alt="" />
+      <span class="view-switch-glow"></span>
     </span>
-    <span class="view-switch-options">
-      <button type="button" class="view-tab view-tab-list is-active" data-view="vertical" aria-label="List view" aria-pressed="true">
-        <span class="view-tab-icon view-tab-icon-list" aria-hidden="true">
-          <span class="view-tab-icon-state view-tab-icon-active">
-            <img class="view-tab-list-leaf-a" src="assets/images/view-switch/list-active-a.svg" alt="" />
-            <img class="view-tab-list-leaf-b" src="assets/images/view-switch/list-active-b.svg" alt="" />
-          </span>
-          <span class="view-tab-icon-state view-tab-icon-inactive">
-            <img class="view-tab-list-leaf-a" src="assets/images/view-switch/list-inactive-a.svg" alt="" />
-            <img class="view-tab-list-leaf-b" src="assets/images/view-switch/list-inactive-b.svg" alt="" />
-          </span>
-        </span>
-        <span class="view-tab-label">List</span>
-      </button>
-      <span class="view-switch-divider" aria-hidden="true">
-        <img src="assets/images/view-switch/view-divider.svg" alt="" />
+    <span class="view-switch-state view-switch-state-list" aria-hidden="true">
+      <span class="view-switch-label">List</span>
+      <span class="view-switch-icon view-switch-icon-list">
+        <img class="view-switch-list-leaf-a" src="assets/images/view-switch/list-inactive-a.svg" alt="" />
+        <img class="view-switch-list-leaf-b" src="assets/images/view-switch/list-inactive-b.svg" alt="" />
       </span>
-      <button type="button" class="view-tab view-tab-grid" data-view="grid" aria-label="Grid view" aria-pressed="false">
-        <span class="view-tab-icon view-tab-icon-grid" aria-hidden="true">
-          <span class="view-tab-icon-state view-tab-icon-active">
-            <img class="view-tab-grid-leaf-a" src="assets/images/view-switch/grid-active-a.svg" alt="" />
-            <img class="view-tab-grid-leaf-b" src="assets/images/view-switch/grid-active-b.svg" alt="" />
-          </span>
-          <span class="view-tab-icon-state view-tab-icon-inactive">
-            <img class="view-tab-grid-leaf-a" src="assets/images/view-switch/grid-inactive-a.svg" alt="" />
-            <img class="view-tab-grid-leaf-b" src="assets/images/view-switch/grid-inactive-b.svg" alt="" />
-          </span>
-        </span>
-        <span class="view-tab-label">Grid</span>
-      </button>
     </span>
-  </div>
+    <span class="view-switch-state view-switch-state-grid" aria-hidden="true">
+      <span class="view-switch-label">Grid</span>
+      <span class="view-switch-icon view-switch-icon-grid">
+        <img class="view-switch-grid-leaf-a" src="assets/images/view-switch/grid-inactive-a.svg" alt="" />
+        <img class="view-switch-grid-leaf-b" src="assets/images/view-switch/grid-inactive-b.svg" alt="" />
+      </span>
+    </span>
+  </button>
 
   <!-- Case-study overlay (SPA, in-place) -->
   <div class="cs-overlay" id="cs-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Case study">

@@ -54,8 +54,10 @@
     var menu = document.getElementById('site-menu');
     var panel = document.getElementById('site-menu-panel');
     var worksButton = menu && menu.querySelector('[data-menu-action="works"]');
+    var aboutLink = menu && menu.querySelector('a[href*="about.html"]');
     var previousFocus = null;
     var closeTimer = null;
+    var leavingForAbout = false;
     var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (!trigger || !menu || !panel) return;
@@ -149,7 +151,59 @@
       }, reducedMotion ? 0 : 840);
     }
 
+    function resetAboutHandoff() {
+      if (!leavingForAbout && !menu.classList.contains('is-navigating-about')) return false;
+      leavingForAbout = false;
+      menu.classList.add('is-resetting');
+      menu.classList.remove('is-selecting-about', 'is-navigating-about', 'is-open', 'is-preparing', 'is-closing');
+      document.body.classList.remove('page-leaving-about', 'menu-open');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-label', 'Open menu');
+      menu.setAttribute('aria-hidden', 'true');
+      if (aboutLink) {
+        aboutLink.classList.remove('is-route-target');
+        aboutLink.removeAttribute('aria-current');
+      }
+      void menu.offsetWidth;
+      window.requestAnimationFrame(function () { menu.classList.remove('is-resetting'); });
+      return true;
+    }
+
+    function navigateToAbout(e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (leavingForAbout) return;
+
+      var href = aboutLink.getAttribute('href') || 'about.html';
+      if (reducedMotion) {
+        window.location.href = href;
+        return;
+      }
+
+      leavingForAbout = true;
+      aboutLink.classList.add('is-route-target');
+      aboutLink.setAttribute('aria-current', 'page');
+      menu.classList.add('is-selecting-about');
+      menu.setAttribute('aria-hidden', 'true');
+
+      try { sessionStorage.setItem('porto-about-curtain', '1'); } catch (storageError) {}
+
+      // Give the active state one clean beat before the structural transition.
+      window.setTimeout(function () {
+        if (!leavingForAbout) return;
+        menu.classList.add('is-navigating-about');
+        document.body.classList.add('page-leaving-about');
+      }, 140);
+
+      // Selection beat (140 ms) + panel expansion (680 ms) + a compositor
+      // margin. Navigation only happens behind a completely solid cover.
+      window.setTimeout(function () {
+        window.location.href = href;
+      }, 900);
+    }
+
     trigger.addEventListener('click', function () {
+      if (leavingForAbout) return;
       if (menu.classList.contains('is-open') || menu.classList.contains('is-preparing')) {
         closeMenu(true);
       } else {
@@ -157,6 +211,7 @@
       }
     });
     if (worksButton) worksButton.addEventListener('click', function () { closeMenu(true); });
+    if (aboutLink) aboutLink.addEventListener('click', navigateToAbout);
 
     menu.addEventListener('click', function (e) {
       if (e.target === menu) closeMenu(true);
@@ -196,42 +251,12 @@
       }
     });
 
-    window.addEventListener('pageshow', function () { closeMenu(false); });
+    window.addEventListener('pageshow', function () {
+      if (!resetAboutHandoff()) closeMenu(false);
+    });
     window.addEventListener('resize', function () {
       if (menu.classList.contains('is-open')) updateMorphGeometry();
     }, { passive: true });
-  })();
-
-  // ── Theme toggle (single icon, circular view-transition reveal) ───
-  (function () {
-    var root = document.documentElement;
-    var btn  = document.getElementById('theme-switch');
-    if (!btn) return;
-    function apply() {
-      var dark = root.classList.toggle('dark');
-      try { localStorage.setItem('porto-theme', dark ? 'dark' : 'light'); } catch (e) {}
-      if (window.GridView && GridView.setTheme) GridView.setTheme();
-    }
-    btn.addEventListener('click', function () {
-      if (!document.startViewTransition) { apply(); return; }
-      var r = btn.getBoundingClientRect();
-      var x = r.left + r.width / 2;
-      var y = r.top + r.height / 2;
-      var endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y)
-      );
-      document.startViewTransition(apply).ready.then(function () {
-        root.animate(
-          { clipPath: [
-              'circle(0px at ' + x + 'px ' + y + 'px)',
-              'circle(' + endRadius + 'px at ' + x + 'px ' + y + 'px)'
-            ] },
-          { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            pseudoElement: '::view-transition-new(root)' }
-        );
-      });
-    });
   })();
 
   // ── Character split for hero label + title ──────────────
@@ -1163,23 +1188,23 @@
     navRows[1].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(-1); });
     navRows[3].addEventListener('click', function () { if (!animating && !isOverlayOpen) go(1);  });
 
-    // ── View tabs: Vertical / Grid ──
-    var viewTabs = document.querySelectorAll('.view-tab');
+    // ── View switch: List / Grid ──
+    var viewToggle = document.getElementById('view-tabs');
     var returnToGrid = false; // overlay was opened from the grid → restore it on close
 
     function syncViewTabs(view) {
-      viewTabs.forEach(function (t) {
-        var active = t.getAttribute('data-view') === view;
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-pressed', active ? 'true' : 'false');
-      });
+      if (!viewToggle) return;
+      var isGrid = view === 'grid';
+      viewToggle.classList.toggle('is-grid', isGrid);
+      viewToggle.setAttribute('aria-pressed', isGrid ? 'true' : 'false');
+      viewToggle.setAttribute('aria-label', isGrid ? 'Switch to list view' : 'Switch to grid view');
     }
 
     function setView(view) {
       if (!window.GridView) return;
       var isGrid = view === 'grid';
-      if (isGrid === GridView.isOpen()) return;
       syncViewTabs(view);
+      if (isGrid === GridView.isOpen()) return;
       if (isGrid) {
         if (convObserver) convObserver.disable();
         GridView.show();
@@ -1189,11 +1214,14 @@
       }
     }
 
-    viewTabs.forEach(function (t) {
-      t.addEventListener('click', function () {
-        if (!isOverlayOpen && !animating) setView(t.getAttribute('data-view'));
+    if (viewToggle) {
+      viewToggle.addEventListener('click', function () {
+        if (!isOverlayOpen && !animating && window.GridView) {
+          setView(GridView.isOpen() ? 'vertical' : 'grid');
+        }
       });
-    });
+      syncViewTabs(window.GridView && GridView.isOpen() ? 'grid' : 'vertical');
+    }
 
     // ── bfcache restore ──
     // The about-page footer glide returns here via history.back(): this DOM

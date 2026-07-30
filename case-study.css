@@ -17,6 +17,7 @@
   --brand-teal-deep: #178B84;
   --accent: var(--brand-teal);
   --divider: #e0e0e0;
+  color-scheme: dark;
 }
 
 /* ── Two-panel shell ── */

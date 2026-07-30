@@ -1,17 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Apply saved theme before render (mirrors index.html) so html.dark styles activate -->
-  <script>try { if (localStorage.getItem('porto-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
 
   <title>Case Study — Ilham</title>
   <meta name="description" content="A case study from Ilham's design portfolio — editorial, cinematic product design." />
   <meta name="author" content="Ilham" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#020202" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="article" />
@@ -47,8 +45,8 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
-      background: #fff;
-      color: #000;
+      background: #020202;
+      color: #d9d9d9;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
@@ -56,7 +54,7 @@
     /* Exit wipe — slides in from the right before navigating away */
     #page-wipe {
       position: fixed; inset: 0; z-index: 100001;
-      background: #fff;
+      background: #020202;
       transform: translateX(100%);
       will-change: transform;
       pointer-events: none;

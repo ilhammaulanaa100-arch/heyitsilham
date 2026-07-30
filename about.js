@@ -1,34 +1,194 @@
-// About page — theme switcher (same behavior as home.js), work-experience counter.
+// About page — full-screen menu, work-experience counter, and page transitions.
 
-// ── Theme toggle (single icon, circular view-transition reveal) ──
+// ── Home menu → About curtain release ──
 (function () {
   var root = document.documentElement;
-  var btn  = document.getElementById('theme-switch');
-  if (!btn) return;
-  function apply() {
-    var dark = root.classList.toggle('dark');
-    try { localStorage.setItem('porto-theme', dark ? 'dark' : 'light'); } catch (e) {}
-  }
-  btn.addEventListener('click', function () {
-    if (!document.startViewTransition) { apply(); return; }
-    var r = btn.getBoundingClientRect();
-    var x = r.left + r.width / 2;
-    var y = r.top + r.height / 2;
-    var endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-    document.startViewTransition(apply).ready.then(function () {
-      root.animate(
-        { clipPath: [
-            'circle(0px at ' + x + 'px ' + y + 'px)',
-            'circle(' + endRadius + 'px at ' + x + 'px ' + y + 'px)'
-          ] },
-        { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-          pseudoElement: '::view-transition-new(root)' }
-      );
+  var curtain = document.getElementById('about-entry-curtain');
+  if (!curtain || !root.classList.contains('from-home-curtain')) return;
+
+  var released = false;
+
+  function release() {
+    if (released) return;
+    released = true;
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        root.classList.add('is-about-ready');
+        document.dispatchEvent(new CustomEvent('porto:about-reveal'));
+        window.setTimeout(function () {
+          root.classList.remove('from-home-curtain', 'is-about-ready');
+        }, 380);
+      });
     });
+  }
+
+  // The same fonts already render on the homepage, so the cache normally
+  // resolves immediately. Keep a short cap for cold loads without making
+  // the black handoff feel like a pause.
+  if (document.fonts && document.fonts.ready) {
+    Promise.race([
+      document.fonts.ready,
+      new Promise(function (resolve) { window.setTimeout(resolve, 180); })
+    ]).then(release, release);
+  } else {
+    release();
+  }
+
+  window.setTimeout(release, 450);
+})();
+
+// ── Full-screen menu (same behavior as the homepage) ──
+(function () {
+  var trigger = document.getElementById('menu-trigger');
+  var menu = document.getElementById('site-menu');
+  var panel = document.getElementById('site-menu-panel');
+  var aboutButton = menu && menu.querySelector('[data-menu-action="about"]');
+  var previousFocus = null;
+  var closeTimer = null;
+  var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!trigger || !menu || !panel) return;
+
+  function focusableItems() {
+    return [trigger].concat(Array.prototype.slice.call(
+      panel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    ));
+  }
+
+  function untransformedTriggerRect() {
+    var rect = trigger.getBoundingClientRect();
+    var transform = window.getComputedStyle(trigger).transform;
+    var translateX = 0;
+    var translateY = 0;
+
+    if (transform && transform !== 'none') {
+      var matrix = transform.match(/^matrix\((.+)\)$/);
+      var matrix3d = transform.match(/^matrix3d\((.+)\)$/);
+      if (matrix) {
+        var values = matrix[1].split(',').map(parseFloat);
+        translateX = values[4] || 0;
+        translateY = values[5] || 0;
+      } else if (matrix3d) {
+        var values3d = matrix3d[1].split(',').map(parseFloat);
+        translateX = values3d[12] || 0;
+        translateY = values3d[13] || 0;
+      }
+    }
+
+    return {
+      top: rect.top - translateY,
+      right: rect.right - translateX,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+  function updateMorphGeometry() {
+    var triggerRect = untransformedTriggerRect();
+    var targetLeft = panel.offsetLeft;
+    var targetTop = panel.offsetTop;
+    var targetWidth = panel.offsetWidth;
+    var targetHeight = panel.offsetHeight;
+    var targetRight = targetLeft + targetWidth;
+
+    panel.style.setProperty('--menu-morph-x', (triggerRect.right - targetRight) + 'px');
+    panel.style.setProperty('--menu-morph-y', (triggerRect.top - targetTop) + 'px');
+    panel.style.setProperty('--menu-clip-left', Math.max(0, targetWidth - triggerRect.width) + 'px');
+    panel.style.setProperty('--menu-clip-bottom', Math.max(0, targetHeight - triggerRect.height) + 'px');
+    panel.style.setProperty('--menu-trigger-width', triggerRect.width + 'px');
+    panel.style.setProperty('--menu-trigger-height', triggerRect.height + 'px');
+  }
+
+  function openMenu() {
+    if (menu.classList.contains('is-open') || menu.classList.contains('is-closing')) return;
+    if (closeTimer !== null) {
+      window.clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+    previousFocus = document.activeElement;
+    updateMorphGeometry();
+    menu.classList.add('is-preparing');
+    menu.setAttribute('aria-hidden', 'false');
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.setAttribute('aria-label', 'Close menu');
+    document.body.classList.add('menu-open');
+    void menu.offsetWidth;
+    window.requestAnimationFrame(function () {
+      menu.classList.add('is-open');
+      menu.classList.remove('is-preparing');
+    });
+  }
+
+  function closeMenu(restoreFocus) {
+    if (!menu.classList.contains('is-open') && !menu.classList.contains('is-preparing')) return;
+    updateMorphGeometry();
+    menu.classList.add('is-closing');
+    menu.classList.remove('is-open', 'is-preparing');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-label', 'Open menu');
+    menu.setAttribute('aria-hidden', 'true');
+    if (restoreFocus !== false) {
+      var focusTarget = previousFocus && previousFocus !== document.body ? previousFocus : trigger;
+      if (focusTarget && focusTarget.focus) focusTarget.focus({ preventScroll: true });
+    }
+    closeTimer = window.setTimeout(function () {
+      menu.classList.remove('is-closing');
+      document.body.classList.remove('menu-open');
+      closeTimer = null;
+    }, reducedMotion ? 0 : 840);
+  }
+
+  trigger.addEventListener('click', function () {
+    if (menu.classList.contains('is-open') || menu.classList.contains('is-preparing')) {
+      closeMenu(true);
+    } else {
+      openMenu();
+    }
   });
+  if (aboutButton) aboutButton.addEventListener('click', function () { closeMenu(true); });
+
+  menu.addEventListener('click', function (e) {
+    if (e.target === menu) closeMenu(true);
+  });
+  menu.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
+  menu.addEventListener('touchmove', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
+
+  document.addEventListener('keydown', function (e) {
+    if (!menu.classList.contains('is-open')) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMenu(true);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    var items = focusableItems();
+    if (!items.length) {
+      e.preventDefault();
+      panel.focus();
+      return;
+    }
+    var first = items[0];
+    var last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+
+  window.addEventListener('pageshow', function () { closeMenu(false); });
+  window.addEventListener('resize', function () {
+    if (menu.classList.contains('is-open')) updateMorphGeometry();
+  }, { passive: true });
 })();
 
 // ── Work experience counter: update as each company crosses mid-viewport ──
@@ -139,14 +299,22 @@
     Motion.splitLines(el);
   });
 
-  // Entrance: hero fades in top→bottom on load.
-  Motion.enter(document.querySelector('.ab-hero'));
+  // Entrance: hero fades in top→bottom. On the menu-curtain route, start it
+  // exactly when the destination cover begins to clear.
+  var hero = document.querySelector('.ab-hero');
+  if (document.documentElement.classList.contains('from-home-curtain')) {
+    document.addEventListener('porto:about-reveal', function () {
+      Motion.enter(hero);
+    }, { once: true });
+  } else {
+    Motion.enter(hero);
+  }
 
   // Below-the-fold: fade each marked block in on scroll.
   Motion.observe(document);
 
-  // Plain nav links (no structural transition) → whisper the page out first.
-  document.querySelectorAll('.nav-links a[href]').forEach(function (a) {
+  // Plain menu links (no structural transition) → whisper the page out first.
+  document.querySelectorAll('.site-menu-nav a[href]').forEach(function (a) {
     a.addEventListener('click', function (e) {
       var href = a.getAttribute('href');
       if (!href || href.charAt(0) === '#') return;    // skip in-page/placeholder

@@ -36,9 +36,15 @@ window.GridView = (function () {
   var PMAG = 30;              // max parallax offset (px)
   var parX = 0, parY = 0;     // eased parallax offset, applied at render + click/glide
 
-  // All 14 PROJECTS tiled as 7 × 2, repeated infinitely on both axes.
-  // Keeping the cycle exact prevents empty or mismatched clickable cells.
+  // Every two-row band contains all 14 projects exactly once. Fourteen stable
+  // shuffled bands make a 28-row supertile, so the infinite repeat stays
+  // balanced without exposing the same two-project vertical pattern.
   var PCOLS = 7, PROWS = 2;
+  var PATTERN_BANDS = 14;
+  var PATTERN_ROWS = PATTERN_BANDS * PROWS;
+  var bandPattern = [];
+  var rowOffsetsByCol = [];
+  var rowPeriodsByCol = [];
 
   // ── Staggered layout ──
   // Columns get a stable pseudo-random vertical shift, and each project's media
@@ -98,8 +104,121 @@ window.GridView = (function () {
 
   function mod(n, m) { return ((n % m) + m) % m; }
 
+  function seededShuffle(values, seed) {
+    var state = seed >>> 0;
+    function random() {
+      state += 0x6D2B79F5;
+      var t = state;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    for (var i = values.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1));
+      var tmp = values[i];
+      values[i] = values[j];
+      values[j] = tmp;
+    }
+    return values;
+  }
+
+  // Reject a band boundary when a project would repeat directly above/below
+  // or on either diagonal. Columns wrap, matching the horizontal supertile.
+  function rowsConflict(upper, lower) {
+    for (var col = 0; col < PCOLS; col++) {
+      for (var dx = -1; dx <= 1; dx++) {
+        if (upper[col] === lower[mod(col + dx, PCOLS)]) return true;
+      }
+    }
+    return false;
+  }
+
+  function buildBandPattern() {
+    var pattern = [];
+    var bandSize = PCOLS * PROWS;
+    var projectCount = PROJECTS.length;
+
+    // The portfolio currently has exactly 14 projects. Preserve a safe stable
+    // fallback if that count changes before the grid pattern is revisited.
+    if (projectCount !== bandSize) {
+      for (var fallbackBand = 0; fallbackBand < PATTERN_BANDS; fallbackBand++) {
+        var fallback = [];
+        for (var fallbackSlot = 0; fallbackSlot < bandSize; fallbackSlot++) {
+          fallback.push(mod(fallbackSlot + fallbackBand * PCOLS, projectCount));
+        }
+        pattern.push(fallback);
+      }
+      return pattern;
+    }
+
+    var base = [];
+    for (var pIdx = 0; pIdx < projectCount; pIdx++) base.push(pIdx);
+
+    // Art-directed first fold: put the earliest portfolio entries across the
+    // first row, with Qita (0) and BYOND (1) in the two central visible cells.
+    // The remaining bands stay seeded/shuffled.
+    pattern.push([
+      4, 0, 1, 2, 5, 3, 6,
+      7, 8, 9, 10, 11, 12, 13
+    ]);
+
+    for (var band = 1; band < PATTERN_BANDS; band++) {
+      var candidate = null;
+      for (var attempt = 0; attempt < 4096; attempt++) {
+        var seed = (
+          0x5F3759DF ^
+          Math.imul(band + 1, 0x85EBCA6B) ^
+          Math.imul(attempt + 1, 0xC2B2AE35)
+        ) >>> 0;
+        var shuffled = seededShuffle(base.slice(), seed);
+        var top = shuffled.slice(0, PCOLS);
+        var previousBottom = band
+          ? pattern[band - 1].slice(PCOLS, bandSize)
+          : null;
+
+        // Keep Qita, BYOND, and Adleesya above the initial viewport in the
+        // preceding band. This prevents them duplicating or stealing focus
+        // immediately before the art-directed first row.
+        if (band === PATTERN_BANDS - 1) {
+          if (
+            shuffled.indexOf(0) >= PCOLS ||
+            shuffled.indexOf(1) >= PCOLS ||
+            shuffled.indexOf(13) >= PCOLS
+          ) continue;
+        }
+
+        if (previousBottom && rowsConflict(previousBottom, top)) continue;
+
+        // Close the 28-row loop cleanly so the supertile seam is invisible.
+        if (band === PATTERN_BANDS - 1) {
+          var bottom = shuffled.slice(PCOLS, bandSize);
+          var firstTop = pattern[0].slice(0, PCOLS);
+          if (rowsConflict(bottom, firstTop)) continue;
+        }
+
+        candidate = shuffled;
+        break;
+      }
+
+      // The retry loop is deterministic and normally resolves in a few tries.
+      // This affine permutation is a guaranteed complete-band fallback.
+      if (!candidate) {
+        candidate = [];
+        for (var slot = 0; slot < bandSize; slot++) {
+          candidate.push(mod(slot * 5 + band * 3, bandSize));
+        }
+      }
+      pattern.push(candidate);
+    }
+    return pattern;
+  }
+
+  bandPattern = buildBandPattern();
+
   function projectIndex(col, row) {
-    return mod(row, PROWS) * PCOLS + mod(col, PCOLS);
+    var band = mod(Math.floor(row / PROWS), PATTERN_BANDS);
+    var slot = mod(row, PROWS) * PCOLS + mod(col, PCOLS);
+    return bandPattern[band][slot];
   }
 
   function hoverMotionForProject(pIdx) {
@@ -114,23 +233,44 @@ window.GridView = (function () {
       : DEFAULT_HOVER_OPACITY;
   }
 
+  function buildRowMetrics() {
+    rowOffsetsByCol = [];
+    rowPeriodsByCol = [];
+    for (var col = 0; col < PCOLS; col++) {
+      var offsets = [0];
+      for (var row = 0; row < PATTERN_ROWS; row++) {
+        var pIdx = projectIndex(col, row);
+        offsets.push(offsets[offsets.length - 1] + cellHeightForProject(pIdx, CELL_W));
+      }
+      rowOffsetsByCol[col] = offsets;
+      rowPeriodsByCol[col] = offsets[PATTERN_ROWS];
+    }
+  }
+
   function rowTop(col, row) {
-    var h0 = cellHeightForProject(projectIndex(col, 0), CELL_W);
-    var h1 = cellHeightForProject(projectIndex(col, 1), CELL_W);
-    var pair = Math.floor(row / PROWS);
-    return pair * (h0 + h1) + (mod(row, PROWS) === 1 ? h0 : 0);
+    var patternCol = mod(col, PCOLS);
+    var cycle = Math.floor(row / PATTERN_ROWS);
+    var localRow = mod(row, PATTERN_ROWS);
+    return cycle * rowPeriodsByCol[patternCol] + rowOffsetsByCol[patternCol][localRow];
   }
 
   function rowAtY(col, y) {
-    var h0 = cellHeightForProject(projectIndex(col, 0), CELL_W);
-    var h1 = cellHeightForProject(projectIndex(col, 1), CELL_W);
-    var period = h0 + h1;
-    var pair = Math.floor(y / period);
-    var localY = y - pair * period;
-    return pair * PROWS + (localY >= h0 ? 1 : 0);
+    var patternCol = mod(col, PCOLS);
+    var period = rowPeriodsByCol[patternCol];
+    var offsets = rowOffsetsByCol[patternCol];
+    var cycle = Math.floor(y / period);
+    var localY = y - cycle * period;
+    var lo = 0, hi = PATTERN_ROWS - 1;
+
+    while (lo < hi) {
+      var mid = Math.floor((lo + hi + 1) / 2);
+      if (offsets[mid] <= localY) lo = mid;
+      else hi = mid - 1;
+    }
+    return cycle * PATTERN_ROWS + lo;
   }
 
-  // Cell palette follows the global theme (html.dark, toggled in home.js)
+  // Cell palette follows the site's permanent dark theme.
   function theme() {
     return document.documentElement.classList.contains('dark')
       ? { bg: '#020202', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
@@ -547,6 +687,7 @@ window.GridView = (function () {
     CELL_W = vw < 700 ? Math.round(vw * 0.72) : Math.max(320, Math.round(vw / 3.5));
     // Reference height is only used for the stable per-column stagger.
     CELL_H = Math.round(CELL_W * 1.06);
+    buildRowMetrics();
     // pool sized for the widest view (hold-zoom shows GW / HOLD_ZOOM of world)
     NX = Math.ceil(GW / HOLD_ZOOM / CELL_W) + 3;
     var minCellH = PROJECTS.reduce(function (minH, p, pIdx) {
