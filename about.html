@@ -31,12 +31,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet" />
 
   <!-- Reuse the homepage navigation/menu component, then layer the scrolling
        About page styles on top. -->
-  <link rel="stylesheet" href="home.css?v=6" />
-  <link rel="stylesheet" href="about.css?v=3" />
+  <link rel="stylesheet" href="home.css?v=18" />
+  <link rel="stylesheet" href="about.css?v=36" />
 </head>
 <body>
 
@@ -70,8 +70,8 @@
     <div class="navbar-right">
       <button class="menu-button" id="menu-trigger" type="button" aria-label="Open menu" aria-controls="site-menu" aria-expanded="false">
         <span class="menu-button-shape" aria-hidden="true">
-          <img class="menu-button-shape-default" src="assets/images/menu-button-default.svg" alt="" />
-          <img class="menu-button-shape-hover" src="assets/images/menu-button-hover.svg" alt="" />
+          <img class="menu-button-shape-default" src="assets/images/menu-button-default.svg?v=2" alt="" />
+          <img class="menu-button-shape-hover" src="assets/images/menu-button-hover.svg?v=2" alt="" />
         </span>
         <span class="menu-button-content">
           <span class="menu-button-icon" aria-hidden="true">
@@ -124,73 +124,168 @@
 
     <!-- ── Hero ── -->
     <section class="ab-hero">
-      <p class="ab-hero-name" data-reveal>[Ilham]</p>
-      <h1 class="ab-hero-headline" data-reveal data-reveal-lines>Designing calm, cinematic products for a loud digital world.</h1>
-      <div class="ab-hero-media" data-reveal>
-        <img src="assets/images/image-placeholder.png" alt="Ilham — portrait" />
+      <div class="ab-hero-stage">
+        <div class="ab-hero-copy">
+          <p class="ab-hero-name" data-reveal>Heyitsilham</p>
+          <h1 class="ab-hero-headline" data-reveal>
+            <span class="m-line"><em class="ab-hero-accent">Pragmatic</em> Product</span>
+            <span class="m-line">Designer, Visual <em class="ab-hero-accent">Thinker</em></span>
+            <span class="m-line">&amp; Vibe Coder</span>
+          </h1>
+        </div>
+        <div class="ab-hero-media" data-reveal>
+          <img src="assets/images/image-placeholder.png" alt="Ilham — portrait" />
+        </div>
       </div>
     </section>
 
     <!-- ── About ── -->
-    <section class="ab-split">
+    <section class="ab-split ab-about">
       <div class="ab-split-left">
-        <h2 class="ab-split-title" data-reveal-scroll>About</h2>
+        <h2 class="ab-split-title">[About]</h2>
       </div>
-      <div class="ab-split-right" data-reveal-scroll>
-        <p class="ab-lead">I'm a product designer based in Jakarta, focused on editorial, cinematic digital experiences — the kind of interfaces that feel considered rather than assembled.</p>
-        <p>Over the years I've worked across fintech, e-commerce, and creative tooling, always chasing the same thing: clarity. I believe good design is mostly about removing, not adding, and that the best interactions are the ones you barely notice.</p>
-        <p>When I'm not pushing pixels I'm probably reading about typography, collecting film stills, or overthinking the border radius of something.</p>
+      <div class="ab-split-right ab-about-copy">
+        <p data-blur-reveal>Currently at Aleph Labs (part of AKQA) as a Senior Product Designer, based in Jakarta and working on large-scale digital products.</p>
+        <p data-blur-reveal>Most of my 6+ years in product design have been focused on banking and telco, with work for BRI, BSI, Maybank, and Telkomsel. I spend most of my time untangling complex flows, piecing together design systems, and crafting the visual experience.</p>
+        <p data-blur-reveal>Lately, I’ve been learning to build beyond Figma through vibe coding, mostly experimenting with interactive web experiences using Three.js, WebGL, GSAP, and other creative coding tools.</p>
       </div>
     </section>
 
     <!-- ── Work Experience ── -->
     <section class="ab-split ab-work">
       <div class="ab-split-left">
-        <div class="ab-work-sticky">
-          <h2 class="ab-split-title" data-reveal-scroll>Work<br/>Experience</h2>
-          <div class="ab-work-counter"><span id="work-counter">1</span><span class="ab-work-total">/5</span></div>
+        <div class="ab-work-sticky" data-blur-block>
+          <h2 class="ab-split-title">[Work Experience]</h2>
         </div>
       </div>
       <div class="ab-split-right ab-work-list">
-        <article class="ab-work-item" data-index="1" data-reveal-scroll>
-          <h3>Byond by BSI</h3>
-          <p class="ab-work-role">Senior Product Designer · 2024 — Now</p>
-          <p>Leading design for the mobile banking super-app: onboarding, daily transactions, and the design system that keeps 40+ screens consistent.</p>
+        <!-- Add/update experience: duplicate one article, then edit its logo,
+             title, role, year, and description. JS recalculates its index. -->
+        <article class="ab-work-item" data-index="1">
+          <div class="ab-work-card">
+            <div class="ab-work-logo" aria-hidden="true" data-blur-block>
+              <img src="assets/images/company-logos/byond.svg" alt="" width="80" height="80" />
+            </div>
+            <div class="ab-work-copy">
+              <div class="ab-work-heading">
+                <h3 data-blur-reveal>BYOND by BSI</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Senior Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2024-Present</span></p>
+              </div>
+              <p class="ab-work-description" data-blur-reveal>Leading design for the mobile banking super-app: onboarding, daily transactions, and the design system that keeps 40+ screens consistent.</p>
+            </div>
+          </div>
         </article>
-        <article class="ab-work-item" data-index="2" data-reveal-scroll>
-          <h3>Tokopedia</h3>
-          <p class="ab-work-role">Product Designer · 2022 — 2024</p>
-          <p>Owned the discovery and search experience. Shipped experiments that lifted conversion while cutting visual noise across the funnel.</p>
+        <article class="ab-work-item" data-index="2">
+          <div class="ab-work-card">
+            <div class="ab-work-logo" aria-hidden="true" data-blur-block>
+              <img src="assets/images/company-logos/tokopedia.svg" alt="" width="80" height="80" />
+            </div>
+            <div class="ab-work-copy">
+              <div class="ab-work-heading">
+                <h3 data-blur-reveal>Tokopedia</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2022-2024</span></p>
+              </div>
+              <p class="ab-work-description" data-blur-reveal>Owned the discovery and search experience. Shipped experiments that lifted conversion while cutting visual noise across the funnel.</p>
+            </div>
+          </div>
         </article>
-        <article class="ab-work-item" data-index="3" data-reveal-scroll>
-          <h3>Gojek</h3>
-          <p class="ab-work-role">Product Designer · 2020 — 2022</p>
-          <p>Worked on GoPay flows — transfers, top-ups, and the little moments of trust that make people comfortable moving money.</p>
+        <article class="ab-work-item" data-index="3">
+          <div class="ab-work-card">
+            <div class="ab-work-logo" aria-hidden="true" data-blur-block>
+              <img src="assets/images/company-logos/gojek.svg" alt="" width="80" height="80" />
+            </div>
+            <div class="ab-work-copy">
+              <div class="ab-work-heading">
+                <h3 data-blur-reveal>Gojek</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2022</span></p>
+              </div>
+              <p class="ab-work-description" data-blur-reveal>Worked on GoPay flows — transfers, top-ups, and the little moments of trust that make people comfortable moving money.</p>
+            </div>
+          </div>
         </article>
-        <article class="ab-work-item" data-index="4" data-reveal-scroll>
-          <h3>Traveloka</h3>
-          <p class="ab-work-role">UI Designer · 2019 — 2020</p>
-          <p>Designed booking flows for flights and hotels, from wireframe to polished handoff, with a focus on mobile-first layouts.</p>
+        <article class="ab-work-item" data-index="4">
+          <div class="ab-work-card">
+            <div class="ab-work-logo" aria-hidden="true" data-blur-block>
+              <img src="assets/images/company-logos/traveloka.svg" alt="" width="80" height="80" />
+            </div>
+            <div class="ab-work-copy">
+              <div class="ab-work-heading">
+                <h3 data-blur-reveal>Traveloka</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>UI Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2019-2020</span></p>
+              </div>
+              <p class="ab-work-description" data-blur-reveal>Designed booking flows for flights and hotels, from wireframe to polished handoff, with a focus on mobile-first layouts.</p>
+            </div>
+          </div>
         </article>
-        <article class="ab-work-item" data-index="5" data-reveal-scroll>
-          <h3>Freelance</h3>
-          <p class="ab-work-role">Designer · 2017 — 2019</p>
-          <p>Brand and web work for local studios and startups — where I learned to ship fast, talk to clients, and defend whitespace.</p>
+        <article class="ab-work-item" data-index="5">
+          <div class="ab-work-card">
+            <div class="ab-work-logo" aria-hidden="true" data-blur-block>
+              <img src="assets/images/company-logos/freelance.svg" alt="" width="80" height="80" />
+            </div>
+            <div class="ab-work-copy">
+              <div class="ab-work-heading">
+                <h3 data-blur-reveal>Freelance</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2017-2019</span></p>
+              </div>
+              <p class="ab-work-description" data-blur-reveal>Brand and web work for local studios and startups — where I learned to ship fast, talk to clients, and defend whitespace.</p>
+            </div>
+          </div>
         </article>
       </div>
     </section>
 
     <!-- ── Outside Design ── -->
-    <section class="ab-outside">
-      <p class="ab-outside-sub">Outside Design</p>
-      <h2 class="ab-outside-title">Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod.</h2>
-      <div class="ab-gallery">
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
-        <figure><img src="assets/images/image-placeholder.png" alt="" /></figure>
+    <section class="ab-outside" aria-labelledby="outside-design-title">
+      <header class="ab-outside-header">
+        <p class="ab-outside-sub" data-blur-reveal>[Outside Design]</p>
+        <h2 class="ab-outside-title" id="outside-design-title" data-blur-reveal>Film, type, and other small obsessions.</h2>
+        <p class="ab-outside-body" data-blur-reveal>Away from product screens, I collect the things that sharpen how I see — quiet frames, expressive letters, night walks, and objects made with care.</p>
+      </header>
+
+      <div class="ab-gallery" aria-label="Outside design interests">
+        <figure class="ab-gallery-card">
+          <div class="ab-gallery-visual" data-blur-block>
+            <img src="assets/images/outside-design/film-stills.jpg" alt="Photographic slides being studied over a glowing lightbox" loading="lazy" decoding="async" />
+            <span class="ab-gallery-overlay" aria-hidden="true"></span>
+            <figcaption class="ab-gallery-info">
+              <h3>Film Stills</h3>
+              <p>Light, color, atmosphere</p>
+            </figcaption>
+          </div>
+        </figure>
+
+        <figure class="ab-gallery-card">
+          <div class="ab-gallery-visual" data-blur-block>
+            <img src="assets/images/outside-design/typography.jpg" alt="Typography specimen books and drawing tools on a wooden table" loading="lazy" decoding="async" />
+            <span class="ab-gallery-overlay" aria-hidden="true"></span>
+            <figcaption class="ab-gallery-info">
+              <h3>Typography</h3>
+              <p>Type, print, details</p>
+            </figcaption>
+          </div>
+        </figure>
+
+        <figure class="ab-gallery-card">
+          <div class="ab-gallery-visual" data-blur-block>
+            <img src="assets/images/outside-design/night-walks.jpg" alt="A quiet walk through a rain-soaked Jakarta street at night" loading="lazy" decoding="async" />
+            <span class="ab-gallery-overlay" aria-hidden="true"></span>
+            <figcaption class="ab-gallery-info">
+              <h3>Night Walks</h3>
+              <p>Jakarta, neon, silence</p>
+            </figcaption>
+          </div>
+        </figure>
+
+        <figure class="ab-gallery-card">
+          <div class="ab-gallery-visual" data-blur-block>
+            <img src="assets/images/outside-design/small-obsessions.jpg" alt="An analog camera and carefully arranged creative tools" loading="lazy" decoding="async" />
+            <span class="ab-gallery-overlay" aria-hidden="true"></span>
+            <figcaption class="ab-gallery-info">
+              <h3>Small Obsessions</h3>
+              <p>Objects, texture, form</p>
+            </figcaption>
+          </div>
+        </figure>
       </div>
     </section>
 
@@ -211,6 +306,7 @@
   </footer>
 
   <script src="motion.js"></script>
-  <script src="about.js?v=4"></script>
+  <script src="menu-button-hover.js?v=3"></script>
+  <script src="about.js?v=24"></script>
 </body>
 </html>

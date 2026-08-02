@@ -11,8 +11,16 @@
 :root {
   --brand-teal: #58F0E0;
   --brand-teal-deep: #178B84;
+  --brand-blue: #5271ED;
+  --brand-aqua: #52EDE2;
   --menu-spring: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: dark;
+}
+
+@property --view-switch-shine-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
 }
 
 @supports (animation-timing-function: linear(0, 1)) {
@@ -71,17 +79,17 @@ body { background: #fff; overflow: hidden; }
    the card's live getBoundingClientRect(); it scales the focus ~20% larger
    mid-transition, then settles back onto the next card. */
 .scan-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.scan-line { position: absolute; background: rgba(34,32,32,0.07); }
+.scan-line { position: absolute; background: rgba(34,32,32,0.10); }
 .scan-line-v1, .scan-line-v2 { top: 0; bottom: 0; width: 1px; }
 .scan-line-h1, .scan-line-h2 { left: 0; right: 0; height: 1px; }
 
 .scan-focus { position: absolute; }
 .scan-corner { position: absolute; width: 26px; height: 26px; }
 /* offset outside the card edge — the opaque card sits above the scan-grid and would hide a flush-mounted bracket */
-.scan-corner-tl { top: -10px; left: -10px; border-top: 2px solid rgba(34,32,32,0.9); border-left: 2px solid rgba(34,32,32,0.9); }
-.scan-corner-tr { top: -10px; right: -10px; border-top: 2px solid rgba(34,32,32,0.9); border-right: 2px solid rgba(34,32,32,0.9); }
-.scan-corner-bl { bottom: -10px; left: -10px; border-bottom: 2px solid rgba(34,32,32,0.9); border-left: 2px solid rgba(34,32,32,0.9); }
-.scan-corner-br { bottom: -10px; right: -10px; border-bottom: 2px solid rgba(34,32,32,0.9); border-right: 2px solid rgba(34,32,32,0.9); }
+.scan-corner-tl { top: -10px; left: -10px; border-top: 2px solid rgba(34,32,32,0.7); border-left: 2px solid rgba(34,32,32,0.7); }
+.scan-corner-tr { top: -10px; right: -10px; border-top: 2px solid rgba(34,32,32,0.7); border-right: 2px solid rgba(34,32,32,0.7); }
+.scan-corner-bl { bottom: -10px; left: -10px; border-bottom: 2px solid rgba(34,32,32,0.7); border-left: 2px solid rgba(34,32,32,0.7); }
+.scan-corner-br { bottom: -10px; right: -10px; border-bottom: 2px solid rgba(34,32,32,0.7); border-right: 2px solid rgba(34,32,32,0.7); }
 
 .vignette-radial {
   position: fixed;
@@ -202,6 +210,9 @@ body.cs-open .navbar { display: none; }
   height: 16px;
   margin-top: 3.5px;
   overflow: hidden;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 .menu-button-icon-menu,
 .menu-button-icon-close {
@@ -249,6 +260,12 @@ body.cs-open .navbar { display: none; }
   transition:
     opacity 160ms ease,
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.menu-button-letter {
+  display: inline-block;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 .menu-button-label-close {
   opacity: 0;
@@ -646,7 +663,14 @@ body.menu-open #proj-cursor { display: none; }
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  perspective: 650px;
+  transform-style: preserve-3d;
+  transition: box-shadow 320ms ease;
+}
+.page-section .proj-card.is-tilting {
+  will-change: transform;
+  box-shadow:
+    0 38px 90px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(88, 240, 224, 0.12);
 }
 .proj-card:focus-visible {
   outline: 2px solid var(--brand-teal);
@@ -662,7 +686,10 @@ body.menu-open #proj-cursor { display: none; }
   height: 100%;
   object-fit: cover;
   display: block;
-  transform-style: preserve-3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proj-card { transition: none; }
 }
 
 /* ── Section navigator (right) ── */
@@ -830,6 +857,14 @@ html.skip-splash .scan-grid { visibility: hidden; }
 
 /* ── View switch (List / Grid) ── */
 .view-tabs {
+  --view-switch-cut: polygon(
+    0 0,
+    91.094% 0,
+    100% 18.46%,
+    100% 100%,
+    4.942% 100%,
+    0 88.06%
+  );
   position: fixed;
   left: 50%;
   bottom: 40px;
@@ -858,29 +893,51 @@ html.skip-splash .scan-grid { visibility: hidden; }
   position: absolute;
   inset: 0;
   display: block;
+  isolation: isolate;
   pointer-events: none;
 }
 .view-switch-bg {
   position: absolute;
   inset: 0;
+  z-index: 0;
   display: block;
   width: 172px;
   height: 67px;
 }
-.view-switch-glow {
+.view-switch-shine-border {
   position: absolute;
-  top: 62px;
-  left: 50%;
   display: block;
-  width: 99px;
-  height: 19px;
-  border-radius: 50%;
-  background: rgba(38, 255, 236, 0.8);
-  filter: blur(12px);
-  transform: translateX(-50%);
+  pointer-events: none;
+  clip-path: var(--view-switch-cut);
+  inset: 0;
+  z-index: 3;
+  padding: 1.5px;
+  opacity: 0.9;
+  background: conic-gradient(
+    from var(--view-switch-shine-angle),
+    transparent 0 56%,
+    var(--brand-blue) 68%,
+    var(--brand-aqua) 76%,
+    rgba(255, 255, 255, 0.95) 80%,
+    var(--brand-aqua) 84%,
+    transparent 96% 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: view-switch-gradient-angle 3s linear infinite;
+  transition:
+    opacity 160ms ease,
+    filter 160ms ease;
 }
 .view-switch-state {
   position: absolute;
+  z-index: 4;
   top: calc(50% + 0.5px);
   left: 16px;
   display: flex;
@@ -905,6 +962,12 @@ html.skip-splash .scan-grid { visibility: hidden; }
   color: #fff;
   white-space: nowrap;
 }
+.view-switch-letter {
+  display: inline-block;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+}
 .view-switch-icon {
   position: relative;
   display: block;
@@ -912,6 +975,9 @@ html.skip-splash .scan-grid { visibility: hidden; }
   height: 20px;
   flex: 0 0 20px;
   overflow: hidden;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 .view-switch-icon img {
   position: absolute;
@@ -940,6 +1006,17 @@ html.skip-splash .scan-grid { visibility: hidden; }
   left: 11.042px;
   width: 7.917px;
   height: 7.917px;
+}
+
+@keyframes view-switch-gradient-angle {
+  to { --view-switch-shine-angle: 360deg; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .view-tabs:is(:hover, :focus-visible) .view-switch-shine-border {
+    opacity: 1;
+    filter: brightness(1.2) saturate(1.1);
+  }
 }
 
 /* ── Grid view (phantom.land-style infinite curved grid, WebGL) ── */
@@ -993,8 +1070,8 @@ html.dark .splash-grid {
     linear-gradient(to right,  rgba(255,255,255,0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
 }
-html.dark .scan-line { background: rgba(255,255,255,0.07); }
-html.dark .scan-corner { border-color: rgba(255,255,255,0.9); }
+html.dark .scan-line { background: rgba(255,255,255,0.10); }
+html.dark .scan-corner { border-color: rgba(255,255,255,0.7); }
 html.dark .vignette-radial,
 html.dark .splash-vignette {
   background:
@@ -1152,7 +1229,11 @@ html.dark #cs-right { background: #020202; }
   .menu-button-label-menu,
   .menu-button-label-close,
   .site-menu-link,
-  .site-menu-connect { transition: none; }
+  .site-menu-connect,
+  .view-tabs,
+  .view-switch-shine-border,
+  .view-switch-state { transition: none; }
+  .view-switch-shine-border { animation: none; }
 }
 
 /* Whisper-fade: home first-paint hero targets hidden only when JS motion on.

@@ -439,6 +439,7 @@
   // same as the reference transition.
   function makeCardClone(cardEl, rect, zIndex) {
     var clone = cardEl.cloneNode(true);
+    clone.classList.remove('is-tilting');
     clone.classList.add('glide-clone'); // keep .proj-card etc — child selectors position the inner img/placeholder
     var s = clone.style; // positioning only — the inline background survives
     s.position = 'fixed';
@@ -1013,8 +1014,9 @@
       card.addEventListener('click', function () {
         if (animating || !window.CaseStudy) return;
 
+        if (window._resetProjectTilt) window._resetProjectTilt(card, true);
         var imgEl = card.querySelector('img');
-        if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 }); // reset hover tilt before measuring
+        if (imgEl) gsap.set(imgEl, { rotateX: 0, rotateY: 0, scale: 1 });
         var fromCard = { card: card, rect: card.getBoundingClientRect() };
 
         try {
@@ -1099,6 +1101,7 @@
     function go(dir) {
       if (animating) return;
       animating = true;
+      if (window._resetProjectTilt) window._resetProjectTilt(null, true);
 
       var prev = current;
 
@@ -1217,6 +1220,7 @@
       syncViewTabs(view);
       if (isGrid === GridView.isOpen()) return;
       if (isGrid) {
+        if (window._resetProjectTilt) window._resetProjectTilt(null, true);
         if (convObserver) convObserver.disable();
         GridView.show();
       } else {
@@ -1240,6 +1244,7 @@
     // landing on fold 0 — snap the whole engine there before the frame paints.
     window.addEventListener('pageshow', function (e) {
       if (!e.persisted) return;
+      if (window._resetProjectTilt) window._resetProjectTilt(null, true);
       if (window.GridView && GridView.isOpen()) {
         syncViewTabs('vertical');
         GridView.hide(true);
@@ -1470,49 +1475,158 @@
     });
   })();
 
-  // ── proj-card 3D tilt ─────────────────────────────────
+  // ── Homepage List: pointer-following 3D card tilt ──────
+  // The custom [EXPLORE] cursor above remains independent, so a card hover
+  // now produces both interactions at once.
   (function () {
-    var activeCard = null;
-    var activeImg  = null;
-    var rect       = null;
-    var lastX = 0, lastY = 0;
-    var rafId = null;
+    var cards = document.querySelectorAll('.page-section .proj-card');
+    var canTilt = !!(
+      window.matchMedia &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+      !window.matchMedia('(max-width: 734px)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+    var states = new WeakMap();
 
-    function onFrame() {
-      rafId = null;
-      if (!activeCard || !activeImg || !rect) return;
-      var nx = (lastX - rect.left) / rect.width;
-      var ny = (lastY - rect.top)  / rect.height;
-      var rotateX = ((ny - 0.5) * 2) * -10;
-      var rotateY = ((nx - 0.5) * 2) *  10;
-      gsap.to(activeImg, { rotateX: rotateX, rotateY: rotateY, scale: 1.04, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
+    var MAX_TILT = 14;
+    var PERSPECTIVE = 800;
+    var ROTATION_EASE = 0.22;
+    var HOVER_SCALE = 1.035;
+    var SPRING_STIFFNESS = 0.14;
+    var SPRING_DAMPING = 0.72;
+    var REST_THRESHOLD = 0.01;
+
+    function schedule(card, state) {
+      if (state.frame === null) {
+        state.frame = window.requestAnimationFrame(function () {
+          render(card, state);
+        });
+      }
     }
 
-    document.addEventListener('mouseover', function (e) {
-      var card = e.target.closest('.proj-card');
-      if (!card || card === activeCard) return;
-      activeCard = card;
-      activeImg  = card.querySelector('img');
-      rect       = card.getBoundingClientRect();
-    });
+    function readPointer(card, state) {
+      if (!state.pendingPointer) return;
+      if (!state.rect) state.rect = card.getBoundingClientRect();
 
-    document.addEventListener('mousemove', function (e) {
-      if (!activeCard) return;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      if (rafId === null) rafId = requestAnimationFrame(onFrame);
-    }, { passive: true });
+      var relativeX = (state.pendingPointer.clientX - state.rect.left) / state.rect.width;
+      var relativeY = (state.pendingPointer.clientY - state.rect.top) / state.rect.height;
+      state.targetY = (relativeX - 0.5) * MAX_TILT * 2;
+      state.targetX = -(relativeY - 0.5) * MAX_TILT * 2;
+      state.pendingPointer = null;
+    }
 
-    document.addEventListener('mouseout', function (e) {
-      var card = e.target.closest('.proj-card');
-      if (!card) return;
-      var related = e.relatedTarget;
-      if (related && related.closest('.proj-card')) return;
-      if (activeImg) {
-        gsap.to(activeImg, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+    function render(card, state) {
+      readPointer(card, state);
+
+      var deltaX = state.targetX - state.currentX;
+      var deltaY = state.targetY - state.currentY;
+      state.currentX += deltaX * ROTATION_EASE;
+      state.currentY += deltaY * ROTATION_EASE;
+
+      state.scaleVelocity += (state.targetScale - state.currentScale) * SPRING_STIFFNESS;
+      state.scaleVelocity *= SPRING_DAMPING;
+      state.currentScale += state.scaleVelocity;
+
+      card.style.transform =
+        'perspective(' + PERSPECTIVE + 'px) ' +
+        'rotateX(' + state.currentX.toFixed(3) + 'deg) ' +
+        'rotateY(' + state.currentY.toFixed(3) + 'deg) ' +
+        'scale(' + state.currentScale.toFixed(4) + ')';
+
+      var rotationSettled =
+        Math.abs(deltaX) < REST_THRESHOLD &&
+        Math.abs(deltaY) < REST_THRESHOLD;
+      var scaleSettled =
+        Math.abs(state.targetScale - state.currentScale) < 0.0005 &&
+        Math.abs(state.scaleVelocity) < 0.0005;
+
+      if (state.active || !rotationSettled || !scaleSettled) {
+        state.frame = window.requestAnimationFrame(function () {
+          render(card, state);
+        });
+        return;
       }
-      activeCard = null; activeImg = null; rect = null;
-      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+
+      state.frame = null;
+      state.currentScale = 1;
+      state.scaleVelocity = 0;
+      state.rect = null;
+      card.style.transform = '';
+    }
+
+    function resetCard(card, immediate) {
+      var state = states.get(card);
+      if (!state) {
+        card.classList.remove('is-tilting');
+        card.style.transform = '';
+        return;
+      }
+
+      state.active = false;
+      state.targetX = 0;
+      state.targetY = 0;
+      state.targetScale = 1;
+      state.pendingPointer = null;
+      card.classList.remove('is-tilting');
+
+      if (immediate) {
+        if (state.frame !== null) window.cancelAnimationFrame(state.frame);
+        state.frame = null;
+        state.currentX = 0;
+        state.currentY = 0;
+        state.currentScale = 1;
+        state.scaleVelocity = 0;
+        state.rect = null;
+        card.style.transform = '';
+      } else {
+        schedule(card, state);
+      }
+    }
+
+    window._resetProjectTilt = function (card, immediate) {
+      if (card) {
+        resetCard(card, immediate !== false);
+        return;
+      }
+      Array.prototype.forEach.call(cards, function (item) {
+        resetCard(item, immediate !== false);
+      });
+    };
+
+    if (!canTilt || !cards.length) return;
+
+    Array.prototype.forEach.call(cards, function (card) {
+      var state = {
+        frame: null,
+        active: false,
+        pendingPointer: null,
+        rect: null,
+        targetX: 0,
+        targetY: 0,
+        currentX: 0,
+        currentY: 0,
+        targetScale: 1,
+        currentScale: 1,
+        scaleVelocity: 0
+      };
+      states.set(card, state);
+
+      card.addEventListener('mouseenter', function () {
+        state.active = true;
+        state.targetScale = HOVER_SCALE;
+        state.rect = card.getBoundingClientRect();
+        card.classList.add('is-tilting');
+        schedule(card, state);
+      });
+
+      card.addEventListener('mousemove', function (event) {
+        state.pendingPointer = event;
+        schedule(card, state);
+      }, { passive: true });
+
+      card.addEventListener('mouseleave', function () {
+        resetCard(card, false);
+      });
     });
   })();
 })();

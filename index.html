@@ -55,7 +55,7 @@
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
   <link rel="stylesheet" href="case-study.css" />
-  <link rel="stylesheet" href="home.css?v=6" />
+  <link rel="stylesheet" href="home.css?v=18" />
 </head>
 <body>
   <div class="home-entry-curtain" id="home-entry-curtain" aria-hidden="true"></div>
@@ -193,8 +193,8 @@
       <div class="navbar-right">
         <button class="menu-button" id="menu-trigger" type="button" aria-label="Open menu" aria-controls="site-menu" aria-expanded="false">
           <span class="menu-button-shape" aria-hidden="true">
-            <img class="menu-button-shape-default" src="assets/images/menu-button-default.svg" alt="" />
-            <img class="menu-button-shape-hover" src="assets/images/menu-button-hover.svg" alt="" />
+            <img class="menu-button-shape-default" src="assets/images/menu-button-default.svg?v=2" alt="" />
+            <img class="menu-button-shape-hover" src="assets/images/menu-button-hover.svg?v=2" alt="" />
           </span>
           <span class="menu-button-content">
             <span class="menu-button-icon" aria-hidden="true">
@@ -251,7 +251,7 @@
   <button class="view-tabs" id="view-tabs" type="button" aria-label="Switch to grid view" aria-pressed="false">
     <span class="view-switch-visual" aria-hidden="true">
       <img class="view-switch-bg" src="assets/images/view-switch/view-toggle-bg.svg" alt="" />
-      <span class="view-switch-glow"></span>
+      <span class="view-switch-shine-border"></span>
     </span>
     <span class="view-switch-state view-switch-state-list" aria-hidden="true">
       <span class="view-switch-label">List</span>
@@ -297,10 +297,11 @@
   <script src="https://cdn.jsdelivr.net/npm/lenis@2.0.0/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="motion.js"></script>
+  <script src="menu-button-hover.js?v=3"></script>
   <script src="case-study.js"></script>
   <script src="content.js"></script>
-  <script src="grid.js"></script>
-  <script src="home.js?v=5"></script>
+  <script src="grid.js?v=2"></script>
+  <script src="home.js?v=6"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>

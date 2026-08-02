@@ -273,8 +273,8 @@ window.GridView = (function () {
   // Cell palette follows the site's permanent dark theme.
   function theme() {
     return document.documentElement.classList.contains('dark')
-      ? { bg: '#020202', line: 'rgba(255,255,255,0.07)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
-      : { bg: '#ffffff', line: 'rgba(34,32,32,0.07)',    text: '#000', dim: 'rgba(0,0,0,0.8)' };
+      ? { bg: '#020202', line: 'rgba(255,255,255,0.10)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
+      : { bg: '#ffffff', line: 'rgba(34,32,32,0.10)',    text: '#000', dim: 'rgba(0,0,0,0.8)' };
   }
 
   // ── Cell texture (canvas): scan-line outline + media ──

@@ -215,17 +215,491 @@
   }, { passive: true });
 })();
 
-// ── Work experience counter: update as each company crosses mid-viewport ──
+// ── Scroll choreography: editorial hero handoff → About → Work ──
 (function () {
-  var counter = document.getElementById('work-counter');
-  var items = document.querySelectorAll('.ab-work-item');
-  if (!counter || !items.length) return;
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (e.isIntersecting) counter.textContent = e.target.getAttribute('data-index');
+  var root = document.documentElement;
+  var heroStage = document.querySelector('.ab-hero-stage');
+  var about = document.querySelector('.ab-about');
+  var aboutTitle = about && about.querySelector('.ab-split-title');
+  var aboutParagraphs = about
+    ? [].slice.call(about.querySelectorAll('[data-blur-reveal]'))
+    : [];
+  var lastAboutParagraph = aboutParagraphs.length
+    ? aboutParagraphs[aboutParagraphs.length - 1]
+    : null;
+  var work = document.querySelector('.ab-work');
+  var workItems = [].slice.call(document.querySelectorAll('.ab-work-item'));
+  var lastWorkItem = workItems.length
+    ? workItems[workItems.length - 1]
+    : null;
+  var outside = document.querySelector('.ab-outside');
+  var outsideGallery = outside && outside.querySelector('.ab-gallery');
+  var reduced = !!(window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var handoffMotion = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: no-preference)')
+    : { matches: false };
+  var frame = null;
+  var aboutPaddingTop = 0;
+
+  if (!about && !workItems.length) return;
+  workItems.forEach(function (item, index) {
+    item.setAttribute('data-index', String(index + 1));
+  });
+  if (!reduced) root.classList.add('ab-cinematic-on');
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function smoothStep(value) {
+    value = clamp(value, 0, 1);
+    return value * value * (3 - 2 * value);
+  }
+
+  function phaseProgress(progress, start, end) {
+    return smoothStep((progress - start) / Math.max(0.001, end - start));
+  }
+
+  function resetHandoff() {
+    root.classList.remove(
+      'ab-handoff-on',
+      'ab-hero-exit-complete',
+      'ab-handoff-complete'
+    );
+    if (heroStage) {
+      heroStage.style.removeProperty('--hero-copy-opacity');
+      heroStage.style.removeProperty('--hero-copy-blur');
+      heroStage.style.removeProperty('--hero-copy-y');
+      heroStage.style.removeProperty('--hero-media-opacity');
+      heroStage.style.removeProperty('--hero-media-blur');
+      heroStage.style.removeProperty('--hero-media-y');
+    }
+    if (about) {
+      about.style.removeProperty('--about-title-opacity');
+      about.style.removeProperty('--about-copy-opacity');
+      about.style.removeProperty('--about-title-handoff-y');
+      about.style.removeProperty('--about-copy-handoff-y');
+    }
+  }
+
+  function measureHandoff() {
+    aboutPaddingTop = about
+      ? (parseFloat(window.getComputedStyle(about).paddingTop) || 0)
+      : 0;
+  }
+
+  function updateHandoff() {
+    if (!heroStage || !about || !aboutTitle || !handoffMotion.matches) {
+      resetHandoff();
+      return;
+    }
+
+    // Read the untransformed title position so the entrance movement cannot
+    // feed back into its own progress calculation.
+    var titleTop = about.getBoundingClientRect().top + aboutPaddingTop;
+    var viewportHeight = window.innerHeight;
+    var handoffStart = viewportHeight * 1.18;
+    var handoffEnd = viewportHeight * 0.66;
+    var handoffProgress = clamp(
+      (handoffStart - titleTop) / Math.max(1, handoffStart - handoffEnd),
+      0,
+      1
+    );
+    var heroExitProgress = phaseProgress(handoffProgress, 0, 0.74);
+    var aboutTitleProgress = phaseProgress(handoffProgress, 0.28, 0.74);
+    var aboutCopyProgress = phaseProgress(handoffProgress, 0.38, 1);
+    var compact = window.innerWidth <= 900;
+    var heroExitLift = compact ? 42 : 64;
+    var aboutTitleRise = compact ? 28 : 36;
+    var aboutCopyRise = compact ? 36 : 52;
+
+    root.classList.add('ab-handoff-on');
+    root.classList.toggle('ab-hero-exit-complete', heroExitProgress >= 0.999);
+    root.classList.toggle('ab-handoff-complete', aboutCopyProgress >= 0.999);
+    heroStage.style.setProperty('--hero-copy-opacity', String(1 - heroExitProgress));
+    heroStage.style.setProperty('--hero-copy-blur', String(3.5 * heroExitProgress) + 'px');
+    heroStage.style.setProperty('--hero-copy-y', String(-heroExitLift * heroExitProgress) + 'px');
+    heroStage.style.setProperty('--hero-media-opacity', String(1 - heroExitProgress));
+    heroStage.style.setProperty('--hero-media-blur', String(3.5 * heroExitProgress) + 'px');
+    heroStage.style.setProperty('--hero-media-y', String(-heroExitLift * heroExitProgress) + 'px');
+    about.style.setProperty('--about-title-opacity', String(aboutTitleProgress));
+    about.style.setProperty('--about-copy-opacity', String(aboutCopyProgress));
+    about.style.setProperty(
+      '--about-title-handoff-y',
+      String(aboutTitleRise * (1 - aboutTitleProgress)) + 'px'
+    );
+    about.style.setProperty(
+      '--about-copy-handoff-y',
+      String(aboutCopyRise * (1 - aboutCopyProgress)) + 'px'
+    );
+  }
+
+  function updateSectionExit(section, anchor) {
+    if (!section || !anchor || reduced) return;
+
+    var viewportHeight = window.innerHeight;
+    var anchorBottom = anchor.getBoundingClientRect().bottom;
+    // The final section has less document below it than About and Work. Start
+    // its identical exit curve earlier so it can finish as the footer enters,
+    // without introducing extra blank scroll space after the gallery.
+    var finalSection = section === outside;
+    var exitStart = viewportHeight * (finalSection ? 0.72 : 0.46);
+    var exitEnd = viewportHeight * (
+      finalSection
+        ? (window.innerWidth <= 900 ? 0.43 : 0.42)
+        : 0.14
+    );
+    var exitProgress = smoothStep(
+      (exitStart - anchorBottom) / Math.max(1, exitStart - exitEnd)
+    );
+    var sectionLift = window.innerWidth <= 900 ? 24 : 32;
+
+    section.style.setProperty(
+      '--ab-section-exit-opacity',
+      String(1 - exitProgress)
+    );
+    section.style.setProperty(
+      '--ab-section-exit-blur',
+      String(3 * exitProgress) + 'px'
+    );
+    section.style.setProperty(
+      '--ab-section-exit-y',
+      String(-sectionLift * exitProgress) + 'px'
+    );
+  }
+
+  function updateSectionExits() {
+    updateSectionExit(about, lastAboutParagraph);
+    updateSectionExit(work, lastWorkItem);
+    updateSectionExit(outside, outsideGallery);
+  }
+
+  function render() {
+    frame = null;
+    updateHandoff();
+    updateSectionExits();
+  }
+
+  function requestRender() {
+    if (frame !== null) return;
+    frame = window.requestAnimationFrame(render);
+  }
+
+  function handleResize() {
+    measureHandoff();
+    requestRender();
+  }
+
+  window.addEventListener('scroll', requestRender, { passive: true });
+  window.addEventListener('resize', handleResize, { passive: true });
+  window.addEventListener('orientationchange', handleResize, { passive: true });
+  window.addEventListener('pageshow', function () {
+    measureHandoff();
+    requestRender();
+  });
+  if (handoffMotion.addEventListener) {
+    handoffMotion.addEventListener('change', handleResize);
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
+      measureHandoff();
+      requestRender();
     });
-  }, { rootMargin: '-45% 0px -45% 0px' }); // fires when the item hits the middle band of the screen
-  items.forEach(function (el) { io.observe(el); });
+  }
+
+  measureHandoff();
+  render();
+})();
+
+// ── Shared scrubbed reveal: About, Work, and Outside Design ──
+// Adapted from Codrops' character-level blur reveal. The original demo uses
+// GSAP + ScrollTrigger; this version keeps the page dependency-free and
+// smooths native scroll progress with a damped requestAnimationFrame loop.
+(function () {
+  var root = document.documentElement;
+  var scenes = [].slice.call(document.querySelectorAll('[data-blur-reveal]'));
+  var blocks = [].slice.call(document.querySelectorAll('[data-blur-block]'));
+  var reduced = !!(window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var states = [];
+  var frame = null;
+  var needsMeasure = true;
+  var lastTime = 0;
+  // Keep the smoothed visual close to its real scroll position. Without this
+  // bound, a large wheel/trackpad jump can move a paragraph through the
+  // viewport while its characters are still easing from progress 0.
+  var maxProgressLag = 0.08;
+
+  if ((!scenes.length && !blocks.length) || reduced) return;
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function splitScene(scene) {
+    var rawText = scene.textContent.replace(/\s+/g, ' ').trim();
+    var content = document.createElement('span');
+    var visual = document.createElement('span');
+    var words = [];
+
+    content.className = 'ab-blur-content';
+    content.setAttribute('aria-label', rawText);
+    visual.className = 'ab-blur-visual';
+    visual.setAttribute('aria-hidden', 'true');
+
+    rawText.split(/(\s+)/).forEach(function (token) {
+      if (!token) return;
+      if (/^\s+$/.test(token)) {
+        visual.appendChild(document.createTextNode(token));
+        return;
+      }
+
+      var word = document.createElement('span');
+      word.className = 'ab-blur-word';
+      word.textContent = token;
+      words.push(word);
+      visual.appendChild(word);
+    });
+
+    var lastIndex = Math.max(1, words.length - 1);
+    words.forEach(function (word, index) {
+      var order = index / lastIndex;
+      word.style.setProperty(
+        '--ab-word-opacity-threshold',
+        (order * 0.74).toFixed(4)
+      );
+    });
+
+    content.appendChild(visual);
+    scene.textContent = '';
+    scene.appendChild(content);
+    return content;
+  }
+
+  scenes.forEach(function (scene) {
+    states.push({
+      type: 'text',
+      scene: scene,
+      content: splitScene(scene),
+      current: 0,
+      target: 0
+    });
+  });
+  blocks.forEach(function (block) {
+    states.push({
+      type: 'block',
+      scene: block,
+      content: block,
+      current: 0,
+      target: 0
+    });
+  });
+  root.classList.add('ab-blur-on');
+
+  function measureTargets() {
+    var viewportHeight = window.innerHeight;
+    var start = viewportHeight * 0.88;
+
+    states.forEach(function (state) {
+      var rect = state.content.getBoundingClientRect();
+      var end = viewportHeight * 0.62 - rect.height;
+      var distance = Math.max(viewportHeight * 0.28, start - end);
+      state.target = clamp((start - rect.top) / distance, 0, 1);
+    });
+    needsMeasure = false;
+  }
+
+  function applyProgress(state) {
+    var riseProgress = clamp(state.current / 0.72, 0, 1);
+    riseProgress = riseProgress * riseProgress * (3 - 2 * riseProgress);
+    if (state.type === 'block') {
+      state.content.style.setProperty(
+        '--ab-block-y',
+        (7 * (1 - riseProgress)).toFixed(3) + 'px'
+      );
+      state.content.style.setProperty(
+        '--ab-block-opacity',
+        (state.current * 1.76).toFixed(4)
+      );
+      return;
+    }
+    state.content.style.setProperty(
+      '--ab-scene-y',
+      (7 * (1 - riseProgress)).toFixed(3) + 'px'
+    );
+    state.content.style.setProperty(
+      '--ab-blur-opacity',
+      (state.current * 1.76).toFixed(4)
+    );
+  }
+
+  function render(time) {
+    frame = null;
+    if (needsMeasure) measureTargets();
+
+    var delta = lastTime ? Math.min(48, time - lastTime) : 16.67;
+    var ease = 1 - Math.exp(-delta / 70);
+    var settled = true;
+    lastTime = time;
+
+    states.forEach(function (state) {
+      var difference = state.target - state.current;
+      if (Math.abs(difference) > maxProgressLag) {
+        state.current = state.target -
+          (difference > 0 ? maxProgressLag : -maxProgressLag);
+        difference = state.target - state.current;
+      }
+      if (Math.abs(difference) > 0.0004) {
+        state.current += difference * ease;
+        settled = false;
+      } else {
+        state.current = state.target;
+      }
+      applyProgress(state);
+    });
+
+    if (!settled) frame = window.requestAnimationFrame(render);
+  }
+
+  function requestRender() {
+    needsMeasure = true;
+    if (frame === null) frame = window.requestAnimationFrame(render);
+  }
+
+  function snapToCurrentScroll() {
+    measureTargets();
+    states.forEach(function (state) {
+      state.current = state.target;
+      applyProgress(state);
+    });
+  }
+
+  window.addEventListener('scroll', requestRender, { passive: true });
+  window.addEventListener('resize', requestRender, { passive: true });
+  window.addEventListener('orientationchange', requestRender, { passive: true });
+  window.addEventListener('pageshow', function () {
+    lastTime = 0;
+    snapToCurrentScroll();
+  });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
+      lastTime = 0;
+      snapToCurrentScroll();
+    });
+  }
+
+  snapToCurrentScroll();
+})();
+
+// ── Outside Design: pointer-following 3D card tilt ──
+// Tuned to the interaction used by the #the-human reference: rotation eases
+// toward the pointer while scale enters and returns on a damped spring.
+(function () {
+  if (!window.matchMedia ||
+      !window.matchMedia('(hover: hover) and (pointer: fine)').matches ||
+      window.matchMedia('(max-width: 734px)').matches ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var cards = document.querySelectorAll('.ab-gallery-card');
+  if (!cards.length) return;
+
+  var MAX_TILT = 14;
+  var PERSPECTIVE = 800;
+  var ROTATION_EASE = 0.22;
+  var HOVER_SCALE = 1.035;
+  var SPRING_STIFFNESS = 0.14;
+  var SPRING_DAMPING = 0.72;
+  var REST_THRESHOLD = 0.01;
+
+  Array.prototype.forEach.call(cards, function (card) {
+    var frame = null;
+    var active = false;
+    var pendingPointer = null;
+    var cachedRect = null;
+    var targetX = 0;
+    var targetY = 0;
+    var currentX = 0;
+    var currentY = 0;
+    var targetScale = 1;
+    var currentScale = 1;
+    var scaleVelocity = 0;
+
+    function readPointer() {
+      if (!pendingPointer) return;
+      if (!cachedRect) cachedRect = card.getBoundingClientRect();
+
+      var relativeX = (pendingPointer.clientX - cachedRect.left) / cachedRect.width;
+      var relativeY = (pendingPointer.clientY - cachedRect.top) / cachedRect.height;
+      targetY = (relativeX - 0.5) * MAX_TILT * 2;
+      targetX = -(relativeY - 0.5) * MAX_TILT * 2;
+      pendingPointer = null;
+    }
+
+    function render() {
+      readPointer();
+
+      var deltaX = targetX - currentX;
+      var deltaY = targetY - currentY;
+      currentX += deltaX * ROTATION_EASE;
+      currentY += deltaY * ROTATION_EASE;
+
+      scaleVelocity += (targetScale - currentScale) * SPRING_STIFFNESS;
+      scaleVelocity *= SPRING_DAMPING;
+      currentScale += scaleVelocity;
+
+      card.style.transform =
+        'perspective(' + PERSPECTIVE + 'px) ' +
+        'rotateX(' + currentX.toFixed(3) + 'deg) ' +
+        'rotateY(' + currentY.toFixed(3) + 'deg) ' +
+        'scale(' + currentScale.toFixed(4) + ')';
+
+      var rotationSettled =
+        Math.abs(deltaX) < REST_THRESHOLD &&
+        Math.abs(deltaY) < REST_THRESHOLD;
+      var scaleSettled =
+        Math.abs(targetScale - currentScale) < 0.0005 &&
+        Math.abs(scaleVelocity) < 0.0005;
+
+      if (active || !rotationSettled || !scaleSettled) {
+        frame = window.requestAnimationFrame(render);
+        return;
+      }
+
+      frame = null;
+      currentScale = 1;
+      scaleVelocity = 0;
+      cachedRect = null;
+      card.style.transform = '';
+    }
+
+    function schedule() {
+      if (frame === null) frame = window.requestAnimationFrame(render);
+    }
+
+    card.addEventListener('mouseenter', function () {
+      active = true;
+      targetScale = HOVER_SCALE;
+      cachedRect = card.getBoundingClientRect();
+      card.classList.add('is-tilting');
+      schedule();
+    });
+
+    card.addEventListener('mousemove', function (event) {
+      pendingPointer = event;
+      schedule();
+    }, { passive: true });
+
+    card.addEventListener('mouseleave', function () {
+      active = false;
+      targetX = 0;
+      targetY = 0;
+      targetScale = 1;
+      pendingPointer = null;
+      card.classList.remove('is-tilting');
+      schedule();
+    });
+  });
 })();
 
 // ── Footer: back-to-homepage glide ──
