@@ -274,15 +274,17 @@
   z-index: 5;
 }
 
-/* Rounded-square arrow buttons — dark fill, white arrow, both themes */
+/* Arrow buttons use the same chamfered container as the menu button.
+   Keep the arrow icon at its existing 20px size. */
 .cs-slider-arrow {
+  position: relative;
   -webkit-appearance: none;
   appearance: none;
   border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #282828;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: transparent;
   color: #fff; /* arrow fill = currentColor */
   display: flex;
   align-items: center;
@@ -290,9 +292,22 @@
   cursor: pointer;
   transition: opacity 0.18s;
 }
-.cs-slider-arrow svg { display: block; }
+.cs-slider-arrow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('assets/images/menu-button-default.svg') center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.cs-slider-arrow:is(:hover, :focus-visible)::before {
+  background-image: url('assets/images/menu-button-hover.svg');
+}
+.cs-slider-arrow svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
 .cs-arrow-prev svg { transform: rotate(180deg); }
-.cs-slider-arrow:hover { opacity: 0.85; }
 .cs-slider-arrow:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -322,13 +337,12 @@
   font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(40px, 5.5vw, 64px);
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   color: #000;
   margin-bottom: 40px;
-  overflow: hidden;
+  overflow: visible;
 }
-
 
 /* ── Meta row — Role / Client / Year ── */
 .cs-meta-row {
@@ -341,7 +355,7 @@
 .cs-meta-item {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .cs-meta-item-label {
@@ -391,10 +405,13 @@
 .cs-applink-arrow {
   display: block;
   flex-shrink: 0;
-  color: var(--brand-teal-deep);
+  color: var(--brand-teal);
+  opacity: 0.7;
+  transition: opacity 240ms ease;
 }
 
 .cs-applink:hover { opacity: 0.7; }
+.cs-applink:hover .cs-applink-arrow { opacity: 1; }
 
 /* ── Body paragraphs ── */
 .cs-body-block {
@@ -463,6 +480,11 @@
   position: relative;
   background: #111;
   margin-bottom: 24px;
+}
+
+.cs-gallery .cs-video-block {
+  width: 100%;
+  margin-left: 0;
 }
 
 .cs-video-block video {

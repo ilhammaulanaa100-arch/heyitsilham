@@ -324,9 +324,30 @@
     function span(cls, text) { return mkEl('span', cls, text); }
     function p(cls, text)    { return mkEl('p',    cls, text); }
 
+    function appendVideo(parent, src, revealOnScroll) {
+      var videoBlock = div('cs-video-block');
+      if (revealOnScroll) videoBlock.setAttribute('data-reveal-scroll', '');
+      var vph = div('cs-video-ph');
+      vph.appendChild(span('cs-video-ph-label', 'Video Showcase'));
+      videoBlock.appendChild(vph);
+      var vid = document.createElement('video');
+      vid.src = src;
+      vid.autoplay = true; vid.muted = true;
+      vid.setAttribute('muted', ''); vid.loop = true;
+      vid.setAttribute('playsinline', '');
+      vid.style.cssText = 'opacity:0;transition:opacity 0.8s ease;';
+      vid.addEventListener('canplay', function () {
+        vid.style.opacity       = '1';
+        vph.style.opacity       = '0';
+        vph.style.pointerEvents = 'none';
+      }, { once: true });
+      videoBlock.appendChild(vid);
+      parent.appendChild(videoBlock);
+    }
+
     // ── 1. Headline (whisper fades per line via Motion.splitLines) ──
     var headlineEl = document.createElement('h1');
-    headlineEl.className = 'cs-headline';
+    headlineEl.className = 'cs-headline' + (p_data.slug === 'porto2026' ? ' cs-headline--qita' : '');
     headlineEl.setAttribute('data-reveal', '');
     headlineEl.setAttribute('data-reveal-lines', '');
     headlineEl.textContent = p_data.title || p_data.subtitle || '';
@@ -378,25 +399,8 @@
     }
 
     // ── 4. Video showcase (if media.video exists) ────────
-    if (p_data.media && p_data.media.video) {
-      var videoBlock = div('cs-video-block');
-      videoBlock.setAttribute('data-reveal-scroll', '');
-      var vph = div('cs-video-ph');
-      vph.appendChild(span('cs-video-ph-label', 'Video Showcase'));
-      videoBlock.appendChild(vph);
-      var vid = document.createElement('video');
-      vid.src = p_data.media.video;
-      vid.autoplay = true; vid.muted = true;
-      vid.setAttribute('muted', ''); vid.loop = true;
-      vid.setAttribute('playsinline', '');
-      vid.style.cssText = 'opacity:0;transition:opacity 0.8s ease;';
-      vid.addEventListener('canplay', function () {
-        vid.style.opacity       = '1';
-        vph.style.opacity       = '0';
-        vph.style.pointerEvents = 'none';
-      }, { once: true });
-      videoBlock.appendChild(vid);
-      detail.appendChild(videoBlock);
+    if (p_data.media && p_data.media.video && !p_data.media.videoAfterGallery) {
+      appendVideo(detail, p_data.media.video, true);
     }
 
     // ── 5. Section-based gallery ─────────────────────────
@@ -407,8 +411,8 @@
       : [];
     if (gallerySections.length) {
       var gallery = div('cs-gallery');
-      gallery.setAttribute('data-reveal-scroll', '');
-      gallerySections.forEach(function (section) {
+      gallery.setAttribute('data-reveal', '');
+      gallerySections.forEach(function (section, sectionIndex) {
         if (!section) return;
         var allowedLayouts = ['full', 'split-square-left', 'split-square-right'];
         var layout = allowedLayouts.indexOf(section.layout) > -1 ? section.layout : 'full';
@@ -448,6 +452,9 @@
           row.appendChild(fig);
         });
         gallery.appendChild(row);
+        if (sectionIndex === 0 && p_data.media.videoAfterGallery) {
+          appendVideo(gallery, p_data.media.videoAfterGallery, false);
+        }
       });
       detail.appendChild(gallery);
     }

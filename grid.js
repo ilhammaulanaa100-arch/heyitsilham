@@ -221,6 +221,26 @@ window.GridView = (function () {
     return bandPattern[band][slot];
   }
 
+  // Find the nearest occurrence of a project around a previously selected
+  // cell. The grid repeats infinitely, so this keeps an arrow-navigated
+  // project return close to the cell the user originally opened.
+  function cellForProject(pIdx, nearCol, nearRow) {
+    var best = null;
+    var bestDistance = Infinity;
+    var radius = PATTERN_ROWS;
+    for (var row = nearRow - radius; row <= nearRow + radius; row++) {
+      for (var col = nearCol - PCOLS; col <= nearCol + PCOLS; col++) {
+        if (projectIndex(col, row) !== pIdx) continue;
+        var distance = Math.abs(col - nearCol) + Math.abs(row - nearRow);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = { col: col, row: row };
+        }
+      }
+    }
+    return best;
+  }
+
   function hoverMotionForProject(pIdx) {
     var value = PROJECTS[pIdx] && PROJECTS[pIdx].hoverMotion;
     return typeof value === 'number' ? Math.max(0, value) : DEFAULT_HOVER_MOTION;
@@ -1002,6 +1022,7 @@ window.GridView = (function () {
     zoomInto: zoomInto,
     zoomOutFrom: zoomOutFrom,
     cellScreenRect: cellScreenRect,
+    cellForProject: cellForProject,
     setCellMediaHidden: setCellMediaHidden,
     setTheme: setTheme,
     hide: hide,

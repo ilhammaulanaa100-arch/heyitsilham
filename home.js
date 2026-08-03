@@ -399,6 +399,8 @@
   var _prevFocus       = null;
   var _trapHandler     = null;
   var _replayHeroReveal = null; // assigned inside load handler once revealText/sectionText/current are live
+  var _syncHomeToProject = null; // keeps the homepage carousel aligned with the active case study
+  var _getHomeProjectCard = null;
   var _hideHeroForClose = null;
 
   var GLIDE_DURATION = 0.75;
@@ -668,6 +670,38 @@
   }
 
   function closeOverlay() {
+    // The case-study slider can change projects without moving the homepage
+    // carousel underneath it. Align the hidden homepage before the close
+    // reveal so returning from a case study lands on the active project.
+    var activeSlideEl = document.querySelector('.cs-slide.is-active');
+    var activeProjectIndex = activeSlideEl
+      ? parseInt(activeSlideEl.getAttribute('data-index'), 10)
+      : -1;
+    if (_syncHomeToProject && activeProjectIndex >= 0) {
+      _syncHomeToProject(activeProjectIndex);
+    }
+    // If the case-study arrow changed project, retarget the reverse glide to
+    // that project's homepage card instead of the card that originally opened
+    // the overlay. This keeps the close animation valid for the new project.
+    if (activeProjectIndex >= 0) {
+      if (_gridReturn && window.GridView && GridView.cellForProject) {
+        var activeGridCell = GridView.cellForProject(
+          activeProjectIndex,
+          _gridReturn.cell.col,
+          _gridReturn.cell.row
+        );
+        if (activeGridCell) {
+          _gridReturn.cell = activeGridCell;
+          _sourceProjectIndex = activeProjectIndex;
+        }
+      } else if (_getHomeProjectCard) {
+        var activeHomeCard = _getHomeProjectCard(activeProjectIndex);
+        if (activeHomeCard) {
+          _sourceCard = activeHomeCard;
+          _sourceProjectIndex = activeProjectIndex;
+        }
+      }
+    }
     hideOverlay();
     history.replaceState({ csOverlay: null }, '', location.pathname.replace(/case-study\.html.*$/, '') || 'index.html');
   }
@@ -1147,6 +1181,28 @@
       }, 0.08)
       .to(navInner, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.3);
     }
+
+    // Case-study navigation happens in a separate overlay, so the homepage
+    // carousel needs an instant, hidden-state sync before the overlay closes.
+    _syncHomeToProject = function (index) {
+      if (index < 0 || index >= TOTAL || index === current) return;
+      current = index;
+      animating = false;
+      sections.forEach(function (el, i) {
+        gsap.killTweensOf(el);
+        el.classList.toggle('is-active', i === current);
+        gsap.set(el, sectionPos(i, current));
+        el.style.zIndex = sectionZ(i === current ? 0 : ((i - current + TOTAL) % TOTAL));
+        el.style.willChange = 'auto';
+      });
+      syncActiveCardTab();
+      updateNav(current);
+      syncScanToActive();
+    };
+    _getHomeProjectCard = function (index) {
+      var section = sections[index];
+      return section ? section.querySelector('.proj-card') : null;
+    };
 
     convObserver = Observer.create({
       type: 'wheel,touch',

@@ -115,7 +115,7 @@ html.about-entry-complete .navbar {
   height: 400px;
   max-width: 100%;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 0;
 }
 .ab-hero-media img,
 .ab-hero-media video {
