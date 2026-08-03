@@ -198,18 +198,19 @@
 
       try { sessionStorage.setItem('porto-about-curtain', '1'); } catch (storageError) {}
 
-      // Give the active state one clean beat before the structural transition.
+      // Let the selected route register, then dissolve the menu as one soft
+      // rack-focus frame instead of expanding its panel to the viewport.
       window.setTimeout(function () {
         if (!leavingForAbout) return;
         menu.classList.add('is-navigating-about');
         document.body.classList.add('page-leaving-about');
-      }, 140);
+      }, 80);
 
-      // Selection beat (140 ms) + panel expansion (680 ms) + one frame.
-      // Hand off as soon as the cover is solid so black never becomes a pause.
+      // Navigate when the dissolve reaches solid #020202; the destination
+      // starts on the identical frame and resolves its content underneath.
       window.setTimeout(function () {
         window.location.href = href;
-      }, 840);
+      }, 720);
     }
 
     trigger.addEventListener('click', function () {
@@ -290,39 +291,15 @@
     });
   })();
 
-  // ── Splash name: char split with CSS stagger ────────────
-  (function () {
-    var el = document.getElementById('splash-name');
-    if (!el) return;
-    var text = el.textContent;
-    el.textContent = '';
-    text.split('').forEach(function (ch, i) {
-      var s = document.createElement('span');
-      s.className = 'char';
-      s.textContent = ch === ' ' ? ' ' : ch;
-      s.style.animationDelay = (0.1 + i * 0.065) + 's';
-      el.appendChild(s);
-    });
-  })();
-
   // ── Splash counter & progress bar ───────────────────────
-  var splashProgress    = 0;
-  var splashCounterDone = false;
+  var splashProgressState = window.__portoSplashProgress || null;
+  var splashCounterDone = !!(splashProgressState && splashProgressState.done);
   var doExitSplash      = null;
-  var splashBarEl       = document.getElementById('splash-bar');
-  var splashCounterEl   = document.getElementById('splash-counter');
-
-  function tickCounter() {
-    var step = splashProgress < 70 ? 3 : splashProgress < 90 ? 1 : 0.5;
-    splashProgress = Math.min(100, splashProgress + step);
-    if (splashBarEl)     splashBarEl.style.width = splashProgress + '%';
-    if (splashCounterEl) splashCounterEl.textContent = String(Math.floor(splashProgress)).padStart(2, '0');
-    if (splashProgress >= 100) {
+  if (splashProgressState) {
+    splashProgressState.onDone = function () {
       splashCounterDone = true;
       if (doExitSplash) doExitSplash();
-      return;
-    }
-    setTimeout(tickCounter, 30);
+    };
   }
 
   // Arriving via the about-page footer glide — the expanded box already covers
@@ -344,11 +321,10 @@
     }
   } catch (e) {}
   if (skipSplash) {
+    if (splashProgressState) splashProgressState.cancel();
     var splashSkipEl = document.getElementById('splash');
     if (splashSkipEl) splashSkipEl.style.display = 'none';
     splashCounterDone = true;
-  } else {
-    setTimeout(tickCounter, 60);
   }
 
   // ── Section navigator ───────────────────────────────────
@@ -1336,25 +1312,148 @@
         markHomeReady();
         return;
       }
+      var portoEl = document.querySelector('.porto');
+      var splashStatusEl = splashEl && splashEl.querySelector('.splash-status');
+      var splashMediaEl = splashEl && splashEl.querySelector('.splash-logo-media');
+      var splashCounterEl = splashEl && splashEl.querySelector('.splash-counter');
+      var firstSectionEl = document.querySelector('.page-section:first-child');
+      var heroCardEl = firstSectionEl && firstSectionEl.querySelector('.proj-card');
+      var heroLabelEl = firstSectionEl && firstSectionEl.querySelector('.ph-label');
+      var heroTitleEl = firstSectionEl && firstSectionEl.querySelector('.ph-title');
+      var heroTextEls = [heroLabelEl, heroTitleEl].filter(Boolean);
+      var navInnerEl = document.getElementById('nav-inner');
+      var scanGridEl = document.querySelector('.scan-grid');
+      var navbarEl = document.querySelector('.navbar');
+      var viewTabsEl = document.getElementById('view-tabs');
+      if (!splashEl || !portoEl) {
+        if (splashEl) splashEl.style.display = 'none';
+        if (portoEl) gsap.set(portoEl, { opacity: 1 });
+        animating = false;
+        markHomeReady();
+        return;
+      }
+
+      // Rack-focus handoff: the homepage is already present underneath the
+      // opaque splash, then resolves from a soft, slightly darkened frame.
+      // No directional wipe — every part of the viewport develops together.
+      gsap.set(portoEl, {
+        opacity: 1,
+        scale: 1.012,
+        filter: 'blur(11px) brightness(0.55)',
+        transformOrigin: '50% 50%',
+        willChange: 'transform,filter'
+      });
+      gsap.set(splashEl, { opacity: 1, yPercent: 0, willChange: 'opacity' });
+      if (splashStatusEl) gsap.set(splashStatusEl, { willChange: 'opacity' });
+      if (splashMediaEl) gsap.set(splashMediaEl, { willChange: 'opacity,filter,transform' });
+      if (splashCounterEl) gsap.set(splashCounterEl, { willChange: 'opacity,filter,transform' });
+
+      // First homepage composition: keep the structural stage stationary and
+      // give only the content a restrained upward lift. The centre card leads,
+      // followed by text and navigation; the grid/UI merely fade into place.
+      if (firstSectionEl) {
+        gsap.set(firstSectionEl.querySelectorAll('.ph-label .char, .ph-title .char'), {
+          opacity: 1,
+          yPercent: 0
+        });
+      }
+      if (heroCardEl) gsap.set(heroCardEl, {
+        y: 24,
+        scale: 0.99,
+        opacity: 0.6,
+        transformOrigin: '50% 50%',
+        willChange: 'transform,opacity'
+      });
+      if (heroTextEls.length) gsap.set(heroTextEls, {
+        y: 16,
+        opacity: 0,
+        willChange: 'transform,opacity'
+      });
+      if (navInnerEl) gsap.set(navInnerEl, { y: 10, opacity: 0, willChange: 'transform,opacity' });
+      if (scanGridEl) gsap.set(scanGridEl, { opacity: 0, willChange: 'opacity' });
+      if (navbarEl) gsap.set(navbarEl, { opacity: 0, willChange: 'opacity' });
+      if (viewTabsEl) gsap.set(viewTabsEl, { opacity: 0, willChange: 'opacity' });
+
       var introTl = gsap.timeline({ onComplete: function () {
+        splashEl.style.display = 'none';
+        gsap.set(portoEl, { clearProps: 'filter,transform,transformOrigin,willChange' });
+        if (splashStatusEl) gsap.set(splashStatusEl, { clearProps: 'opacity,filter,willChange' });
+        if (splashMediaEl) gsap.set(splashMediaEl, { clearProps: 'opacity,filter,transform,willChange' });
+        if (splashCounterEl) gsap.set(splashCounterEl, { clearProps: 'opacity,filter,transform,willChange' });
+        if (heroCardEl) gsap.set(heroCardEl, { clearProps: 'opacity,transform,transformOrigin,willChange' });
+        // Keep the final inline opacity: the base anti-FOUC rule intentionally
+        // leaves .ph-label at zero until JavaScript has completed its reveal.
+        if (heroTextEls.length) gsap.set(heroTextEls, { clearProps: 'transform,willChange' });
+        if (navInnerEl) gsap.set(navInnerEl, { clearProps: 'opacity,transform,willChange' });
+        if (scanGridEl) gsap.set(scanGridEl, { clearProps: 'opacity,willChange' });
+        if (navbarEl) gsap.set(navbarEl, { clearProps: 'opacity,willChange' });
+        if (viewTabsEl) gsap.set(viewTabsEl, { clearProps: 'opacity,willChange' });
+        gsap.set(splashEl, { clearProps: 'opacity,transform,willChange' });
         animating = false;
         markHomeReady();
       } });
       introTl
-        .to(splashEl, { yPercent: -105, duration: 1.0, ease: 'expo.inOut' }, 0)
-        .to('.porto',  { opacity: 1,    duration: 0.5,  ease: 'power2.out' }, 0.3);
-      // First paint = whisper fade (section-nav still uses revealText untouched).
-      if (typeof Motion !== 'undefined') {
-        var sec0 = document.querySelector('.page-section:first-child');
-        if (sec0) {
-          // cancel the char-hidden state GSAP set on section 0 so the container fade shows text
-          if (window.gsap) gsap.set(sec0.querySelectorAll('.ph-label .char, .ph-title .char'), { opacity: 1, yPercent: 0 });
-          sec0.querySelectorAll('.ph-label, .ph-title').forEach(function (el) { el.setAttribute('data-reveal', ''); });
-          Motion.enter(sec0, { delay: 500 }); // start after the .porto fade begins
-        }
-      } else {
-        revealText(introTl, sectionText(0));
-      }
+        .to(splashCounterEl, {
+          opacity: 0,
+          y: -8,
+          filter: 'blur(5px)',
+          duration: 0.28,
+          ease: 'sine.in'
+        }, 0)
+        .to(splashMediaEl, {
+          opacity: 0,
+          scale: 0.985,
+          filter: 'blur(8px)',
+          duration: 0.52,
+          ease: 'sine.inOut'
+        }, 0.08)
+        .to(splashEl, { opacity: 0, duration: 0.94, ease: 'sine.inOut' }, 0.16)
+        .to(portoEl, {
+          scale: 1,
+          filter: 'blur(0px) brightness(1)',
+          duration: 1.1,
+          ease: 'sine.inOut'
+        }, 0.12);
+      if (heroCardEl) introTl.to(heroCardEl, {
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 0.95,
+        ease: 'power3.out'
+      }, 0.18);
+      if (scanGridEl) introTl.to(scanGridEl, {
+        opacity: 1,
+        duration: 0.7,
+        ease: 'sine.out'
+      }, 0.34);
+      if (heroLabelEl) introTl.to(heroLabelEl, {
+        y: 0,
+        opacity: 1,
+        duration: 0.78,
+        ease: 'power3.out'
+      }, 0.3);
+      if (heroTitleEl) introTl.to(heroTitleEl, {
+        y: 0,
+        opacity: 1,
+        duration: 0.82,
+        ease: 'power3.out'
+      }, 0.38);
+      if (navInnerEl) introTl.to(navInnerEl, {
+        y: 0,
+        opacity: 1,
+        duration: 0.65,
+        ease: 'power3.out'
+      }, 0.42);
+      if (navbarEl) introTl.to(navbarEl, {
+        opacity: 1,
+        duration: 0.62,
+        ease: 'sine.out'
+      }, 0.44);
+      if (viewTabsEl) introTl.to(viewTabsEl, {
+        opacity: 1,
+        duration: 0.62,
+        ease: 'sine.out'
+      }, 0.48);
     };
 
     if (splashCounterDone) doExitSplash();

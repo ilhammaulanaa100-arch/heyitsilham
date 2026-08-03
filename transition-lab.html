@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transition Lab — Ilham Portfolio</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <script>
+    try {
+      sessionStorage.removeItem('porto-home-curtain');
+      sessionStorage.setItem('porto-skip-splash', '1');
+    } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="transition-lab.css?v=1" />
+</head>
+<body>
+  <header class="lab-controls" aria-label="Transition controls">
+    <div class="lab-heading">
+      <span class="lab-kicker">Transition lab</span>
+      <span class="lab-current" id="lab-current">Film Dissolve</span>
+    </div>
+
+    <div class="lab-variants" role="tablist" aria-label="Transition variants">
+      <button class="lab-variant is-active" type="button" role="tab" aria-selected="true" data-variant="film">
+        <span>01</span> Film Dissolve
+      </button>
+      <button class="lab-variant" type="button" role="tab" aria-selected="false" data-variant="focus">
+        <span>02</span> Rack Focus
+      </button>
+      <button class="lab-variant" type="button" role="tab" aria-selected="false" data-variant="bloom">
+        <span>03</span> Luminance Bloom
+      </button>
+    </div>
+
+    <div class="lab-actions">
+      <button id="lab-replay" type="button">Replay transition</button>
+      <button id="lab-full-run" type="button">Full run</button>
+    </div>
+  </header>
+
+  <main class="lab-stage">
+    <div class="lab-home-layer" id="lab-home-layer">
+      <iframe id="lab-home" src="index.html?transition-lab=1" title="Homepage preview" tabindex="-1"></iframe>
+    </div>
+
+    <div class="lab-splash" id="lab-splash" aria-hidden="true">
+      <div class="lab-black" id="lab-black"></div>
+      <canvas class="lab-noise" id="lab-noise"></canvas>
+      <div class="lab-bloom" id="lab-bloom"></div>
+      <div class="lab-exposure" id="lab-exposure"></div>
+
+      <div class="lab-status" id="lab-status">
+        <div class="lab-logo-media" id="lab-logo-media">
+          <video id="lab-logo-video" muted playsinline preload="auto" poster="assets/images/splash-logo-poster.png">
+            <source src="assets/images/splash/splash-logo.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <div class="lab-counter" id="lab-counter">0%</div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="lab-help" aria-hidden="true">
+    <span><kbd>1</kbd>–<kbd>3</kbd> variants</span>
+    <span><kbd>Space</kbd> replay</span>
+  </aside>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="transition-lab.js?v=1"></script>
+</body>
+</html>

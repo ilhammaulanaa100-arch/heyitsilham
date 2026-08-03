@@ -338,18 +338,21 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu.is-navigating-about,
 .site-menu.is-navigating-home {
   visibility: visible;
-  /* Keep the existing backdrop composite stable while a separate opaque
-     scrim hides the project card. Animating backdrop-filter over the card's
-     transformed image can make Chromium rebuild that layer for one frame. */
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  /* Rack-focus dissolve: deepen the existing menu atmosphere without turning
+     the panel itself into a fullscreen curtain. */
+  background-color: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   pointer-events: none;
-  transition: none;
+  transition:
+    background-color 640ms cubic-bezier(0.37, 0, 0.63, 1),
+    backdrop-filter 640ms cubic-bezier(0.37, 0, 0.63, 1),
+    -webkit-backdrop-filter 640ms cubic-bezier(0.37, 0, 0.63, 1);
 }
 .site-menu.is-navigating-about::before,
 .site-menu.is-navigating-home::before {
   opacity: 1;
+  transition: opacity 640ms cubic-bezier(0.37, 0, 0.63, 1);
 }
 .site-menu-panel {
   position: absolute;
@@ -389,19 +392,27 @@ body.menu-open .menu-button { pointer-events: auto; }
 }
 .site-menu.is-navigating-about .site-menu-panel,
 .site-menu.is-navigating-home .site-menu-panel {
-  top: 0;
-  right: 0;
-  width: 100vw;
-  height: 100vh;
   clip-path: inset(0 0 0 0);
-  transform: translate3d(0, 0, 0);
-  background-color: #020202;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translate3d(0, 0, 0) scale(0.992);
+  animation: menu-route-rack-out 520ms cubic-bezier(0.37, 0, 0.63, 1) both;
   transition:
-    top 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    right 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    width 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    height 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    background-color 280ms ease 340ms;
+    opacity 320ms cubic-bezier(0.33, 0, 0.2, 1),
+    filter 520ms cubic-bezier(0.37, 0, 0.63, 1),
+    transform 640ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+@keyframes menu-route-rack-out {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translate3d(0, 0, 0) scale(0.992);
+  }
 }
 .site-menu.is-resetting,
 .site-menu.is-resetting *,
@@ -441,9 +452,9 @@ body.menu-open .menu-button { pointer-events: auto; }
   height: 100%;
   opacity: 0;
   transition:
-    width 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    height 680ms cubic-bezier(0.76, 0, 0.24, 1),
-    opacity 240ms ease 340ms;
+    width 520ms cubic-bezier(0.37, 0, 0.63, 1),
+    height 520ms cubic-bezier(0.37, 0, 0.63, 1),
+    opacity 260ms cubic-bezier(0.33, 0, 0.2, 1);
 }
 .site-menu-link:focus-visible,
 .site-menu-social:focus-visible { outline: none; }
@@ -514,21 +525,21 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu.is-navigating-about .site-menu-link,
 .site-menu.is-navigating-home .site-menu-link {
   opacity: 0;
-  transform: translate3d(-12px, 0, 0);
+  transform: translate3d(0, 0, 0);
   transition:
     color 120ms ease,
-    opacity 160ms ease,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 240ms cubic-bezier(0.33, 0, 0.2, 1),
+    transform 240ms cubic-bezier(0.33, 0, 0.2, 1);
 }
 .site-menu.is-navigating-about .site-menu-link.is-route-target,
 .site-menu.is-navigating-home .site-menu-link.is-route-target {
   color: #fff;
   opacity: 0;
-  transform: translate3d(0, -8px, 0);
+  transform: translate3d(0, 0, 0);
   transition:
     color 120ms ease,
-    opacity 180ms ease,
-    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 280ms cubic-bezier(0.33, 0, 0.2, 1),
+    transform 280ms cubic-bezier(0.33, 0, 0.2, 1);
 }
 .site-menu-link.is-route-target::after {
   content: '';
@@ -573,10 +584,10 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu.is-navigating-about .site-menu-connect,
 .site-menu.is-navigating-home .site-menu-connect {
   opacity: 0;
-  transform: translate3d(-12px, 0, 0);
+  transform: translate3d(0, 0, 0);
   transition:
-    opacity 160ms ease,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 220ms cubic-bezier(0.33, 0, 0.2, 1),
+    transform 220ms cubic-bezier(0.33, 0, 0.2, 1);
 }
 
 body.page-leaving-about .menu-button,
@@ -584,8 +595,18 @@ body.page-leaving-home .menu-button {
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 800ms var(--menu-spring),
-    opacity 160ms ease 120ms;
+    transform 640ms cubic-bezier(0.37, 0, 0.63, 1),
+    opacity 220ms cubic-bezier(0.33, 0, 0.2, 1);
+}
+
+body.page-leaving-about .porto,
+body.page-leaving-home .about-page {
+  filter: blur(8px) brightness(0.62);
+  transform: scale(0.992);
+  transform-origin: 50% 50%;
+  transition:
+    filter 640ms cubic-bezier(0.37, 0, 0.63, 1),
+    transform 640ms cubic-bezier(0.37, 0, 0.63, 1);
 }
 
 /* About menu → Works handoff. Homepage fold 0 is prepared underneath this
@@ -605,7 +626,53 @@ html.from-about-curtain .home-entry-curtain {
 }
 html.from-about-curtain.is-home-ready .home-entry-curtain {
   opacity: 0;
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 720ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+html.from-about-curtain .porto {
+  opacity: 1;
+  filter: blur(10px) brightness(0.58);
+  transform: scale(1.012);
+  transform-origin: 50% 50%;
+}
+html.from-about-curtain .page-section:first-child .ph-layout {
+  transform: translate3d(0, 18px, 0);
+}
+html.from-about-curtain .navbar,
+html.from-about-curtain .view-tabs {
+  opacity: 0;
+  filter: blur(6px);
+}
+html.from-about-curtain.is-home-ready .porto {
+  filter: blur(0) brightness(1);
+  transform: scale(1);
+  transition:
+    filter 920ms cubic-bezier(0.37, 0, 0.63, 1),
+    transform 920ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+html.from-about-curtain.is-home-ready .page-section:first-child .ph-layout {
+  transform: translate3d(0, 0, 0);
+  transition: transform 860ms cubic-bezier(0.16, 1, 0.3, 1) 80ms;
+}
+html.from-about-curtain.is-home-ready .navbar,
+html.from-about-curtain.is-home-ready .view-tabs {
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity 620ms cubic-bezier(0.33, 0, 0.2, 1) 180ms,
+    filter 720ms cubic-bezier(0.37, 0, 0.63, 1) 120ms;
+}
+html.home-entry-complete .porto {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+html.home-entry-complete .page-section:first-child .ph-layout {
+  transform: none;
+}
+html.home-entry-complete .navbar,
+html.home-entry-complete .view-tabs {
+  opacity: 1;
+  filter: none;
 }
 .site-menu-connect p {
   font-family: 'Bai Jamjuree', sans-serif;
@@ -710,7 +777,93 @@ body.menu-open #proj-cursor { display: none; }
 .nav-row.is-inactive[data-rel="-1"], .nav-row.is-inactive[data-rel="1"] { opacity: 0.35; }
 .nav-row.is-current { color: var(--brand-teal-deep); }
 html.dark .nav-row.is-current { color: var(--brand-teal); }
-.nav-num { font-size: 24px; letter-spacing: -0.24px; }
+.nav-num {
+  font-size: 24px;
+  letter-spacing: -0.24px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+@media (min-width: 901px) {
+  .section-nav {
+    right: 56px;
+    top: 50%;
+    width: 57px;
+    height: 243px;
+    transform: translateY(-50%);
+  }
+  .section-nav::before,
+  .section-nav::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    z-index: 2;
+    width: 57px;
+    height: 130px;
+    pointer-events: none;
+  }
+  .section-nav::before {
+    top: 0;
+    background: linear-gradient(
+      to bottom,
+      #020202 18.462%,
+      rgba(2, 2, 2, 0) 90.385%
+    );
+  }
+  .section-nav::after {
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(2, 2, 2, 0) 9.615%,
+      #020202 81.538%
+    );
+  }
+  .nav-inner {
+    position: absolute;
+    top: 20px;
+    left: 14px;
+    z-index: 1;
+    width: 33px;
+    height: 203px;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .nav-row {
+    flex: 0 0 30px;
+    width: 33px;
+    height: 30px;
+    justify-content: center;
+    font-family: 'Bai Jamjuree', sans-serif;
+    font-weight: 400;
+    line-height: normal;
+    color: #fff;
+  }
+  .nav-row:nth-child(2) {
+    flex: 1 0 0;
+    min-height: 1px;
+  }
+  .nav-row.is-current {
+    flex: 0 0 35px;
+    height: 35px;
+  }
+  .nav-row.is-inactive[data-rel="-2"],
+  .nav-row.is-inactive[data-rel="-1"],
+  .nav-row.is-inactive[data-rel="1"],
+  .nav-row.is-inactive[data-rel="2"] {
+    opacity: 1;
+  }
+  .nav-num {
+    display: block;
+    width: 100%;
+    font-size: 24px;
+    letter-spacing: -0.72px;
+    text-align: center;
+  }
+  .nav-row.is-current .nav-num {
+    font-size: 28px;
+    letter-spacing: -0.84px;
+  }
+}
 
 /* ── Per-project hero layout ── */
 .ph-layout {
@@ -760,56 +913,74 @@ html.skip-splash .scan-grid { visibility: hidden; }
 /* ── Splash Screen ── */
 #splash {
   position: fixed; inset: 0; z-index: 9999;
-  background: #fff;
-  display: flex; align-items: center; justify-content: center;
-}
-.splash-grid {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image:
-    linear-gradient(to right,  rgba(34,32,32,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(34,32,32,0.06) 1px, transparent 1px);
-  background-size: 80.68px 80.68px;
-}
-.splash-vignette {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background:
-    linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
-    linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
-    linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
-    linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
+  overflow: hidden;
+  background: #0f0e0e;
+  will-change: opacity;
 }
 .splash-inner {
-  position: relative; z-index: 2;
-  display: flex; flex-direction: column; align-items: center; gap: 40px;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
-.splash-name {
-  font-family: 'Bai Jamjuree', sans-serif;
-  font-weight: 400;
-  font-size: 96px; line-height: 1.1; letter-spacing: -0.02em; color: #000;
-  overflow: hidden; padding-block: 0.14em;
+.splash-status {
+  position: absolute;
+  left: clamp(20px, 3.889vw, 56px);
+  right: clamp(20px, 3.889vw, 56px);
+  bottom: clamp(20px, 2.667vh, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  will-change: opacity, filter;
 }
-.splash-name .char {
-  display: inline-block;
-  opacity: 0; transform: translateY(60%);
-  animation: splashCharIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.splash-logo-media {
+  --splash-settle: 0;
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(70px, 8.333vw, 120px);
+  aspect-ratio: 4 / 5;
+  overflow: visible;
+  background: transparent;
 }
-@keyframes splashCharIn {
-  to { opacity: 1; transform: translateY(0); }
+.splash-logo-video,
+.splash-logo-final {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
 }
-.splash-bottom {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
+.splash-logo-video {
+  opacity: calc(1 - var(--splash-settle));
 }
-.splash-bar-track {
-  width: 200px; height: 1px; background: rgba(0,0,0,0.1);
-  position: relative; overflow: hidden;
+.splash-logo-final {
+  z-index: 4;
+  opacity: var(--splash-settle);
+  transform: translate(-50%, -50%);
+  filter: saturate(1.08) drop-shadow(0 12px 30px rgba(82, 237, 226, 0.18));
+  pointer-events: none;
 }
-.splash-bar-fill {
-  position: absolute; left: 0; top: 0; height: 100%;
-  width: 0%; background: var(--brand-teal);
+.splash-logo-media.is-complete .splash-logo-final {
+  filter: saturate(1.08) drop-shadow(0 14px 34px rgba(82, 237, 226, 0.24));
 }
 .splash-counter {
-  font-family: 'Recoleta', Georgia, serif; font-weight: 300;
-  font-size: 14px; letter-spacing: -0.14px; color: rgba(0,0,0,0.35);
+  position: relative;
+  flex: 0 0 auto;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-size: clamp(64px, 10.278vw, 148px);
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  color: #fff;
+  white-space: nowrap;
 }
 
 /* ── Custom cursor ── */
@@ -1063,17 +1234,11 @@ html.lenis { height: 100%; }
 
 /* ── Permanent dark theme ── */
 html.dark body,
-html.dark .porto,
-html.dark #splash { background: #020202; }
-html.dark .splash-grid {
-  background-image:
-    linear-gradient(to right,  rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
-}
+html.dark .porto { background: #020202; }
+html.dark #splash { background: #0f0e0e; }
 html.dark .scan-line { background: rgba(255,255,255,0.10); }
 html.dark .scan-corner { border-color: rgba(255,255,255,0.7); }
-html.dark .vignette-radial,
-html.dark .splash-vignette {
+html.dark .vignette-radial {
   background:
     linear-gradient(to bottom, rgba(2,2,2,0.92) 0%, rgba(2,2,2,0) 18%),
     linear-gradient(to top,    rgba(2,2,2,0.92) 0%, rgba(2,2,2,0) 18%),
@@ -1082,10 +1247,7 @@ html.dark .splash-vignette {
 }
 html.dark .nav-row { color: #fff; }
 html.dark .ph-label,
-html.dark .ph-title,
-html.dark .splash-name { color: #fff; }
-html.dark .splash-bar-track { background: rgba(255,255,255,0.12); }
-html.dark .splash-counter { color: rgba(255,255,255,0.4); }
+html.dark .ph-title { color: #fff; }
 html.dark #cs-right { background: #020202; }
 
 /* ══ Responsive ═══════════════════════════════════════════
@@ -1148,7 +1310,7 @@ html.dark #cs-right { background: #020202; }
   }
 
   /* Counter: current / total, centred at the bottom (jasminegunarto-style) */
-  .section-nav { left: 0; right: 0; top: auto; bottom: 22px; transform: none; width: auto; }
+  .section-nav { left: 0; right: 0; top: auto; bottom: 22px; transform: none; width: auto; height: auto; }
   .nav-inner { flex-direction: row; justify-content: center; align-items: baseline; gap: 6px; }
   .nav-inner::after {
     content: '/ ' attr(data-total);
@@ -1201,8 +1363,6 @@ html.dark #cs-right { background: #020202; }
       linear-gradient(to left,   rgba(2,2,2,0.92) 0%, rgba(2,2,2,0) 8%);
   }
 
-  .splash-name { font-size: clamp(48px, 14vw, 72px); }
-  .splash-bar-track { width: 160px; }
 }
 
 @media (min-width: 901px) and (max-height: 899px) {

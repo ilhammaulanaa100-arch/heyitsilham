@@ -35,8 +35,8 @@
 
   <!-- Reuse the homepage navigation/menu component, then layer the scrolling
        About page styles on top. -->
-  <link rel="stylesheet" href="home.css?v=18" />
-  <link rel="stylesheet" href="about.css?v=36" />
+  <link rel="stylesheet" href="home.css?v=41" />
+  <link rel="stylesheet" href="about.css?v=42" />
 </head>
 <body>
 
@@ -50,21 +50,32 @@
     var curtain = document.getElementById('about-entry-curtain');
     if (!curtain || !root.classList.contains('from-home-curtain')) return;
 
-    curtain.getBoundingClientRect();
-    requestAnimationFrame(function () {
-      root.classList.add('is-about-ready');
-      document.dispatchEvent(new CustomEvent('porto:about-reveal'));
-      setTimeout(function () {
-        root.classList.remove('from-home-curtain', 'is-about-ready');
-      }, 220);
-    });
+    function release() {
+      curtain.getBoundingClientRect();
+      requestAnimationFrame(function () {
+        root.classList.add('is-about-ready');
+        document.dispatchEvent(new CustomEvent('porto:about-reveal'));
+        setTimeout(function () {
+          root.classList.add('about-entry-complete');
+          root.classList.remove('from-home-curtain', 'is-about-ready');
+        }, 1040);
+      });
+    }
+
+    // Wait only for parsing—not images—so the destination composition exists
+    // before its rack-focus transition begins.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', release, { once: true });
+    } else {
+      release();
+    }
   })();
   </script>
 
   <nav class="navbar">
     <div class="navbar-left">
       <div class="logo" aria-hidden="true">
-        <img src="assets/images/logo%20baru.png" alt="" />
+        <img src="assets/images/logo%20ilham%20baru.png" alt="" />
       </div>
     </div>
     <div class="navbar-right">
@@ -97,24 +108,24 @@
           <span>About</span>
           <img class="site-menu-active-dot" src="assets/images/site-menu/menu-active-dot.svg" alt="" aria-hidden="true" />
         </button>
-        <button class="site-menu-link" type="button">Message</button>
+        <a class="site-menu-link" href="mailto:ilhammaulanaa100@gmail.com">Message</a>
       </nav>
 
       <div class="site-menu-connect">
         <p>Connect with me</p>
         <div class="site-menu-socials" aria-label="Social links">
-          <button class="site-menu-social" type="button" aria-label="Instagram">
-            <img src="assets/images/site-menu/social-instagram.svg" alt="" />
-          </button>
-          <button class="site-menu-social site-menu-social-x" type="button" aria-label="X">
-            <img src="assets/images/site-menu/social-x.svg" alt="" />
-          </button>
-          <button class="site-menu-social" type="button" aria-label="Dribbble">
-            <img src="assets/images/site-menu/social-dribbble.svg" alt="" />
-          </button>
-          <button class="site-menu-social" type="button" aria-label="LinkedIn">
+          <a class="site-menu-social" href="https://www.linkedin.com/in/ilham-maulana2110/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <img src="assets/images/site-menu/social-linkedin.svg" alt="" />
-          </button>
+          </a>
+          <a class="site-menu-social" href="https://dribbble.com/heyitsilham" target="_blank" rel="noopener noreferrer" aria-label="Dribbble">
+            <img src="assets/images/site-menu/social-dribbble.svg" alt="" />
+          </a>
+          <a class="site-menu-social" href="https://www.instagram.com/ui_ilham/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <img src="assets/images/site-menu/social-instagram.svg" alt="" />
+          </a>
+          <a class="site-menu-social" href="https://www.upwork.com/freelancers/~01710fbc4b548834e5?mp_source=share" target="_blank" rel="noopener noreferrer" aria-label="Upwork">
+            <img src="assets/images/site-menu/upwork.svg" alt="" />
+          </a>
         </div>
       </div>
     </section>
@@ -126,7 +137,7 @@
     <section class="ab-hero">
       <div class="ab-hero-stage">
         <div class="ab-hero-copy">
-          <p class="ab-hero-name" data-reveal>Heyitsilham</p>
+          <p class="ab-hero-name" data-reveal>[Heyitsilham]</p>
           <h1 class="ab-hero-headline" data-reveal>
             <span class="m-line"><em class="ab-hero-accent">Pragmatic</em> Product</span>
             <span class="m-line">Designer, Visual <em class="ab-hero-accent">Thinker</em></span>
@@ -164,70 +175,66 @@
         <article class="ab-work-item" data-index="1">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/byond.svg" alt="" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20alehp.svg" alt="Aleph Labs logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>BYOND by BSI</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Senior Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2024-Present</span></p>
+                <h3 data-blur-reveal>Aleph-Labs (Part of AKQA)</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Senior Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2022-Present</span></p>
               </div>
-              <p class="ab-work-description" data-blur-reveal>Leading design for the mobile banking super-app: onboarding, daily transactions, and the design system that keeps 40+ screens consistent.</p>
+              <p class="ab-work-description" data-blur-reveal>Joined Aleph Labs as a Product Designer and grew into a Senior Product Designer role, leading design across large-scale banking and telco products for BSI, BRI, Telkomsel, and Maybank.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="2">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/tokopedia.svg" alt="" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20mandala.png" alt="Mandala logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Tokopedia</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2022-2024</span></p>
+                <h3 data-blur-reveal>PT Mandala Multifinance (Now Adira)</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2021-2022</span></p>
               </div>
-              <p class="ab-work-description" data-blur-reveal>Owned the discovery and search experience. Shipped experiments that lifted conversion while cutting visual noise across the funnel.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="3">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/gojek.svg" alt="" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20prima%20cloud.png" alt="PrimaCloud logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Gojek</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2022</span></p>
+                <h3 data-blur-reveal>PrimaClouds Solutions Sdn Bhd</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2021</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>Part-Time</span></p>
               </div>
-              <p class="ab-work-description" data-blur-reveal>Worked on GoPay flows — transfers, top-ups, and the little moments of trust that make people comfortable moving money.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="4">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/traveloka.svg" alt="" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20upwork.png" alt="Upwork logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Traveloka</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>UI Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2019-2020</span></p>
+                <h3 data-blur-reveal>Ex-Top Rated Upwork</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2021</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>Freelance</span></p>
               </div>
-              <p class="ab-work-description" data-blur-reveal>Designed booking flows for flights and hotels, from wireframe to polished handoff, with a focus on mobile-first layouts.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="5">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/freelance.svg" alt="" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20tanahair.svg" alt="Tanah Air logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Freelance</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2017-2019</span></p>
+                <h3 data-blur-reveal>Tanah Air Studio</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Junior UX Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2021</span></p>
               </div>
-              <p class="ab-work-description" data-blur-reveal>Brand and web work for local studios and startups — where I learned to ship fast, talk to clients, and defend whitespace.</p>
             </div>
           </div>
         </article>
@@ -237,52 +244,51 @@
     <!-- ── Outside Design ── -->
     <section class="ab-outside" aria-labelledby="outside-design-title">
       <header class="ab-outside-header">
-        <p class="ab-outside-sub" data-blur-reveal>[Outside Design]</p>
-        <h2 class="ab-outside-title" id="outside-design-title" data-blur-reveal>Film, type, and other small obsessions.</h2>
-        <p class="ab-outside-body" data-blur-reveal>Away from product screens, I collect the things that sharpen how I see — quiet frames, expressive letters, night walks, and objects made with care.</p>
+        <p class="ab-outside-sub" data-blur-reveal>[More of Me]</p>
+        <h2 class="ab-outside-title" id="outside-design-title" data-blur-reveal>Things that keep me moving and curious.</h2>
       </header>
 
       <div class="ab-gallery" aria-label="Outside design interests">
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
-            <img src="assets/images/outside-design/film-stills.jpg" alt="Photographic slides being studied over a glowing lightbox" loading="lazy" decoding="async" />
+            <img src="assets/images/outside-design/moreofme1.png" alt="More of Me image 1" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
             <figcaption class="ab-gallery-info">
-              <h3>Film Stills</h3>
-              <p>Light, color, atmosphere</p>
+              <h3>Science Things</h3>
+              <p>Astronomy, History, etc</p>
             </figcaption>
           </div>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
-            <img src="assets/images/outside-design/typography.jpg" alt="Typography specimen books and drawing tools on a wooden table" loading="lazy" decoding="async" />
+            <img src="assets/images/outside-design/moreofme2.png" alt="More of Me image 2" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
             <figcaption class="ab-gallery-info">
-              <h3>Typography</h3>
-              <p>Type, print, details</p>
+              <h3>Running</h3>
+              <p>Road to VHalf Marathon JRF 2026</p>
             </figcaption>
           </div>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
-            <img src="assets/images/outside-design/night-walks.jpg" alt="A quiet walk through a rain-soaked Jakarta street at night" loading="lazy" decoding="async" />
+            <img src="assets/images/outside-design/moreofme3.png" alt="More of Me image 3" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
             <figcaption class="ab-gallery-info">
-              <h3>Night Walks</h3>
-              <p>Jakarta, neon, silence</p>
+              <h3>Books</h3>
+              <p>Currently reading Guns, Germs and Steel</p>
             </figcaption>
           </div>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
-            <img src="assets/images/outside-design/small-obsessions.jpg" alt="An analog camera and carefully arranged creative tools" loading="lazy" decoding="async" />
+            <img src="assets/images/outside-design/moreofme4.png" alt="More of Me image 4" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
             <figcaption class="ab-gallery-info">
-              <h3>Small Obsessions</h3>
-              <p>Objects, texture, form</p>
+              <h3>Video Games</h3>
+              <p>Ex Dota 2, CSGO, PubG Player</p>
             </figcaption>
           </div>
         </figure>
@@ -307,6 +313,6 @@
 
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
-  <script src="about.js?v=24"></script>
+  <script src="about.js?v=26"></script>
 </body>
 </html>

@@ -138,18 +138,13 @@
       if (!leavingForWorks) return;
       menu.classList.add('is-navigating-home');
       document.body.classList.add('page-leaving-home');
-    }, 140);
+    }, 80);
 
     window.setTimeout(function () {
-      // The common Home → About → Works path can restore the already-rendered
-      // homepage from bfcache. Direct About visits keep the prepared-load
-      // fallback below.
-      if (/(index\.html|\/)$/.test(document.referrer) && history.length > 1) {
-        history.back();
-      } else {
-        window.location.href = href;
-      }
-    }, 840);
+      // Always activate the prepared destination URL. Depending on history.back
+      // made the rack-focus entry conditional on browser bfcache behaviour.
+      window.location.href = href;
+    }, 720);
   }
 
   if (worksLink) worksLink.addEventListener('click', navigateToWorks);
@@ -233,7 +228,6 @@
     ? workItems[workItems.length - 1]
     : null;
   var outside = document.querySelector('.ab-outside');
-  var outsideGallery = outside && outside.querySelector('.ab-gallery');
   var reduced = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var handoffMotion = window.matchMedia
@@ -372,7 +366,6 @@
   function updateSectionExits() {
     updateSectionExit(about, lastAboutParagraph);
     updateSectionExit(work, lastWorkItem);
-    updateSectionExit(outside, outsideGallery);
   }
 
   function render() {

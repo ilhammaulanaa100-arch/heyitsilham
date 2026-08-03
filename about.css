@@ -36,7 +36,48 @@ html.from-home-curtain .about-entry-curtain {
 }
 html.from-home-curtain.is-about-ready .about-entry-curtain {
   opacity: 0;
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 720ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+html.from-home-curtain .about-page {
+  filter: blur(10px) brightness(0.58);
+  transform: scale(1.012);
+  transform-origin: 50% 0;
+}
+html.from-home-curtain .ab-hero-stage {
+  transform: translate3d(0, 18px, 0);
+}
+html.from-home-curtain .navbar {
+  opacity: 0;
+  filter: blur(6px);
+}
+html.from-home-curtain.is-about-ready .about-page {
+  filter: blur(0) brightness(1);
+  transform: scale(1);
+  transition:
+    filter 920ms cubic-bezier(0.37, 0, 0.63, 1),
+    transform 920ms cubic-bezier(0.37, 0, 0.63, 1);
+}
+html.from-home-curtain.is-about-ready .ab-hero-stage {
+  transform: translate3d(0, 0, 0);
+  transition: transform 860ms cubic-bezier(0.16, 1, 0.3, 1) 80ms;
+}
+html.from-home-curtain.is-about-ready .navbar {
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity 620ms cubic-bezier(0.33, 0, 0.2, 1) 180ms,
+    filter 720ms cubic-bezier(0.37, 0, 0.63, 1) 120ms;
+}
+html.about-entry-complete .about-page {
+  filter: none;
+  transform: none;
+}
+html.about-entry-complete .ab-hero-stage {
+  transform: none;
+}
+html.about-entry-complete .navbar {
+  opacity: 1;
+  filter: none;
 }
 
 /* ── Page shell ── */
@@ -47,15 +88,17 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
 .ab-hero-name {
   font-family: 'Bai Jamjuree', sans-serif;
   font-weight: 400;
-  font-size: 32px;
+  font-size: 28px;
+  font-style: italic;
   line-height: 1.2;
   letter-spacing: -0.03em;
+  color: #9e9e9e;
   margin-bottom: 32px;
 }
 .ab-hero-headline {
   max-width: 26ch;
   margin-bottom: 72px;
-  font-weight: 600;
+  font-weight: 400;
   font-size: clamp(48px, 6.5vw, 96px);
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -65,7 +108,7 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
 }
 .ab-hero-accent {
   font-style: italic;
-  font-weight: 600;
+  font-weight: 400;
 }
 .ab-hero-media {
   width: 600px;
@@ -84,22 +127,6 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
 /* Editorial relay handoff: copy and portrait leave as one locked composition,
    while About enters through the same continuous overlap. */
 @media (prefers-reduced-motion: no-preference) {
-  html.ab-handoff-on .ab-hero-copy {
-    opacity: var(--hero-copy-opacity, 1);
-    filter: blur(var(--hero-copy-blur, 0px));
-    transform: translate3d(0, var(--hero-copy-y, 0px), 0);
-    will-change: transform, opacity, filter;
-  }
-  html.ab-handoff-on .ab-hero-media {
-    transform: translate3d(0, var(--hero-media-y, 0px), 0);
-    will-change: transform;
-  }
-  html.ab-handoff-on .ab-hero-media img,
-  html.ab-handoff-on .ab-hero-media video {
-    opacity: var(--hero-media-opacity, 1);
-    filter: blur(var(--hero-media-blur, 0px));
-    will-change: opacity, filter;
-  }
   html.ab-handoff-on .ab-about .ab-split-left {
     opacity: var(--about-title-opacity, 0);
     transform: translate3d(0, var(--about-title-handoff-y, 0px), 0);
@@ -109,9 +136,6 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
     opacity: var(--about-copy-opacity, 0);
     transform: translate3d(0, var(--about-copy-handoff-y, 0px), 0);
     will-change: transform, opacity;
-  }
-  html.ab-handoff-on.ab-hero-exit-complete .ab-hero-stage {
-    visibility: hidden;
   }
   html.ab-handoff-on.ab-handoff-complete .ab-about .ab-split-left,
   html.ab-handoff-on.ab-handoff-complete .ab-about-copy {
@@ -132,9 +156,7 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
     will-change: transform, opacity, filter;
   }
   html.ab-cinematic-on .ab-work > .ab-split-left,
-  html.ab-cinematic-on .ab-work .ab-work-item:last-child,
-  html.ab-cinematic-on .ab-outside > .ab-outside-header,
-  html.ab-cinematic-on .ab-outside > .ab-gallery {
+  html.ab-cinematic-on .ab-work .ab-work-item:last-child {
     opacity: var(--ab-section-exit-opacity, 1);
     filter: blur(var(--ab-section-exit-blur, 0px));
     transform: translate3d(0, var(--ab-section-exit-y, 0px), 0);
@@ -152,16 +174,17 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
 .ab-split-title,
 .ab-outside-sub {
   font-family: 'Bai Jamjuree', sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   font-style: italic;
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.03em;
+  color: #9e9e9e;
 }
 .ab-about-copy p {
   position: relative;
   font-family: 'Bai Jamjuree', sans-serif;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: -0.025em;
@@ -171,7 +194,8 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
   --ab-section-spacing: 32svh;
   position: relative;
   z-index: 2;
-  padding-top: var(--ab-section-spacing);
+  /* Only tighten the hero → About transition. Keep About → Work unchanged. */
+  padding-top: 16svh;
   /* Keep the handoff continuous: Work begins revealing while the final About
      paragraph clears, leaving breathing room without an empty viewport. */
   padding-bottom: var(--ab-section-spacing);
@@ -184,7 +208,7 @@ html.from-home-curtain.is-about-ready .about-entry-curtain {
 .ab-about-copy {
   display: flex;
   flex-direction: column;
-  gap: 240px;
+  gap: 120px;
   width: 100%;
   max-width: none;
   justify-self: stretch;
@@ -283,7 +307,7 @@ html.ab-blur-on [data-blur-block] {
 }
 .ab-work-item h3 {
   color: #fff;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 400;
   line-height: normal;
   letter-spacing: -0.03em;
@@ -352,13 +376,13 @@ html.ab-blur-on [data-blur-block] {
   will-change: transform;
   box-shadow:
     0 38px 90px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(88, 240, 224, 0.08);
+    0 0 0 0.5px rgba(255, 255, 255, 0.03);
 }
 .ab-gallery-visual {
   position: relative;
   aspect-ratio: 320 / 426;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid #464646;
   border-radius: 24px;
   background: #fff;
   transition: border-color 320ms ease;
@@ -383,9 +407,9 @@ html.ab-blur-on [data-blur-block] {
 .ab-gallery-info {
   position: absolute;
   z-index: 2;
-  top: 79.921875%;
-  right: 7.1875%;
-  left: 7.1875%;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -412,7 +436,7 @@ html.ab-blur-on [data-blur-block] {
 }
 @media (hover: hover) and (pointer: fine) {
   .ab-gallery-card.is-tilting .ab-gallery-visual {
-    border-color: rgba(88, 240, 224, 0.32);
+    border-color: #464646;
   }
 }
 

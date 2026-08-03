@@ -46,16 +46,34 @@
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+  <!-- Warm the transparent logo still so the splash can paint before the
+       matching alpha video finishes decoding. -->
+  <link rel="preload" as="image" href="assets/images/splash/splash-logo-center-alpha-poster.png" fetchpriority="high" />
+
   <!-- Fonts -->
-  <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;600&display=swap" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;600&family=Cormorant+Garamond:ital,wght@1,300&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;600&family=Cormorant+Garamond:ital,wght@1,300&display=swap" />
+  </noscript>
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
   <link rel="stylesheet" href="case-study.css" />
-  <link rel="stylesheet" href="home.css?v=18" />
+  <link rel="stylesheet" href="home.css?v=41" />
 </head>
 <body>
   <div class="home-entry-curtain" id="home-entry-curtain" aria-hidden="true"></div>
@@ -85,14 +103,16 @@
       requestAnimationFrame(function () {
         root.classList.add('is-home-ready');
         setTimeout(function () {
+          root.classList.add('home-entry-complete');
           root.classList.remove('from-about-curtain', 'is-home-ready');
-        }, 220);
+        }, 1040);
       });
     }
 
     function arm() {
       if (armed || (!root.classList.contains('from-about-curtain') && !hasRoute())) return;
       armed = true;
+      root.classList.remove('home-entry-complete');
       root.classList.add('from-about-curtain');
       try {
         sessionStorage.removeItem('porto-home-curtain');
@@ -136,18 +156,122 @@
 
   <!-- Splash Screen -->
   <div id="splash">
-    <div class="splash-grid"></div>
-    <div class="splash-vignette"></div>
     <div class="splash-inner">
-      <div class="splash-name" id="splash-name">Ilham.</div>
-      <div class="splash-bottom">
-        <div class="splash-bar-track">
-          <div class="splash-bar-fill" id="splash-bar"></div>
+      <div class="splash-status">
+        <div class="splash-logo-media" aria-hidden="true">
+          <video
+            class="splash-logo-video"
+            id="splash-logo-video"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            poster="assets/images/splash/splash-logo-center-alpha-poster.png"
+          >
+            <source src="assets/images/splash/splash-logo-center-alpha.webm" type="video/webm" />
+          </video>
+          <img
+            class="splash-logo-final"
+            src="assets/images/splash/splash-logo-center-alpha-poster.png"
+            alt=""
+            decoding="sync"
+            fetchpriority="high"
+          />
         </div>
-        <div class="splash-counter" id="splash-counter">00</div>
+        <div class="splash-counter" id="splash-counter" aria-hidden="true">0%</div>
       </div>
     </div>
   </div>
+  <script>
+  // Start the visible loader immediately, before third-party libraries below
+  // have a chance to delay page initialisation. If a logo video source is
+  // supplied, progress follows its duration; the poster fallback uses 2.6 s.
+  (function () {
+    var completionTimer = 0;
+    var state = window.__portoSplashProgress = {
+      done: false,
+      completing: false,
+      cancelled: false,
+      onDone: null,
+      cancel: function () {
+        this.cancelled = true;
+        if (completionTimer) clearTimeout(completionTimer);
+      }
+    };
+    if (document.documentElement.classList.contains('skip-splash')) {
+      state.done = true;
+      return;
+    }
+
+    var counter = document.getElementById('splash-counter');
+    var video = document.getElementById('splash-logo-video');
+    var media = document.querySelector('.splash-logo-media');
+    var targetDuration = 2600;
+    var fallbackDuration = targetDuration;
+    var completionHold = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260;
+    var startedAt = performance.now();
+    var lastProgress = 0;
+
+    function syncVideoSpeed() {
+      if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+      // The encoded clip is 3.33 s. Playback rate follows the requested visual
+      // duration so the material changes and the percentage remain locked.
+      video.playbackRate = Math.max(0.75, Math.min(2, (video.duration - 0.08) / (targetDuration / 1000)));
+    }
+    if (video) {
+      video.addEventListener('loadedmetadata', syncVideoSpeed, { once: true });
+      if (video.readyState >= 1) syncVideoSpeed();
+    }
+
+    function setLogoSettle(progress) {
+      if (!media) return;
+      // Resolve the changing material reel into the teal master mark during
+      // the final beat. Smoothstep keeps the crossfade free of a visible seam.
+      var t = Math.max(0, Math.min(1, (progress - 88) / 10));
+      t = t * t * (3 - 2 * t);
+      media.style.setProperty('--splash-settle', t.toFixed(4));
+    }
+
+    function complete() {
+      if (state.cancelled || state.done || state.completing) return;
+      state.completing = true;
+      lastProgress = 100;
+      setLogoSettle(100);
+      if (counter) counter.textContent = '100%';
+      if (media) media.classList.add('is-complete');
+      if (video) video.pause();
+
+      completionTimer = setTimeout(function () {
+        if (state.cancelled) return;
+        state.done = true;
+        state.completing = false;
+        if (typeof state.onDone === 'function') state.onDone();
+      }, completionHold);
+    }
+
+    function render(now) {
+      if (state.cancelled || state.done || state.completing) return;
+      var hasTimedVideo = video && Number.isFinite(video.duration) && video.duration > 0;
+      var progress = hasTimedVideo
+        // Finish just ahead of the encoded tail so a repeated last frame does
+        // not leave the counter visibly parked at 99%.
+        ? (video.currentTime / Math.max(0.1, video.duration - 0.08)) * 100
+        : ((now - startedAt) / fallbackDuration) * 100;
+      progress = Math.max(lastProgress, Math.max(0, Math.min(100, progress)));
+      lastProgress = progress;
+      if (counter) counter.textContent = Math.floor(progress) + '%';
+      setLogoSettle(progress);
+
+      if (progress >= 100 || (hasTimedVideo && video.ended)) {
+        complete();
+        return;
+      }
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  })();
+  </script>
 
   <div class="porto">
 
@@ -187,7 +311,7 @@
   <nav class="navbar">
       <div class="navbar-left">
         <div class="logo" aria-hidden="true">
-          <img src="assets/images/logo%20baru.png" alt="" />
+          <img src="assets/images/logo%20ilham%20baru.png" alt="" />
         </div>
       </div>
       <div class="navbar-right">
@@ -221,24 +345,24 @@
           <img class="site-menu-active-dot" src="assets/images/site-menu/menu-active-dot.svg" alt="" aria-hidden="true" />
         </button>
         <a class="site-menu-link" href="about.html">About</a>
-        <button class="site-menu-link" type="button">Message</button>
+        <a class="site-menu-link" href="mailto:ilhammaulanaa100@gmail.com">Message</a>
       </nav>
 
       <div class="site-menu-connect">
         <p>Connect with me</p>
         <div class="site-menu-socials" aria-label="Social links">
-          <button class="site-menu-social" type="button" aria-label="Instagram">
-            <img src="assets/images/site-menu/social-instagram.svg" alt="" />
-          </button>
-          <button class="site-menu-social site-menu-social-x" type="button" aria-label="X">
-            <img src="assets/images/site-menu/social-x.svg" alt="" />
-          </button>
-          <button class="site-menu-social" type="button" aria-label="Dribbble">
-            <img src="assets/images/site-menu/social-dribbble.svg" alt="" />
-          </button>
-          <button class="site-menu-social" type="button" aria-label="LinkedIn">
+          <a class="site-menu-social" href="https://www.linkedin.com/in/ilham-maulana2110/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <img src="assets/images/site-menu/social-linkedin.svg" alt="" />
-          </button>
+          </a>
+          <a class="site-menu-social" href="https://dribbble.com/heyitsilham" target="_blank" rel="noopener noreferrer" aria-label="Dribbble">
+            <img src="assets/images/site-menu/social-dribbble.svg" alt="" />
+          </a>
+          <a class="site-menu-social" href="https://www.instagram.com/ui_ilham/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <img src="assets/images/site-menu/social-instagram.svg" alt="" />
+          </a>
+          <a class="site-menu-social" href="https://www.upwork.com/freelancers/~01710fbc4b548834e5?mp_source=share" target="_blank" rel="noopener noreferrer" aria-label="Upwork">
+            <img src="assets/images/site-menu/upwork.svg" alt="" />
+          </a>
         </div>
       </div>
     </section>
@@ -301,7 +425,7 @@
   <script src="case-study.js"></script>
   <script src="content.js"></script>
   <script src="grid.js?v=2"></script>
-  <script src="home.js?v=6"></script>
+  <script src="home.js?v=17"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>
