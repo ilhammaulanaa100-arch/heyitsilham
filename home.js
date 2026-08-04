@@ -44,7 +44,7 @@
               '</div>' +
             '</div>' +
             '<div class="ph-media">' +
-              '<div class="proj-card ' + shape + '" style="background:' + proj.color + ';" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.subtitle.replace(/\n/g, ' ')) + '">' +
+              '<div class="proj-card ' + shape + '" style="background:#232323;" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.subtitle.replace(/\n/g, ' ')) + '">' +
                 imgTag +
               '</div>' +
             '</div>' +
@@ -551,13 +551,21 @@
     var useAnim = !!(fromCard && window.gsap && !prefersReduced && !isMobile);
 
     if (!useAnim) {
+      var closeControl = document.getElementById('cs-right-close');
+      if (closeControl) {
+        if (window.gsap) gsap.set(closeControl, { opacity: isMobile ? 1 : 0.7 });
+        else closeControl.style.opacity = isMobile ? '1' : '0.7';
+      }
+      if (isMobile) {
+        if (window.gsap) gsap.set('#cs-right', { clearProps: 'transform' });
+        else if (csRight) csRight.style.transform = 'none';
+      }
       _sourceCard = null; _sourceProjectIndex = -1; // no source card → close stays instant/crossfade, not a mismatched glide
       _gridReturn = null;
       if (window.GridView && GridView.isOpen()) GridView.hide(true); // grid can't sit behind the transparent left panel
 
       if (isMobile && window.gsap && !prefersReduced) {
         // Simple mobile crossfade (opacity only)
-        gsap.set('#cs-right', { xPercent: 0 });
         gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
         gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' });
         gsap.to('.porto', { opacity: 0, duration: 0.3, ease: 'power2.out' });
@@ -732,7 +740,8 @@
         if (window.gsap) {
           gsap.set('.porto', { opacity: 1 });
           gsap.set('.cs-slide.is-active .proj-card', { opacity: 1 });
-          gsap.set('#cs-right', { xPercent: 0 });
+          if (isMobile) gsap.set('#cs-right', { clearProps: 'transform' });
+          else gsap.set('#cs-right', { xPercent: 0 });
           if (_sourceCard) gsap.set(_sourceCard, { opacity: 1 });
         } else {
           var pEl = document.querySelector('.porto'); if (pEl) pEl.style.opacity = '1';
@@ -945,6 +954,19 @@
       if (r) setScanRect(r);
     }
 
+    function syncMobilePeekMask() {
+      var root = document.documentElement;
+      if (!isMobileFlow()) {
+        root.style.removeProperty('--mobile-peek-top');
+        root.style.removeProperty('--mobile-peek-bottom');
+        return;
+      }
+      var r = cardRect(current);
+      if (!r) return;
+      root.style.setProperty('--mobile-peek-top', Math.max(0, r.top) + 'px');
+      root.style.setProperty('--mobile-peek-bottom', Math.max(0, VH - r.bottom) + 'px');
+    }
+
     function tweenScanTo(tl, rect, pos, dur) {
       tl.to(scanEls.focus, { left: rect.left, top: rect.top, width: rect.width, height: rect.height, duration: dur, ease: 'expo.inOut' }, pos)
         .to(scanEls.v1, { left: rect.left - SCAN_CORNER_OFFSET, duration: dur, ease: 'expo.inOut' }, pos)
@@ -969,10 +991,12 @@
     // ponytail: fixed X offsets kept — peeking cards sit mostly offscreen on
     // phones, so mixed widths only change the sliver; apply the edge-gap
     // treatment here too if that ever reads as uneven.
-    var PEEK_NEXT_X = 0.8;
-    var PEEK_PREV_X = -0.8;
+    // Mobile-only horizontal peek: calculate from each card's real width so
+    // landscape, square, and portrait neighbours expose the same slim edge.
+    var MOBILE_PEEK = 20;
 
     var _cardH = []; // per-section card heights — cleared on resize
+    var _cardW = []; // per-section card widths — cleared on resize
     function cardH(i) {
       if (_cardH[i] == null) {
         var c = sections[i] && sections[i].querySelector('.proj-card');
@@ -980,14 +1004,21 @@
       }
       return _cardH[i];
     }
+    function cardW(i) {
+      if (_cardW[i] == null) {
+        var c = sections[i] && sections[i].querySelector('.proj-card');
+        _cardW[i] = c ? c.getBoundingClientRect().width : VW - 48;
+      }
+      return _cardW[i];
+    }
 
     function sectionOffset(i, cur) {
       var fd = (i - cur + TOTAL) % TOTAL;
       var horiz = isMobileFlow();
       var span  = horiz ? VW : VH;
       if (fd === 0)         return 0;
-      if (fd === 1)         return horiz ? span * PEEK_NEXT_X : cardH(cur) + VH * GAP_BELOW;
-      if (fd === TOTAL - 1) return horiz ? span * PEEK_PREV_X : -(cardH(i) + VH * GAP_ABOVE);
+      if (fd === 1)         return horiz ? (span + cardW(i)) / 2 - MOBILE_PEEK : cardH(cur) + VH * GAP_BELOW;
+      if (fd === TOTAL - 1) return horiz ? -((span + cardW(i)) / 2 - MOBILE_PEEK) : -(cardH(i) + VH * GAP_ABOVE);
       if (fd === TOTAL - 2) return span * PARK_ABOVE;
       return span * PARK_BELOW;
     }
@@ -1022,7 +1053,18 @@
       if (!slug) return;
 
       card.addEventListener('click', function () {
-        if (animating || !window.CaseStudy) return;
+        if (animating) return;
+
+        // Clicking either visible neighbour mirrors the wheel direction:
+        // the card below advances, while the card above goes back.
+        if (i !== current) {
+          var forwardDistance = (i - current + TOTAL) % TOTAL;
+          if (forwardDistance === 1) go(1);
+          else if (forwardDistance === TOTAL - 1) go(-1);
+          return;
+        }
+
+        if (!window.CaseStudy) return;
 
         if (window._resetProjectTilt) window._resetProjectTilt(card, true);
         var imgEl = card.querySelector('img');
@@ -1054,6 +1096,7 @@
       el.style.zIndex = sectionZ((i - 0 + TOTAL) % TOTAL);
     });
     sections[0].classList.add('is-active');
+    syncMobilePeekMask();
     syncScanToActive();
 
     function syncActiveCardTab() {
@@ -1123,6 +1166,7 @@
 
       sections.forEach(function (s) { s.classList.remove('is-active'); });
       sections[current].classList.add('is-active');
+      syncMobilePeekMask();
       syncActiveCardTab();
 
       sections.forEach(function (el) { el.style.willChange = 'transform'; });
@@ -1198,6 +1242,7 @@
       syncActiveCardTab();
       updateNav(current);
       syncScanToActive();
+      syncMobilePeekMask();
     };
     _getHomeProjectCard = function (index) {
       var section = sections[index];
@@ -1219,7 +1264,9 @@
       VH = window.innerHeight;
       VW = window.innerWidth;
       _cardH = []; // breakpoints resize the cards — re-measure
+      _cardW = [];
       sections.forEach(function (el, i) { gsap.set(el, sectionPos(i, current)); });
+      syncMobilePeekMask();
       if (!animating) syncScanToActive();
     });
 
@@ -1300,6 +1347,7 @@
       syncActiveCardTab();
       updateNav(0);
       syncScanToActive();
+      syncMobilePeekMask();
     });
 
     document.addEventListener('grid-open-project', function (e) {
@@ -1565,18 +1613,19 @@
       kick();
     }, { passive: true });
 
-    // Event delegation on document catches all .proj-card hovers
+    // Only the active card advertises the case-study action. Neighbour cards
+    // remain plain previous/next navigation targets.
     document.addEventListener('mouseover', function (e) {
-      if (e.target.closest('.page-section .proj-card')) {
+      if (e.target.closest('.page-section.is-active .proj-card')) {
         cursor.classList.add('is-visible');
         document.body.style.cursor = 'none';
       }
     });
 
     document.addEventListener('mouseout', function (e) {
-      if (e.target.closest('.page-section .proj-card')) {
+      if (e.target.closest('.page-section.is-active .proj-card')) {
         var related = e.relatedTarget;
-        if (!related || !related.closest('.page-section .proj-card')) {
+        if (!related || !related.closest('.page-section.is-active .proj-card')) {
           cursor.classList.remove('is-visible');
           document.body.style.cursor = '';
         }

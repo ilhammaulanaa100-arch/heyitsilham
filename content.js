@@ -185,7 +185,7 @@ const PROJECTS = [
         { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB4.png', alt: 'MyTelkomsel Basic showcase 4' }] },
         { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB5.png', alt: 'MyTelkomsel Basic showcase 5' }] },
         { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB6.png', alt: 'MyTelkomsel Basic showcase 6' }] },
-        { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB-Thumbnail.png', alt: 'MyTelkomsel Basic showcase 7' }] }
+        { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB7.png', alt: 'MyTelkomsel Basic showcase 8' }] }
       ]
     },
     meta: { role: 'Product Designer', client: 'Telkomsel', year: '2025' }
@@ -232,7 +232,7 @@ const PROJECTS = [
         ] },
         { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW4.png', alt: 'MyTelkomsel Web showcase 4' }] },
         { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW5.png', alt: 'MyTelkomsel Web showcase 5' }] },
-        { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW-Thumbnail.png', alt: 'MyTelkomsel Web showcase 6' }] }
+        { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW6.png', alt: 'MyTelkomsel Web showcase 6' }] }
       ]
     },
     meta: { role: 'Product Designer', client: 'Telkomsel', year: '2024' }
@@ -260,9 +260,10 @@ const PROJECTS = [
     slug: 'bri-tennis',
     period: '2024',
     sourceUrl: '',
-    summary: "Ducati BRI Rally was an internal tennis event between Aleph and BRI, created to bring both teams together outside the usual project setting. I developed the event identity and applied it across match-day collateral, including jerseys, towels, tote bags, banners, and other event materials.",
+    summary: "Deuce Blue Rally was an internal tennis event between Aleph and BRI, created to bring both teams together outside the usual project setting. I developed the event identity and applied it across match-day collateral, including jerseys, towels, tote bags, tumblers, power banks, medals, backdrops, and other event materials.",
     subtitle: 'BRI Tennis',
-    title: 'An Identity Built for Match Day',
+    title: 'Connecting Beyond the Office',
+    titleLines: ['Connecting Beyond', 'the Office'],
     shape: 'is-landscape',
     color: 'linear-gradient(160deg,#1f65b7,#123b74)',
     media: {
@@ -292,6 +293,7 @@ const PROJECTS = [
     summary: "MyTutor App is a mobile platform designed to help tutors manage their teaching activities more efficiently. It provides direct access to available tutoring opportunities, schedules, payment information, and other essential resources through a more convenient mobile experience.\n\nAs part of my role with MyTutor, I designed the app to translate the platform's core tutor workflow into a clear and accessible interface. The experience enables tutors to manage opportunities, relationships, and teaching activities directly from their mobile devices.",
     subtitle: 'MyTutor App',
     title: 'One App for Every Side of Tutoring',
+    titleLines: ['One App for Every Side', 'of Tutoring'],
     shape: 'is-portrait',
     color: 'linear-gradient(160deg,#32a8ff,#1764bd)',
     media: {
@@ -315,6 +317,7 @@ const PROJECTS = [
     summary: "MyTutor Web is a Malaysia-based EdTech platform that connects students and parents with verified tutors for personalized one-to-one and online learning. The platform helps families find tutoring for subjects and learning levels while simplifying scheduling tools for both parents and tutors.\n\nAs part of my role with MyTutor, I designed the learning and purchasing experience, focusing on clearer navigation, reduced friction, and stronger alignment between parents, tutors, and students.",
     subtitle: 'MyTutor Web',
     title: 'A Shared Space for Tutors and Parents',
+    titleLines: ['A Shared Space for', 'Tutors and Parents'],
     shape: 'is-landscape',
     color: 'linear-gradient(160deg,#32a8ff,#1764bd)',
     media: {
@@ -334,8 +337,9 @@ const PROJECTS = [
     period: '2021',
     sourceUrl: '',
     summary: "Mandala is an internal application designed for Mandala Finance's field collection team, helping employees manage daily operational tasks more efficiently. The platform enables users to review customer visit lists, track assigned activities, and access the information needed to plan and complete field collections.\n\nAs the Product Designer, I collaborated with multiple squads and remained involved throughout the product development process. I was responsible for reducing friction in the payment flow, improving the end-to-end experience, coordinating usability testing with users, and designing directly in Figma to ensure the product remained aligned with the intended experience.",
-    subtitle: 'Mandala (Mango)',
-    title: 'The Whiteboard, Built for the Field',
+    subtitle: 'MantisGo',
+    title: 'The Workday, Built for the Field',
+    titleLines: ['The Workday,', 'Built for the Field'],
     shape: 'is-square',
     color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
@@ -382,6 +386,7 @@ const PROJECTS = [
     summary: "Fatberry is a Malaysia-based insurance platform offering accessible protection products, including car and motorcycle insurance. The platform provides an end-to-end experience for customers, from getting a quote to comparing and purchasing coverage, while making insurance easier to understand and navigate.\n\nI collaborated closely with stakeholders to define the user journey, improve information architecture, and translate complex insurance terms into an approachable experience. The result was a clearer, more confident flow for users exploring their options.",
     subtitle: 'Fatberry',
     title: 'The Brighter Side of Insurance',
+    titleLines: ['The Brighter Side', 'of Insurance'],
     shape: 'is-square',
     color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
@@ -405,6 +410,7 @@ const PROJECTS = [
     summary: "Adleesya is an online marketplace that brings together beauty products through a growing sales and distributor network. Beyond serving customers, the brand also provides business opportunities for sales representatives and registered distributors across several Southeast Asian markets.\n\nAs part of my role at PrimaCloud Solutions, I contributed to a product initiative that supported Adleesya's sales network. The experience helped streamline product discovery, improve distributor management, and create a clearer path to customer acquisition and marketplace growth.",
     subtitle: 'Adleesya',
     title: 'Beauty Sales, All in One Place',
+    titleLines: ['Beauty Sales,', 'All in One Place'],
     shape: 'is-square',
     color: 'linear-gradient(160deg,#8f72d8,#513696)',
     media: {

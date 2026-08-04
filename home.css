@@ -60,9 +60,17 @@ body { background: #fff; overflow: hidden; }
 
 .porto { position: fixed; inset: 0; overflow: hidden; background: #fff; opacity: 0; }
 .page-section { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.page-section.is-active { pointer-events: auto; }
+.page-section.is-active { pointer-events: none; }
 .page-section:not(.is-active) .proj-card { pointer-events: none; }
 .page-section.is-active .proj-card { pointer-events: auto; cursor: none; }
+
+@media (min-width: 901px) {
+  /* The two visible neighbour cards act as previous/next navigation targets. */
+  .page-section:not(.is-active) .proj-card {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+}
 
 /* Fluid stage — renders identically at 1440px, adapts below/above it */
 .section-inner {
@@ -137,7 +145,14 @@ body { background: #fff; overflow: hidden; }
 body.cs-open .navbar { display: none; }
 .navbar-left { display: flex; align-items: center; }
 .logo { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
-.logo img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  transform: scale(1.25);
+  transform-origin: center;
+}
 
 .navbar-right { display: flex; align-items: center; }
 
@@ -544,9 +559,11 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu-link.is-route-target::after {
   content: '';
   display: block;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  align-self: center;
+  transform: translateY(8px);
   border-radius: 50%;
   background: var(--brand-teal);
 }
@@ -554,9 +571,11 @@ body.menu-open .menu-button { pointer-events: auto; }
 .site-menu-link.is-active { color: #fff; }
 .site-menu-active-dot {
   display: block;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  align-self: center;
+  transform: translateY(8px);
 }
 .site-menu-connect {
   position: absolute;
@@ -1260,6 +1279,15 @@ html.dark #cs-right { background: #020202; }
   .page-section.is-active .proj-card { cursor: pointer; }
 }
 
+@media (max-width: 900px) {
+  /* Let the fixed Close control share the root stacking context with the
+     bottom navigation overlay when a case study opens in-place. */
+  body.cs-open #cs-right {
+    z-index: auto;
+    transform: none !important;
+  }
+}
+
 /* ── Tablet (901–1280px): same layout, shrunk to fit ── */
 @media (max-width: 1280px) {
   .navbar { padding: 20px 40px; }
@@ -1285,19 +1313,40 @@ html.dark #cs-right { background: #020202; }
 
 /* ── Mobile (≤900px): stacked hero, compact chrome ── */
 @media (max-width: 900px) {
-  .section-inner { height: 100%; top: 0; transform: none; }
+  .section-inner {
+    height: 100%;
+    height: 100dvh;
+    top: 0;
+    transform: none;
+  }
+
+  /* Keep neighbour peeks inside the active card's vertical frame. */
+  .page-section:not(.is-active) {
+    clip-path: inset(
+      var(--mobile-peek-top, 0px) 0
+      var(--mobile-peek-bottom, 0px) 0
+    );
+  }
 
   /* Horizontal carousel structure: year + title top, card centre, counter bottom */
   .ph-layout {
     top: 0; bottom: 0; left: 0; transform: none;
     flex-direction: column; align-items: flex-start; justify-content: flex-start;
-    gap: 24px; padding: 84px 24px 88px;
+    gap: 24px;
+    padding: 84px 24px calc(160px + env(safe-area-inset-bottom));
   }
   .ph-text { width: 100%; gap: 6px; }
   .ph-label { width: auto; font-size: 15px; }
   .ph-title { font-size: clamp(32px, 9.5vw, 52px); letter-spacing: -0.02em; }
   .ph-spacer { display: none; }
-  .ph-media { width: 100%; margin: auto 0; justify-content: center; }
+  .ph-media {
+    width: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+  }
   /* vh caps keep cards on screen in landscape phones too */
   .proj-card.is-landscape { width: min(100%, 63vh); height: auto; aspect-ratio: 580 / 420; }
   .proj-card.is-square    { width: min(100%, 48vh); height: auto; aspect-ratio: 1; }
@@ -1310,7 +1359,15 @@ html.dark #cs-right { background: #020202; }
   }
 
   /* Counter: current / total, centred at the bottom (jasminegunarto-style) */
-  .section-nav { left: 0; right: 0; top: auto; bottom: 22px; transform: none; width: auto; height: auto; }
+  .section-nav {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 72px);
+    transform: none;
+    width: auto;
+    height: auto;
+  }
   .nav-inner { flex-direction: row; justify-content: center; align-items: baseline; gap: 6px; }
   .nav-inner::after {
     content: '/ ' attr(data-total);
@@ -1320,6 +1377,22 @@ html.dark #cs-right { background: #020202; }
   html.dark .nav-inner::after { color: #fff; }
   .nav-row.is-inactive { display: none; }
   .nav-num { font-size: 16px; }
+
+  .view-tabs {
+    bottom: max(24px, env(safe-area-inset-bottom));
+    width: 144px;
+    height: 56px;
+  }
+  .view-switch-bg {
+    width: 100%;
+    height: 100%;
+  }
+  .view-switch-state {
+    left: 14px;
+    gap: 8px;
+    width: 116px;
+  }
+  .view-switch-label { font-size: 16px; }
 
   .site-menu-panel {
     top: 16px;

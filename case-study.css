@@ -20,6 +20,12 @@
   color-scheme: dark;
 }
 
+@property --cs-arrow-shine-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 /* ── Two-panel shell ── */
 .cs-shell {
   display: flex;
@@ -299,18 +305,53 @@
   background: url('assets/images/menu-button-default.svg') center / 100% 100% no-repeat;
   pointer-events: none;
 }
+.cs-slider-arrow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1.5px;
+  pointer-events: none;
+  clip-path: polygon(0 0, 91% 0, 100% 18%, 100% 100%, 5% 100%, 0 88%);
+  background: conic-gradient(
+    from var(--cs-arrow-shine-angle),
+    transparent 0 56%,
+    #5271ED 68%,
+    #52EDE2 76%,
+    rgba(255, 255, 255, 0.95) 80%,
+    #52EDE2 84%,
+    transparent 96% 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+}
+.cs-slider-arrow:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  animation: cs-arrow-shine 1.6s linear infinite;
+}
 .cs-slider-arrow:is(:hover, :focus-visible)::before {
   background-image: url('assets/images/menu-button-hover.svg');
 }
 .cs-slider-arrow svg {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: block;
 }
 .cs-arrow-prev svg { transform: rotate(180deg); }
 .cs-slider-arrow:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+@keyframes cs-arrow-shine {
+  to { --cs-arrow-shine-angle: 360deg; }
 }
 
 .cs-slider-counter {
@@ -342,6 +383,10 @@
   color: #000;
   margin-bottom: 40px;
   overflow: visible;
+}
+
+.cs-title-line {
+  display: block;
 }
 
 /* ── Meta row — Role / Client / Year ── */
@@ -389,12 +434,12 @@
   gap: 12px;
   margin-bottom: 32px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 18px;
   letter-spacing: -0.03em;
   color: #000;
   text-decoration: none;
-  transition: opacity 0.18s;
+  transition: color 160ms ease;
 }
 
 .cs-applink-text {
@@ -406,12 +451,15 @@
   display: block;
   flex-shrink: 0;
   color: var(--brand-teal);
-  opacity: 0.7;
-  transition: opacity 240ms ease;
+  opacity: 1;
 }
 
-.cs-applink:hover { opacity: 0.7; }
-.cs-applink:hover .cs-applink-arrow { opacity: 1; }
+.cs-applink-letter {
+  display: inline-block;
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+}
 
 /* ── Body paragraphs ── */
 .cs-body-block {
@@ -422,7 +470,7 @@
 }
 
 .cs-body-para {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 300;
   line-height: 1.6;
@@ -542,6 +590,10 @@ html.motion-on [data-reveal-scroll] { opacity: 0; }
     font-size: clamp(32px, 9vw, 56px);
     letter-spacing: -0.02em;
   }
+
+  .cs-title-line {
+    display: inline;
+  }
 }
 
 /* ── Lenis smooth scroll ── */
@@ -592,34 +644,70 @@ html.dark .cs-g-fig { background: #1c1b1b; }
   .cs-top-row { width: calc(100% + 48px); margin-left: -48px; }
 }
 
-/* ── Mobile (≤900px): the 320×380 slider card overflows the
-   stacked left panel — shrink card + panel together ── */
+/* ── Mobile (≤900px): bottom project-navigation overlay ── */
 @media (max-width: 900px) {
-  /* pin the shell to the viewport and let the article take the remaining
-     height — a fixed 100vh article under the image panel left its last
-     ~360px unreachable */
+  /* Pin the shell to the viewport; the article remains the only scroll area. */
   .cs-shell { height: 100vh; min-height: 0; }
   .cs-right { height: auto; flex: 1; min-height: 0; }
 
   .cs-left {
-    flex-shrink: 0;
-    height: 70vw;
-    min-height: 360px;
-    max-height: 55vh;
+    box-sizing: border-box;
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 120px 24px max(24px, env(safe-area-inset-bottom));
+    border-bottom: 0;
+    background: transparent;
+    pointer-events: none;
   }
-  .cs-slide { margin-left: -130px; margin-top: -140px; }
-  .cs-slide .proj-card { width: 260px; height: 280px; }
-  /* same homepage proportions, shrunk for the short stacked panel */
-  .cs-slide.is-portrait  { margin-left: -105px; margin-top: -140px; }
-  .cs-slide.is-square    { margin-left: -125px; margin-top: -125px; }
-  .cs-slide.is-landscape { margin-left: -150px; margin-top: -108px; }
-  .cs-slide .proj-card.is-portrait  { width: 210px; height: 280px; }
-  .cs-slide .proj-card.is-square    { width: 250px; height: 250px; }
-  .cs-slide .proj-card.is-landscape { width: 300px; height: 217px; }
-  /* num + caption duplicate the counter and tag pill, and collide with
-     the close link / arrows in the short stacked panel */
-  .cs-slide-title { display: none; }
-  .cs-slider-nav { bottom: 10px; }
+
+  .cs-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      #020202 0%,
+      rgba(2, 2, 2, 0.96) 36%,
+      rgba(2, 2, 2, 0) 100%
+    );
+    -webkit-backdrop-filter: blur(36px);
+    backdrop-filter: blur(36px);
+    -webkit-mask-image: linear-gradient(to top, #000 0 36%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0 36%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Keep project navigation without the desktop artwork or counter. */
+  .cs-slider { height: 48px; }
+  .cs-slide { display: none; }
+  .cs-slider-nav {
+    position: fixed;
+    right: 24px;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: auto;
+    width: auto;
+    transform: none;
+    justify-content: flex-end;
+    gap: 24px;
+    pointer-events: none;
+  }
+  .cs-slider-arrow { pointer-events: auto; }
+  .cs-slider-counter { display: none; }
+  .cs-right-close {
+    position: fixed;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    left: 24px;
+    z-index: 22;
+    height: 48px;
+    opacity: 1;
+  }
   .cs-close { top: 20px; left: 20px; }
   .cs-top-row { margin-bottom: 32px; margin-left: 0; width: auto; }
   .cs-headline { margin-bottom: 32px; }

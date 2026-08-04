@@ -330,11 +330,7 @@ window.GridView = (function () {
       if (sh > img.height) { sh = img.height; sw = sh * ar; }
       ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, mx, my, mw, mh);
     } else {
-      var g = ctx.createLinearGradient(mx, my, mx + mw, my + mh);
-      var cols = gradColors(p.color);
-      g.addColorStop(0, cols[0]);
-      g.addColorStop(1, cols[1]);
-      ctx.fillStyle = g;
+      ctx.fillStyle = '#232323';
       ctx.fillRect(mx, my, mw, mh);
     }
 

@@ -149,7 +149,7 @@
       // Gradient placeholder always present behind the image
       var ph = document.createElement('div');
       ph.className = 'proj-card-ph';
-      ph.style.background = slide.color || '#f0f0f0';
+      ph.style.background = '#232323';
       card.appendChild(ph);
 
       // Cover image (if src exists)
@@ -324,6 +324,47 @@
     function span(cls, text) { return mkEl('span', cls, text); }
     function p(cls, text)    { return mkEl('p',    cls, text); }
 
+    function wireAppLinkHover(button) {
+      var textEl = button.querySelector('.cs-applink-text');
+      var icon = button.querySelector('.cs-applink-arrow');
+      if (!textEl || !icon || !textEl.textContent) return;
+
+      var letters = [];
+      var rawText = textEl.textContent;
+      textEl.textContent = '';
+      Array.from(rawText).forEach(function (character) {
+        var letter = document.createElement('span');
+        letter.className = 'cs-applink-letter';
+        letter.textContent = character;
+        textEl.appendChild(letter);
+        letters.push(letter);
+      });
+
+      var activeAnimations = [];
+      function cancelAnimations() {
+        activeAnimations.forEach(function (animation) { animation.cancel(); });
+        activeAnimations = [];
+      }
+      function animateWobble(target, rotation, scale, delay, animateWeight) {
+        var distorted = 'rotate(' + rotation.toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+        var animation = target.animate([
+          { transform: 'rotate(0deg) scale(1)', offset: 0, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', ...(animateWeight ? { fontWeight: '700' } : {}) },
+          { transform: distorted, offset: 0.3846, easing: 'linear', ...(animateWeight ? { fontWeight: '700' } : {}) },
+          { transform: distorted, offset: 0.6154, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', ...(animateWeight ? { fontWeight: '700' } : {}) },
+          { transform: 'rotate(0deg) scale(1)', offset: 1, ...(animateWeight ? { fontWeight: '700' } : {}) }
+        ], { duration: 650, delay: delay, fill: 'none' });
+        activeAnimations.push(animation);
+      }
+      button.addEventListener('mouseenter', function () {
+        cancelAnimations();
+        animateWobble(icon, -12 + Math.random() * 24, 1.14 + Math.random() * 0.16, 0, false);
+        letters.forEach(function (letter, index) {
+          animateWobble(letter, -15 + Math.random() * 30, 1.15 + Math.random() * 0.25, index * 50, true);
+        });
+      });
+      button.addEventListener('click', cancelAnimations);
+    }
+
     function appendVideo(parent, src, revealOnScroll) {
       var videoBlock = div('cs-video-block');
       if (revealOnScroll) videoBlock.setAttribute('data-reveal-scroll', '');
@@ -349,8 +390,18 @@
     var headlineEl = document.createElement('h1');
     headlineEl.className = 'cs-headline' + (p_data.slug === 'porto2026' ? ' cs-headline--qita' : '');
     headlineEl.setAttribute('data-reveal', '');
-    headlineEl.setAttribute('data-reveal-lines', '');
-    headlineEl.textContent = p_data.title || p_data.subtitle || '';
+    if (Array.isArray(p_data.titleLines) && p_data.titleLines.length) {
+      p_data.titleLines.forEach(function (line, index) {
+        var lineEl = document.createElement('span');
+        lineEl.className = 'm-line cs-title-line';
+        lineEl.textContent = line;
+        headlineEl.appendChild(lineEl);
+        if (index < p_data.titleLines.length - 1) headlineEl.appendChild(document.createTextNode(' '));
+      });
+    } else {
+      headlineEl.setAttribute('data-reveal-lines', '');
+      headlineEl.textContent = p_data.title || p_data.subtitle || '';
+    }
     detail.appendChild(headlineEl);
 
     // ── 2. Meta row (Role / Client / Year) ──
@@ -381,6 +432,7 @@
       '<svg class="cs-applink-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
       '<path d="M10.6607 4.33926C10.3353 4.01382 10.3353 3.48618 10.6607 3.16074C10.9862 2.83531 11.5138 2.83531 11.8393 3.16074L18.0893 9.41074C18.4147 9.73618 18.4147 10.2638 18.0893 10.5893L11.8393 16.8393C11.5138 17.1647 10.9862 17.1647 10.6607 16.8393C10.3353 16.5138 10.3353 15.9862 10.6607 15.6607L15.4882 10.8333H2.5C2.03976 10.8333 1.66667 10.4602 1.66667 10C1.66667 9.53976 2.03976 9.16667 2.5 9.16667H15.4882L10.6607 4.33926Z" fill="currentColor"/>' +
       '</svg>');
+    wireAppLinkHover(appLink);
     detail.appendChild(appLink);
 
     var divider = div('cs-meta-divider');
