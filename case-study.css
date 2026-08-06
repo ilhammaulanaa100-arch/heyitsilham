@@ -17,7 +17,14 @@
   --brand-teal-deep: #178B84;
   --accent: var(--brand-teal);
   --divider: #e0e0e0;
+  --media-skeleton-base: #101513;
+  --media-skeleton-sheen: rgba(88, 240, 224, 0.16);
   color-scheme: dark;
+}
+
+@keyframes media-skeleton-sweep {
+  from { transform: translate3d(-180%, 0, 0) skewX(-12deg); }
+  to { transform: translate3d(280%, 0, 0) skewX(-12deg); }
 }
 
 @property --cs-arrow-shine-angle {
@@ -126,6 +133,11 @@
   text-decoration: none;
   opacity: 0.7;
   transition: opacity 0.18s;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .cs-right-close svg {
@@ -200,6 +212,37 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  background: var(--media-skeleton-base);
+}
+
+.proj-card.is-loading::before,
+.proj-card.is-error::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(88, 240, 224, 0.035), transparent 42%),
+    var(--media-skeleton-base);
+}
+
+.proj-card.is-loading::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, var(--media-skeleton-sheen), transparent);
+  animation: media-skeleton-sweep 1.65s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform;
+}
+
+.proj-card.is-loading > img { opacity: 0; }
+.proj-card.is-loaded > img {
+  opacity: 1;
+  transition: opacity 360ms ease;
 }
 
 /* Slider track — horizontal strip of cards */
@@ -246,6 +289,8 @@
 .cs-slide .proj-card-ph {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  background: var(--media-skeleton-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -505,18 +550,41 @@
   position: relative;
   width: 100%;
   overflow: hidden;
-  background: #f0f0f0;
+  background: var(--media-skeleton-base);
 }
 .cs-gallery-section--full .cs-g-frame { aspect-ratio: 16 / 9; }
 .cs-gallery-section--split-square-left .cs-g-fig:first-child .cs-g-frame,
 .cs-gallery-section--split-square-right .cs-g-fig:last-child .cs-g-frame { aspect-ratio: 1 / 1; }
 .cs-gallery-section--split-square-left .cs-g-fig:last-child .cs-g-frame,
 .cs-gallery-section--split-square-right .cs-g-fig:first-child .cs-g-frame { aspect-ratio: 1564 / 1010; }
-.cs-g-ph { position: absolute; inset: 0; }
+.cs-g-ph {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(88, 240, 224, 0.035), transparent 42%),
+    var(--media-skeleton-base);
+}
+.cs-g-frame.is-loading .cs-g-ph::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, var(--media-skeleton-sheen), transparent);
+  animation: media-skeleton-sweep 1.65s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform;
+}
 .cs-g-img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; display: block;
+}
+.cs-g-frame.is-loading .cs-g-img { opacity: 0; }
+.cs-g-frame.is-loaded .cs-g-img {
+  opacity: 1;
+  transition: opacity 360ms ease;
 }
 .cs-g-img.is-contain { object-fit: contain; }
 /* ── Video showcase — inset 48px from the panel's true edges ── */
@@ -634,6 +702,13 @@ html.dark .cs-slider-counter { color: #d9d9d9; }
 html.dark .cs-meta-item-label { color: rgba(255, 255, 255, 0.4); }
 html.dark .cs-body-para { color: rgba(255, 255, 255, 0.82); }
 html.dark .cs-g-fig { background: #1c1b1b; }
+
+@media (prefers-reduced-motion: reduce) {
+  .proj-card.is-loading::after,
+  .cs-g-frame.is-loading .cs-g-ph::after { display: none; }
+  .proj-card.is-loaded > img,
+  .cs-g-frame.is-loaded .cs-g-img { transition: none; }
+}
 /* ══ Responsive additions ═════════════════════════════════ */
 
 /* ── Tablet (901–1200px): narrower article gutters ── */

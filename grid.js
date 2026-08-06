@@ -18,6 +18,7 @@ window.GridView = (function () {
   var DEFAULT_HOVER_COLOR = '#BEFFF7';
   var DEFAULT_HOVER_MOTION = 0.6;
   var DEFAULT_HOVER_OPACITY = 0.28;
+  var REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var LERP       = 0.10;  // scroll smoothing (direct catch-up)
   var FRICTION   = 0.955; // drag momentum decay (long, weighty glide on release)
 
@@ -293,8 +294,8 @@ window.GridView = (function () {
   // Cell palette follows the site's permanent dark theme.
   function theme() {
     return document.documentElement.classList.contains('dark')
-      ? { bg: '#020202', line: 'rgba(255,255,255,0.10)', text: '#fff', dim: 'rgba(255,255,255,0.8)' }
-      : { bg: '#ffffff', line: 'rgba(34,32,32,0.10)',    text: '#000', dim: 'rgba(0,0,0,0.8)' };
+      ? { bg: '#020202', line: 'rgba(255,255,255,0.10)', text: '#fff', dim: 'rgba(255,255,255,0.8)', skeleton: '#101513', sheen: '#253a36' }
+      : { bg: '#ffffff', line: 'rgba(34,32,32,0.10)',    text: '#000', dim: 'rgba(0,0,0,0.8)',       skeleton: '#e9eeec', sheen: '#f8fffd' };
   }
 
   // ── Cell texture (canvas): scan-line outline + media ──
@@ -330,7 +331,7 @@ window.GridView = (function () {
       if (sh > img.height) { sh = img.height; sw = sh * ar; }
       ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, mx, my, mw, mh);
     } else {
-      ctx.fillStyle = '#232323';
+      ctx.fillStyle = th.skeleton;
       ctx.fillRect(mx, my, mw, mh);
     }
 
@@ -390,15 +391,32 @@ window.GridView = (function () {
       hoverCtx: hoverCtx,
       hoverTex: hoverTex,
       img: null,
+      imageReady: false,
+      reveal: (p.media && p.media.hero) ? 0 : 1,
+      revealStarted: 0,
       hideMedia: false
     };
     if (p.media && p.media.hero) {
       var img = new Image();
-      img.onload = function () {
+      img.decoding = 'async';
+      var committed = false;
+      function commitImage() {
+        if (committed) return;
+        committed = true;
         cell.img = img;
+        cell.imageReady = true;
+        cell.revealStarted = window.performance ? performance.now() : Date.now();
         if (!cell.hideMedia) { drawCell(ctx, p, W, H, img); tex.needsUpdate = true; }
         drawHoverTexture(hoverCtx, p, W, H, img);
         hoverTex.needsUpdate = true;
+      }
+      img.onload = function () {
+        if (typeof img.decode === 'function') img.decode().then(commitImage, commitImage);
+        else commitImage();
+      };
+      img.onerror = function () {
+        committed = true;
+        cell.reveal = 1;
       };
       img.src = p.media.hero;
     }
@@ -418,6 +436,11 @@ window.GridView = (function () {
       c.tex.needsUpdate = true;
       drawHoverTexture(c.hoverCtx, c.p, c.hoverCtx.canvas.width, c.hoverCtx.canvas.height, c.img);
       c.hoverTex.needsUpdate = true;
+    });
+    meshes.forEach(function (m) {
+      if (!m.material || !m.material.uniforms) return;
+      m.material.uniforms.uSkeletonBase.value.set(th.skeleton);
+      m.material.uniforms.uSkeletonSheen.value.set(th.sheen);
     });
   }
 
@@ -459,18 +482,27 @@ window.GridView = (function () {
     'uniform float uMotion;',
     'uniform float uHoverOpacity;',
     'uniform float uPhase;',
+    'uniform float uSkeletonAmount;',
+    'uniform float uSkeletonMotion;',
+    'uniform vec3 uSkeletonBase;',
+    'uniform vec3 uSkeletonSheen;',
     'void main() {',
     '  vec4 texel = texture2D(uMap, vUv);',
-    '  if (uHover < 0.001) {',
-    '    gl_FragColor = texel;',
-    '    return;',
-    '  }',
     '  float feather = 0.004;',
     '  float inX = smoothstep(uMediaRect.x, uMediaRect.x + feather, vUv.x)',
     '    * (1.0 - smoothstep(uMediaRect.z - feather, uMediaRect.z, vUv.x));',
     '  float inY = smoothstep(uMediaRect.y, uMediaRect.y + feather, vUv.y)',
     '    * (1.0 - smoothstep(uMediaRect.w - feather, uMediaRect.w, vUv.y));',
     '  float mediaMask = inX * inY * uMediaVisible;',
+    '  vec2 localUv = (vUv - uMediaRect.xy) / max(uMediaRect.zw - uMediaRect.xy, vec2(0.001));',
+    '  float sweep = fract(uTime * 0.28 + uPhase * 0.071) * 1.6 - 0.3;',
+    '  float band = 1.0 - smoothstep(0.0, 0.20, abs(localUv.x + localUv.y * 0.16 - sweep));',
+    '  vec3 skeleton = mix(uSkeletonBase, uSkeletonSheen, band * 0.72 * uSkeletonMotion);',
+    '  vec3 baseTexel = mix(texel.rgb, skeleton, mediaMask * uSkeletonAmount);',
+    '  if (uHover < 0.001) {',
+    '    gl_FragColor = vec4(baseTexel, texel.a);',
+    '    return;',
+    '  }',
     '  vec2 bgUv = vUv - 0.5;',
     '  float angle = sin(uTime * 0.22 + uPhase) * 0.020 * uMotion;',
     '  float cs = cos(angle);',
@@ -485,14 +517,15 @@ window.GridView = (function () {
     '  bgUv = clamp(bgUv, vec2(0.02), vec2(0.98));',
     '  vec3 movingBg = texture2D(uHoverMap, bgUv).rgb;',
     '  movingBg = mix(movingBg, uHoverColor, 0.24);',
-    '  vec3 filledCell = mix(texel.rgb, movingBg, uHover * uHoverOpacity);',
-    '  vec3 color = mix(filledCell, texel.rgb, mediaMask);',
+    '  vec3 filledCell = mix(baseTexel, movingBg, uHover * uHoverOpacity);',
+    '  vec3 color = mix(filledCell, baseTexel, mediaMask);',
     '  gl_FragColor = vec4(color, texel.a);',
     '}'
   ].join('\n');
 
   function makeCellMaterial(pIdx) {
     var cv = cells[pIdx].ctx.canvas;
+    var th = theme();
     return new THREE.ShaderMaterial({
       uniforms: {
         uMap:          { value: textures[pIdx] },
@@ -504,7 +537,11 @@ window.GridView = (function () {
         uTime:         { value: 0 },
         uMotion:       { value: hoverMotionForProject(pIdx) },
         uHoverOpacity: { value: hoverOpacityForProject(pIdx) },
-        uPhase:        { value: pIdx * 1.618 }
+        uPhase:        { value: pIdx * 1.618 },
+        uSkeletonAmount: { value: 1 - cells[pIdx].reveal },
+        uSkeletonMotion: { value: REDUCED_MOTION ? 0 : 1 },
+        uSkeletonBase:   { value: new THREE.Color(th.skeleton) },
+        uSkeletonSheen:  { value: new THREE.Color(th.sheen) }
       },
       vertexShader: CELL_VERT,
       fragmentShader: CELL_FRAG
@@ -785,6 +822,11 @@ window.GridView = (function () {
     }
 
     var hoverTime = (window.performance ? performance.now() : Date.now()) * 0.001;
+    var frameNow = window.performance ? performance.now() : Date.now();
+    cells.forEach(function (cell) {
+      if (!cell.imageReady || cell.reveal >= 1) return;
+      cell.reveal = REDUCED_MOTION ? 1 : Math.min(1, (frameNow - cell.revealStarted) / 360);
+    });
     for (var i = 0; i < meshes.length; i++) {
       var col = firstCol + (i % NX);
       var firstRow = rowAtY(col, syE - padY - colShift(col)) - 1;
@@ -815,6 +857,7 @@ window.GridView = (function () {
       uniforms.uHover.value += (hoverTarget - uniforms.uHover.value) * HOVER_LERP;
       uniforms.uTime.value = hoverTime;
       uniforms.uMediaVisible.value = cells[pIdx].hideMedia ? 0 : 1;
+      uniforms.uSkeletonAmount.value = 1 - cells[pIdx].reveal;
     }
 
     renderer.setRenderTarget(rt);

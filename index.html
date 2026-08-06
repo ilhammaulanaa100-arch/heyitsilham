@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Ilham — Product Designer</title>
+  <title>Heyitsilham</title>
   <meta name="description" content="Ilham — product designer crafting editorial, cinematic digital experiences. Selected work and case studies." />
   <meta name="author" content="Ilham" />
-  <link rel="canonical" href="https://heyitsilham.vercel.app/" />
+  <link rel="canonical" href="https://heyitsilham.com/" />
   <meta name="theme-color" content="#020202" />
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
   <!-- Arriving from the about-page footer glide: suppress the splash and show
@@ -28,27 +28,59 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Ilham — Product Designer" />
+  <meta property="og:title" content="HeyItsIlham — Product Designer" />
   <meta property="og:description" content="Editorial, cinematic digital experiences. Selected work and case studies." />
-  <meta property="og:url" content="https://heyitsilham.vercel.app/" />
-  <meta property="og:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+  <meta property="og:url" content="https://heyitsilham.com/" />
+  <meta property="og:image" content="https://heyitsilham.com/assets/images/og-image.jpg" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://heyitsilham.com/#website",
+        "url": "https://heyitsilham.com/",
+        "name": "HeyItsIlham",
+        "description": "Ilham — product designer crafting editorial, cinematic digital experiences.",
+        "publisher": { "@id": "https://heyitsilham.com/#ilham" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://heyitsilham.com/#ilham",
+        "name": "Ilham",
+        "alternateName": "HeyItsIlham",
+        "url": "https://heyitsilham.com/",
+        "image": "https://heyitsilham.com/assets/images/site-menu/ilham.png",
+        "jobTitle": "Product Designer",
+        "email": "works@heyitsilham.com",
+        "description": "Ilham is a product designer crafting editorial, cinematic digital experiences across financial products, digital services, and brand systems.",
+        "sameAs": [
+          "https://www.linkedin.com/in/ilham-maulana2110/",
+          "https://dribbble.com/heyitsilham",
+          "https://www.instagram.com/ui_ilham/",
+          "https://www.upwork.com/freelancers/~01710fbc4b548834e5?mp_source=share"
+        ]
+      }
+    ]
+  }
+  </script>
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Ilham — Product Designer" />
+  <meta name="twitter:title" content="HeyItsIlham — Product Designer" />
   <meta name="twitter:description" content="Editorial, cinematic digital experiences. Selected work and case studies." />
-  <meta name="twitter:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+  <meta name="twitter:image" content="https://heyitsilham.com/assets/images/og-image.jpg" />
 
   <!-- Favicons -->
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/assets/images/favicon.png" type="image/png" sizes="180x180" />
+  <link rel="apple-touch-icon" href="/assets/images/favicon.png" />
+  <script src="tab-title.js"></script>
 
   <!-- Warm the transparent logo still so the splash can paint before the
        matching alpha video finishes decoding. -->
-  <link rel="preload" as="image" href="assets/images/splash/splash-logo-center-alpha-poster.png" fetchpriority="high" />
+  <link rel="preload" as="image" href="assets/images/splash/splash-logo-center-alpha-poster-small.png" fetchpriority="high" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
@@ -72,8 +104,8 @@
   </noscript>
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
-  <link rel="stylesheet" href="case-study.css?v=48" />
-  <link rel="stylesheet" href="home.css?v=51" />
+  <link rel="stylesheet" href="case-study.css?v=50" />
+  <link rel="stylesheet" href="home.css?v=53" />
 </head>
 <body>
   <div class="home-entry-curtain" id="home-entry-curtain" aria-hidden="true"></div>
@@ -166,13 +198,13 @@
             muted
             playsinline
             preload="auto"
-            poster="assets/images/splash/splash-logo-center-alpha-poster.png"
+            poster="assets/images/splash/splash-logo-center-alpha-poster-small.png"
           >
             <source src="assets/images/splash/splash-logo-center-alpha.webm" type="video/webm" />
           </video>
           <img
             class="splash-logo-final"
-            src="assets/images/splash/splash-logo-center-alpha-poster.png"
+            src="assets/images/splash/splash-logo-center-alpha-poster-small.png"
             alt=""
             decoding="sync"
             fetchpriority="high"
@@ -311,7 +343,7 @@
   <nav class="navbar">
       <div class="navbar-left">
         <div class="logo" aria-hidden="true">
-          <img src="assets/images/logo%20ilham%20baru.png" alt="" />
+          <img src="assets/images/logo%20ilham%20baru-small.png" alt="" width="128" height="160" decoding="async" />
         </div>
       </div>
       <div class="navbar-right">
@@ -345,7 +377,7 @@
           <img class="site-menu-active-dot" src="assets/images/site-menu/menu-active-dot.svg" alt="" aria-hidden="true" />
         </button>
         <a class="site-menu-link" href="about.html">About</a>
-        <a class="site-menu-link" href="mailto:ilhammaulanaa100@gmail.com">Message</a>
+        <a class="site-menu-link" href="mailto:works@heyitsilham.com">Message</a>
       </nav>
 
       <div class="site-menu-connect">
@@ -402,13 +434,13 @@
       <div class="cs-right" id="cs-right">
         <div id="cs-right-content">
           <div class="cs-top-row">
-            <a class="cs-right-close" id="cs-right-close" href="javascript:void(0)">
+            <button class="cs-right-close" id="cs-right-close" type="button">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
               </svg>
               Close
-            </a>
-            <a class="cs-source" id="cs-source" href="javascript:void(0)" target="_blank" rel="noopener noreferrer">Source ↗</a>
+            </button>
+            <a class="cs-source" id="cs-source" href="index.html" target="_blank" rel="noopener noreferrer">Source ↗</a>
           </div>
           <div class="cs-detail" id="cs-detail"></div>
         </div>
@@ -422,10 +454,10 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
-  <script src="case-study.js"></script>
-  <script src="content.js"></script>
-  <script src="grid.js?v=2"></script>
-  <script src="home.js?v=24"></script>
+  <script src="case-study.js?v=2"></script>
+  <script src="content.js?v=2"></script>
+  <script src="grid.js?v=3"></script>
+  <script src="home.js?v=26"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>

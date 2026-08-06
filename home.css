@@ -749,6 +749,7 @@ body.menu-open #proj-cursor { display: none; }
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  background: var(--media-skeleton-base, #101513);
   transform-style: preserve-3d;
   transition: box-shadow 320ms ease;
 }
@@ -772,6 +773,7 @@ body.menu-open #proj-cursor { display: none; }
   height: 100%;
   object-fit: cover;
   display: block;
+  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -910,6 +912,7 @@ html.dark .nav-row.is-current { color: var(--brand-teal); }
   font-family: 'Bai Jamjuree', sans-serif;
   font-weight: 600;
   font-size: 80px; line-height: 1.1; letter-spacing: -0.02em; color: #000;
+  margin: 0;
   white-space: normal;
   overflow-wrap: normal;
   overflow: visible;

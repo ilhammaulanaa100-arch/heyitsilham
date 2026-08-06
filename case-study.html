@@ -6,30 +6,31 @@
 
   <script>try { if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { document.documentElement.classList.add('motion-on'); addEventListener('load', function () { setTimeout(function () { if (!window.Motion) document.documentElement.classList.remove('motion-on'); }, 0); }); } } catch (e) {}</script>
 
-  <title>Case Study — Ilham</title>
+  <title>Heyitsilham</title>
   <meta name="description" content="A case study from Ilham's design portfolio — editorial, cinematic product design." />
+  <link rel="canonical" href="https://heyitsilham.com/case-study.html" />
   <meta name="author" content="Ilham" />
   <meta name="theme-color" content="#020202" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="Case Study — Ilham" />
+  <meta property="og:title" content="HeyItsIlham — Case Study" />
   <meta property="og:description" content="A case study from Ilham's design portfolio." />
-  <meta property="og:url" content="https://heyitsilham.vercel.app/" />
-  <meta property="og:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+  <meta property="og:url" content="https://heyitsilham.com/" />
+  <meta property="og:image" content="https://heyitsilham.com/assets/images/og-image.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Case Study — Ilham" />
+  <meta name="twitter:title" content="HeyItsIlham — Case Study" />
   <meta name="twitter:description" content="A case study from Ilham's design portfolio." />
-  <meta name="twitter:image" content="https://heyitsilham.vercel.app/og-image.jpg" />
+  <meta name="twitter:image" content="https://heyitsilham.com/assets/images/og-image.jpg" />
 
   <!-- Favicons -->
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/assets/images/favicon.png" type="image/png" sizes="180x180" />
+  <link rel="apple-touch-icon" href="/assets/images/favicon.png" />
+  <script src="tab-title.js"></script>
 
   <!-- Recoleta (brand serif, same as index.html) -->
   <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
@@ -39,7 +40,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,300&family=Bai+Jamjuree:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/lenis@2.0.0/dist/lenis.min.js"></script>
-  <link rel="stylesheet" href="case-study.css?v=48" />
+  <link rel="stylesheet" href="case-study.css?v=50" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -93,9 +94,9 @@
   </div><!-- end .cs-shell -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="content.js"></script>
+    <script src="content.js?v=2"></script>
   <script src="motion.js"></script>
-  <script src="case-study.js"></script>
+  <script src="case-study.js?v=2"></script>
   <script>
     // ── Guard against content.js failing to load ───
     if (typeof PROJECTS === 'undefined' || !PROJECTS || !PROJECTS.length) {
@@ -110,7 +111,7 @@
 
       // ── Populate page metadata ───────────────────────────
       // Title fallback: subtitle → title → generic
-      document.title = (p_data.subtitle || p_data.title || 'Case Study') + ' — Ilham';
+      document.title = 'Heyitsilham';
 
       // ── Source link — checked after normalizer ────
       var sourceLink = document.getElementById('cs-source');

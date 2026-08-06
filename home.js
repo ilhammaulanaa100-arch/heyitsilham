@@ -20,6 +20,48 @@
     return;
   }
 
+  // Keep the dark skeleton visible until the browser has decoded the image.
+  // Waiting for decode avoids a blank/half-painted frame on slower devices.
+  function trackCardImage(img, card) {
+    if (!img || !card) return;
+    var settled = false;
+    var decodePending = false;
+
+    function reveal() {
+      if (settled) return;
+      settled = true;
+      card.classList.remove('is-loading', 'is-error');
+      card.classList.add('is-loaded');
+      card.setAttribute('aria-busy', 'false');
+    }
+
+    function loaded() {
+      if (settled || decodePending) return;
+      decodePending = true;
+      if (typeof img.decode === 'function') {
+        img.decode().then(reveal, reveal);
+      } else {
+        reveal();
+      }
+    }
+
+    function failed() {
+      if (settled) return;
+      settled = true;
+      img.style.display = 'none';
+      card.classList.remove('is-loading');
+      card.classList.add('is-error');
+      card.setAttribute('aria-busy', 'false');
+    }
+
+    img.addEventListener('load', loaded, { once: true });
+    img.addEventListener('error', failed, { once: true });
+    if (img.complete) {
+      if (img.naturalWidth > 0) loaded();
+      else failed();
+    }
+  }
+
   // ── Build sections from PROJECTS ────────────────────────
   (function () {
     function esc(str) {
@@ -28,23 +70,26 @@
     var wrap = document.getElementById('sections-wrap');
     PROJECTS.forEach(function (proj, i) {
       var shape  = proj.shape || (i < 2 ? 'is-square' : 'is-landscape');
+      var titleTag = i === 0 ? 'h1' : 'div';
       var imgTag = (proj.media && proj.media.hero)
-        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" onerror="this.style.display=\'none\'" />'
+        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" loading="' + (i < 2 ? 'eager' : 'lazy') + '" decoding="async" fetchpriority="' + (i === 0 ? 'high' : 'auto') + '" />'
         : '';
+      var loadingClass = imgTag ? ' is-loading' : ' is-empty';
+      var busy = imgTag ? 'true' : 'false';
 
       wrap.insertAdjacentHTML('beforeend',
         '<div class="page-section page-placeholder" data-slug="' + proj.slug + '">' +
           '<div class="section-inner"><section class="ph-layout">' +
             '<div class="ph-text">' +
               '<p class="ph-label">' + esc(proj.period) + '</p>' +
-              '<div class="ph-title">' +
+              '<' + titleTag + ' class="ph-title">' +
                 proj.subtitle.split('\n').map(function (line) {
                   return '<span class="line-mask"><span class="line">' + esc(line) + '</span></span>';
                 }).join('') +
-              '</div>' +
+              '</' + titleTag + '>' +
             '</div>' +
             '<div class="ph-media">' +
-              '<div class="proj-card ' + shape + '" style="background:#232323;" tabindex="-1" role="link" aria-label="Open case study: ' + esc(proj.subtitle.replace(/\n/g, ' ')) + '">' +
+              '<div class="proj-card ' + shape + loadingClass + '" tabindex="-1" role="link" aria-busy="' + busy + '" aria-label="Open case study: ' + esc(proj.subtitle.replace(/\n/g, ' ')) + '">' +
                 imgTag +
               '</div>' +
             '</div>' +
@@ -52,6 +97,10 @@
           '</section></div>' +
         '</div>'
       );
+    });
+
+    Array.prototype.forEach.call(wrap.querySelectorAll('.proj-card.is-loading img'), function (img) {
+      trackCardImage(img, img.closest('.proj-card'));
     });
   })();
 
@@ -428,7 +477,10 @@
     s.transform = 'none';
     s.zIndex = zIndex;
     var img = clone.querySelector('img');
-    if (img) img.style.transform = 'none'; // strip any hover-tilt state
+    if (img) {
+      img.style.transform = 'none'; // strip any hover-tilt state
+      if (clone.classList.contains('is-loading')) trackCardImage(img, clone);
+    }
     var shell = document.getElementById('cs-shell');
     (shell || document.body).appendChild(clone);
     return clone;

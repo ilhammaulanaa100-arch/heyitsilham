@@ -20,6 +20,45 @@
   var _contentEl           = null;
   var _exitFn              = null;
 
+  function trackSkeletonImage(img, host) {
+    if (!img || !host) return;
+    var settled = false;
+    var decodePending = false;
+
+    function reveal() {
+      if (settled) return;
+      settled = true;
+      host.classList.remove('is-loading', 'is-error');
+      host.classList.add('is-loaded');
+      host.setAttribute('aria-busy', 'false');
+    }
+
+    function loaded() {
+      if (settled || decodePending) return;
+      decodePending = true;
+      if (typeof img.decode === 'function') img.decode().then(reveal, reveal);
+      else reveal();
+    }
+
+    function failed() {
+      if (settled) return;
+      settled = true;
+      img.style.display = 'none';
+      host.classList.remove('is-loading');
+      host.classList.add('is-error');
+      host.setAttribute('aria-busy', 'false');
+    }
+
+    img.addEventListener('load', loaded, { once: true });
+    img.addEventListener('error', failed, { once: true });
+    // A newly-created <img> with no src also reports complete=true. Only inspect
+    // the cached state once a real source has actually been assigned.
+    if (img.getAttribute('src') && img.complete) {
+      if (img.naturalWidth > 0) loaded();
+      else failed();
+    }
+  }
+
   function slugOf(project, index) {
     return project.slug || String(index + 1);
   }
@@ -144,21 +183,23 @@
 
       // Card
       var card = document.createElement('div');
-      card.className = 'proj-card ' + slide.shape;
+      card.className = 'proj-card ' + slide.shape + (slide.src ? ' is-loading' : ' is-empty');
+      card.setAttribute('aria-busy', slide.src ? 'true' : 'false');
 
-      // Gradient placeholder always present behind the image
+      // Neutral fallback remains behind the skeleton/image.
       var ph = document.createElement('div');
       ph.className = 'proj-card-ph';
-      ph.style.background = '#232323';
+      ph.setAttribute('aria-hidden', 'true');
       card.appendChild(ph);
 
       // Cover image (if src exists)
       if (slide.src) {
         var img = document.createElement('img');
-        img.src = slide.src;
         img.alt = slide.caption || '';
+        img.decoding = 'async';
         img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1;';
-        img.onerror = function () { this.style.display = 'none'; };
+        trackSkeletonImage(img, card);
+        img.src = slide.src;
         card.appendChild(img);
       }
 
@@ -420,20 +461,22 @@
     });
     detail.appendChild(metaRow);
 
-    // ── App link — "Link Apps →" (Figma), between meta row and divider ──
-    var appLink = document.createElement('a');
-    appLink.className = 'cs-applink';
-    appLink.setAttribute('data-reveal', '');
-    appLink.href = p_data.sourceUrl || '#';
-    appLink.target = '_blank';
-    appLink.rel = 'noopener noreferrer';
-    appLink.appendChild(span('cs-applink-text', 'Link Apps'));
-    appLink.insertAdjacentHTML('beforeend',
-      '<svg class="cs-applink-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
-      '<path d="M10.6607 4.33926C10.3353 4.01382 10.3353 3.48618 10.6607 3.16074C10.9862 2.83531 11.5138 2.83531 11.8393 3.16074L18.0893 9.41074C18.4147 9.73618 18.4147 10.2638 18.0893 10.5893L11.8393 16.8393C11.5138 17.1647 10.9862 17.1647 10.6607 16.8393C10.3353 16.5138 10.3353 15.9862 10.6607 15.6607L15.4882 10.8333H2.5C2.03976 10.8333 1.66667 10.4602 1.66667 10C1.66667 9.53976 2.03976 9.16667 2.5 9.16667H15.4882L10.6607 4.33926Z" fill="currentColor"/>' +
-      '</svg>');
-    wireAppLinkHover(appLink);
-    detail.appendChild(appLink);
+    // ── App link — only render when the project has a live destination ──
+    if (p_data.sourceUrl && p_data.sourceUrl.trim()) {
+      var appLink = document.createElement('a');
+      appLink.className = 'cs-applink';
+      appLink.setAttribute('data-reveal', '');
+      appLink.href = p_data.sourceUrl;
+      appLink.target = '_blank';
+      appLink.rel = 'noopener noreferrer';
+      appLink.appendChild(span('cs-applink-text', 'Link Apps'));
+      appLink.insertAdjacentHTML('beforeend',
+        '<svg class="cs-applink-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
+        '<path d="M10.6607 4.33926C10.3353 4.01382 10.3353 3.48618 10.6607 3.16074C10.9862 2.83531 11.5138 2.83531 11.8393 3.16074L18.0893 9.41074C18.4147 9.73618 18.4147 10.2638 18.0893 10.5893L11.8393 16.8393C11.5138 17.1647 10.9862 17.1647 10.6607 16.8393C10.3353 16.5138 10.3353 15.9862 10.6607 15.6607L15.4882 10.8333H2.5C2.03976 10.8333 1.66667 10.4602 1.66667 10C1.66667 9.53976 2.03976 9.16667 2.5 9.16667H15.4882L10.6607 4.33926Z" fill="currentColor"/>' +
+        '</svg>');
+      wireAppLinkHover(appLink);
+      detail.appendChild(appLink);
+    }
 
     var divider = div('cs-meta-divider');
     divider.setAttribute('data-reveal', '');
@@ -483,20 +526,21 @@
           var fig = document.createElement('figure');
           fig.className = 'cs-g-fig';
 
-          var frame = div('cs-g-frame');
+          var frame = div('cs-g-frame' + (item.src ? ' is-loading' : ' is-empty'));
+          frame.setAttribute('aria-busy', item.src ? 'true' : 'false');
           var ph = div('cs-g-ph');
-          ph.style.background = item.background || section.background || p_data.color || '#f0f0f0';
+          ph.setAttribute('aria-hidden', 'true');
           frame.appendChild(ph);
 
           if (item.src) {
             var img = document.createElement('img');
             img.className = 'cs-g-img';
-            img.src = item.src;
             img.alt = item.alt || caption;
             img.loading = 'lazy';
             img.decoding = 'async';
             if (item.fit === 'contain') img.classList.add('is-contain');
-            img.onerror = function () { this.style.display = 'none'; };
+            trackSkeletonImage(img, frame);
+            img.src = item.src;
             frame.appendChild(img);
           }
 
@@ -554,7 +598,7 @@
         }
       }
 
-      document.title = (project.subtitle || project.title || 'Case Study') + ' — Ilham';
+      document.title = 'Heyitsilham';
       history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
 
       if (window.gsap) { gsap.killTweensOf(_detailEl); }
