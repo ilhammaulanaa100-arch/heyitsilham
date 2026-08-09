@@ -292,20 +292,16 @@ window.GridView = (function () {
   }
 
   // Cell palette follows the site's permanent dark theme.
-  function theme() {
-    return document.documentElement.classList.contains('dark')
-      ? { bg: '#020202', line: 'rgba(255,255,255,0.10)', text: '#fff', dim: 'rgba(255,255,255,0.8)', skeleton: '#101513', sheen: '#253a36' }
-      : { bg: '#ffffff', line: 'rgba(34,32,32,0.10)',    text: '#000', dim: 'rgba(0,0,0,0.8)',       skeleton: '#e9eeec', sheen: '#f8fffd' };
-  }
+  var THEME = {
+    bg: '#020202',
+    line: 'rgba(255,255,255,0.10)',
+    skeleton: '#101513',
+    sheen: '#253a36'
+  };
 
   // ── Cell texture (canvas): scan-line outline + media ──
-  function gradColors(str) {
-    var m = String(str).match(/#[0-9a-fA-F]{3,8}/g) || [];
-    return [m[0] || '#333', m[1] || m[0] || '#111'];
-  }
-
   function drawCell(ctx, p, W, H, img, blankMedia) {
-    var th = theme();
+    var th = THEME;
 
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = th.bg;
@@ -425,25 +421,6 @@ window.GridView = (function () {
     return tex;
   }
 
-  // Repaint every cell + scene/vignette colours for the current theme
-  function setTheme() {
-    if (!built) return;
-    var th = theme();
-    gridScene.background.set(th.bg);
-    postMat.uniforms.uBg.value.set(th.bg);
-    cells.forEach(function (c) {
-      drawCell(c.ctx, c.p, c.ctx.canvas.width, c.ctx.canvas.height, c.img, c.hideMedia);
-      c.tex.needsUpdate = true;
-      drawHoverTexture(c.hoverCtx, c.p, c.hoverCtx.canvas.width, c.hoverCtx.canvas.height, c.img);
-      c.hoverTex.needsUpdate = true;
-    });
-    meshes.forEach(function (m) {
-      if (!m.material || !m.material.uniforms) return;
-      m.material.uniforms.uSkeletonBase.value.set(th.skeleton);
-      m.material.uniforms.uSkeletonSheen.value.set(th.sheen);
-    });
-  }
-
   // Hide/restore one project's media square in its cell texture. Used while a
   // card FLIP-glides to/from the case study: the DOM clone owns the media, so
   // the canvas must never show a duplicate of it. Affects every tiled repeat
@@ -525,7 +502,7 @@ window.GridView = (function () {
 
   function makeCellMaterial(pIdx) {
     var cv = cells[pIdx].ctx.canvas;
-    var th = theme();
+    var th = THEME;
     return new THREE.ShaderMaterial({
       uniforms: {
         uMap:          { value: textures[pIdx] },
@@ -743,7 +720,7 @@ window.GridView = (function () {
     buildRowMetrics();
     // pool sized for the widest view (hold-zoom shows GW / HOLD_ZOOM of world)
     NX = Math.ceil(GW / HOLD_ZOOM / CELL_W) + 3;
-    var minCellH = PROJECTS.reduce(function (minH, p, pIdx) {
+    var minCellH = PROJECTS.reduce(function (minH, _project, pIdx) {
       return Math.min(minH, cellHeightForProject(pIdx, CELL_W));
     }, Infinity);
     NY = Math.ceil(GH / HOLD_ZOOM / minCellH) + 4; // +1 row buffer for colShift
@@ -936,7 +913,7 @@ window.GridView = (function () {
     viewEl.appendChild(renderer.domElement);
 
     gridScene = new THREE.Scene();
-    gridScene.background = new THREE.Color(theme().bg);
+    gridScene.background = new THREE.Color(THEME.bg);
     camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
     unitGeo = new THREE.PlaneGeometry(1, 1);
     hoverTextures = [];
@@ -957,7 +934,7 @@ window.GridView = (function () {
         uAspect:   { value: 1 },
         uVignette: { value: VIGNETTE },
         uDof:      { value: DOF },
-        uBg:       { value: new THREE.Color(theme().bg) }
+        uBg:       { value: new THREE.Color(THEME.bg) }
       }
     });
     postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
@@ -1063,7 +1040,6 @@ window.GridView = (function () {
     cellScreenRect: cellScreenRect,
     cellForProject: cellForProject,
     setCellMediaHidden: setCellMediaHidden,
-    setTheme: setTheme,
     hide: hide,
     isOpen: function () { return open; }
   };

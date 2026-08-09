@@ -74,6 +74,7 @@
     previousFocus = document.activeElement;
     updateMorphGeometry();
     menu.classList.add('is-preparing');
+    menu.removeAttribute('inert');
     menu.setAttribute('aria-hidden', 'false');
     trigger.setAttribute('aria-expanded', 'true');
     trigger.setAttribute('aria-label', 'Close menu');
@@ -93,11 +94,12 @@
     menu.classList.remove('is-open', 'is-preparing');
     trigger.setAttribute('aria-expanded', 'false');
     trigger.setAttribute('aria-label', 'Open menu');
-    menu.setAttribute('aria-hidden', 'true');
     if (restoreFocus !== false) {
       var focusTarget = previousFocus && previousFocus !== document.body ? previousFocus : trigger;
       if (focusTarget && focusTarget.focus) focusTarget.focus({ preventScroll: true });
     }
+    menu.setAttribute('aria-hidden', 'true');
+    menu.setAttribute('inert', '');
     closeTimer = window.setTimeout(function () {
       menu.classList.remove('is-closing');
       document.body.classList.remove('menu-open');
@@ -131,7 +133,9 @@
     worksLink.classList.add('is-route-target');
     worksLink.setAttribute('aria-current', 'page');
     menu.classList.add('is-selecting-works');
+    trigger.focus({ preventScroll: true });
     menu.setAttribute('aria-hidden', 'true');
+    menu.setAttribute('inert', '');
     try { sessionStorage.setItem('porto-home-curtain', '1'); } catch (storageError) {}
 
     window.setTimeout(function () {
@@ -196,6 +200,7 @@
       trigger.setAttribute('aria-expanded', 'false');
       trigger.setAttribute('aria-label', 'Open menu');
       menu.setAttribute('aria-hidden', 'true');
+      menu.setAttribute('inert', '');
       if (worksLink) {
         worksLink.classList.remove('is-route-target');
         worksLink.removeAttribute('aria-current');
@@ -433,11 +438,13 @@
   function splitScene(scene) {
     var rawText = scene.textContent.replace(/\s+/g, ' ').trim();
     var content = document.createElement('span');
+    var accessibleText = document.createElement('span');
     var visual = document.createElement('span');
     var words = [];
 
     content.className = 'ab-blur-content';
-    content.setAttribute('aria-label', rawText);
+    accessibleText.className = 'ab-blur-accessible';
+    accessibleText.textContent = rawText;
     visual.className = 'ab-blur-visual';
     visual.setAttribute('aria-hidden', 'true');
 
@@ -464,6 +471,7 @@
       );
     });
 
+    content.appendChild(accessibleText);
     content.appendChild(visual);
     scene.textContent = '';
     scene.appendChild(content);
@@ -745,10 +753,7 @@
   }
 
   link.addEventListener('click', function (e) { e.preventDefault(); commit(); });
-  peek.addEventListener('click', commit);
-  peek.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); commit(); }
-  });
+  peek.addEventListener('click', function (e) { e.preventDefault(); commit(); });
 
   var armed = false, pull = 0, prevT = 0, prevDy = 0;
   window.addEventListener('wheel', function (e) {

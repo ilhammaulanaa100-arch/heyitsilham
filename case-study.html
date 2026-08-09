@@ -30,7 +30,7 @@
   <!-- Favicons -->
   <link rel="icon" href="/assets/images/favicon.png?v=2" type="image/png" sizes="180x180" />
   <link rel="apple-touch-icon" href="/assets/images/favicon.png?v=2" />
-  <script src="tab-title.js"></script>
+  <script src="tab-title.js?v=2"></script>
 
   <!-- Recoleta (brand serif, same as index.html) -->
   <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
@@ -39,8 +39,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,300&family=Bai+Jamjuree:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/lenis@2.0.0/dist/lenis.min.js"></script>
-  <link rel="stylesheet" href="case-study.css?v=50" />
+  <script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
+  <link rel="stylesheet" href="case-study.css?v=52" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -66,7 +66,7 @@
   <div id="page-wipe"></div>
 
   <!-- Two-panel PDP shell -->
-  <div class="cs-shell" id="cs-shell">
+  <main class="cs-shell" id="cs-shell">
 
     <!-- LEFT: sticky slider panel -->
     <div class="cs-left" id="cs-left">
@@ -84,19 +84,18 @@
             </svg>
             Close
           </a>
-          <a class="cs-source" id="cs-source" href="" target="_blank" rel="noopener noreferrer">Source ↗</a>
         </div>
         <!-- Article content populated by buildDetail() -->
         <div class="cs-detail" id="cs-detail"></div>
       </div>
     </div>
 
-  </div><!-- end .cs-shell -->
+  </main><!-- end .cs-shell -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="content.js?v=2"></script>
+  <script src="content.js?v=5"></script>
   <script src="motion.js"></script>
-  <script src="case-study.js?v=2"></script>
+  <script src="case-study.js?v=7"></script>
   <script>
     // ── Guard against content.js failing to load ───
     if (typeof PROJECTS === 'undefined' || !PROJECTS || !PROJECTS.length) {
@@ -112,15 +111,6 @@
       // ── Populate page metadata ───────────────────────────
       // Title fallback: subtitle → title → generic
       document.title = 'Heyitsilham';
-
-      // ── Source link — checked after normalizer ────
-      var sourceLink = document.getElementById('cs-source');
-      if (p_data.sourceUrl && p_data.sourceUrl.trim() !== '') {
-        sourceLink.href = p_data.sourceUrl;
-        sourceLink.removeAttribute('hidden');
-      } else {
-        sourceLink.setAttribute('hidden', '');
-      }
 
       function exitPage(href) {
         var wipe = document.getElementById('page-wipe');
@@ -147,8 +137,7 @@
         sliderEl:      document.getElementById('cs-slider'),
         detailEl:      document.getElementById('cs-detail'),
         scrollWrapper: document.getElementById('cs-right'),
-        contentEl:     document.getElementById('cs-right-content'),
-        exitFn:        exitPage
+        contentEl:     document.getElementById('cs-right-content')
       });
 
       // ── Entrance: direct URL load, no page transition ─────

@@ -14,6 +14,8 @@
   --brand-blue: #5271ED;
   --brand-aqua: #52EDE2;
   --menu-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --home-stage-max: 1600px;
+  --home-stage-gutter: 56px;
   color-scheme: dark;
 }
 
@@ -109,6 +111,32 @@ body { background: #fff; overflow: hidden; }
     linear-gradient(to top,    rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
     linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%),
     linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 18%);
+}
+
+.vignette-radial::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 18vh;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    rgba(0, 0, 0, 0.92) 38%,
+    rgba(0, 0, 0, 0.45) 70%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to top,
+    #000 0%,
+    rgba(0, 0, 0, 0.92) 38%,
+    rgba(0, 0, 0, 0.45) 70%,
+    transparent 100%
+  );
 }
 
 /* ── Navbar ── */
@@ -585,7 +613,7 @@ body.menu-open .menu-button { pointer-events: auto; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
+  gap: 24px;
   width: 294px;
   opacity: 0;
   transform: translate3d(20px, -20px, 0);
@@ -693,13 +721,96 @@ html.home-entry-complete .view-tabs {
   opacity: 1;
   filter: none;
 }
-.site-menu-connect p {
+.site-menu-email {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 294px;
+}
+.site-menu-email-label {
+  width: 100%;
   font-family: 'Bai Jamjuree', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   font-style: normal;
   line-height: normal;
   color: #8b8b8b;
+}
+.site-menu-email-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.site-menu-email-value {
+  flex: 0 0 auto;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: normal;
+  white-space: nowrap;
+  transition: color 160ms ease;
+}
+.site-menu-email-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  transition: filter 160ms ease, transform 160ms ease;
+}
+.site-menu-email-copy:is(:hover, :focus-visible) .site-menu-email-icon {
+  filter: brightness(0) saturate(100%) invert(89%) sepia(32%) saturate(892%) hue-rotate(113deg) brightness(101%) contrast(88%);
+  transform: translateY(-1px);
+}
+.site-menu-email-copy:focus-visible {
+  outline: 2px solid var(--brand-teal);
+  outline-offset: 4px;
+}
+.site-menu-toast {
+  position: absolute;
+  z-index: 4;
+  top: 40px;
+  left: 50%;
+  width: min(360px, calc(100vw - 48px));
+  min-height: 52px;
+  padding: 15px 20px;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+  color: #fff;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-50%, -8px, 0);
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.site-menu-toast.is-success {
+  background: #0f6b4f;
+}
+.site-menu-toast.is-error {
+  background: #8f2d2d;
+}
+.site-menu-toast.is-visible {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
 }
 .site-menu-socials {
   display: flex;
@@ -725,14 +836,6 @@ html.home-entry-complete .view-tabs {
   display: block;
   width: 24px;
   height: 24px;
-}
-.site-menu-social-x { overflow: hidden; }
-.site-menu-social-x img {
-  position: absolute;
-  top: 1.9032px;
-  left: 1.0008px;
-  width: 21.9984px;
-  height: 19.8864px;
 }
 body.menu-open #proj-cursor { display: none; }
 
@@ -1294,7 +1397,12 @@ html.dark #cs-right { background: #020202; }
 /* ── Tablet (901–1280px): same layout, shrunk to fit ── */
 @media (max-width: 1280px) {
   .navbar { padding: 20px 40px; }
-  .section-nav { right: 40px; width: auto; }
+  /* Keep the 57px navigator centred beneath the 100px Menu button. Using
+     width:auto here collapses the fixed box because its children are absolute. */
+  .section-nav {
+    right: calc(40px + (100px - 57px) / 2);
+    width: 57px;
+  }
 
   .ph-layout { padding: 0 40px; }
   .ph-text { width: clamp(260px, 30vw, 400px); }
@@ -1312,6 +1420,74 @@ html.dark #cs-right { background: #020202; }
   .proj-card.is-landscape { width: min(38vw, 580px); }
   .proj-card.is-square    { width: min(34vw, 480px); }
   .proj-card.is-portrait  { width: min(28vw, 420px); }
+}
+
+/* ── Large desktop (>1600px): one centred coordinate system ──
+   The regular desktop composition is 1440px wide and left-aligned. Extending
+   that geometry across a 2K/4K viewport separates the article from its fixed
+   controls, so every persistent element shares this capped stage instead. */
+@media (min-width: 1601px) {
+  :root {
+    --home-stage-offset: calc((100vw - var(--home-stage-max)) / 2);
+  }
+
+  .navbar {
+    padding-inline: calc(var(--home-stage-offset) + var(--home-stage-gutter));
+  }
+
+  .site-menu-panel {
+    right: calc(var(--home-stage-offset) + 40px);
+  }
+
+  .section-nav {
+    right: calc(
+      var(--home-stage-offset) + var(--home-stage-gutter) +
+      (100px - 57px) / 2
+    );
+  }
+
+  .ph-layout {
+    left: var(--home-stage-offset);
+    width: var(--home-stage-max);
+    max-width: none;
+    padding-inline: var(--home-stage-gutter);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 680px minmax(0, 1fr);
+  }
+
+  .ph-text {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .ph-spacer { display: none; }
+
+  .ph-media {
+    grid-column: 2;
+    grid-row: 1;
+    width: 680px;
+    margin-left: 0;
+  }
+
+  .ph-label { font-size: clamp(20px, 1.05vw, 22px); }
+  .ph-title { font-size: clamp(80px, 4.5vw, 96px); }
+
+  .proj-card.is-landscape {
+    width: clamp(580px, 30vw, 660px);
+    height: auto;
+    aspect-ratio: 580 / 420;
+  }
+  .proj-card.is-square {
+    width: clamp(480px, 26vw, 560px);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .proj-card.is-portrait {
+    width: clamp(420px, 23vw, 500px);
+    height: auto;
+    aspect-ratio: 420 / 560;
+  }
 }
 
 /* ── Mobile (≤900px): stacked hero, compact chrome ── */
@@ -1422,6 +1598,8 @@ html.dark #cs-right { background: #020202; }
     bottom: 32px;
     width: calc(100% - 64px);
   }
+  .site-menu-email { width: 100%; }
+  .site-menu-email-value { font-size: clamp(17px, 5vw, 20px); }
 
   /* Softer edge fade — 18% of a phone screen washes out the content */
   .vignette-radial {
@@ -1431,6 +1609,7 @@ html.dark #cs-right { background: #020202; }
       linear-gradient(to right,  rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%),
       linear-gradient(to left,   rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 8%);
   }
+  .vignette-radial::after { height: 8vh; }
   html.dark .vignette-radial {
     background:
       linear-gradient(to bottom, rgba(2,2,2,0.92) 0%, rgba(2,2,2,0) 8%),
@@ -1466,6 +1645,7 @@ html.dark #cs-right { background: #020202; }
   .menu-button-label-close,
   .site-menu-link,
   .site-menu-connect,
+  .site-menu-toast,
   .view-tabs,
   .view-switch-shine-border,
   .view-switch-state { transition: none; }

@@ -9,10 +9,8 @@ const PROJECTS = [
     // shape drives BOTH the vertical card and the grid tile — one truth per project.
     // Curated so the infinite grid cycle mixes all three shapes.
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#9f4bed 0%,#7b49a9 100%)',
     media: {
       hero: 'assets/projects/Qita/qita-thumbnail.jpg',
-      video: '',
       videoAfterGallery: 'assets/projects/Qita/QITA.mp4',
       gallery: [
         {
@@ -74,13 +72,11 @@ const PROJECTS = [
     subtitle: 'BYOND\nby BSI',
     title: 'A New Chapter for Islamic Banking in Indonesia',
     shape: 'is-square', // hero asset is 1680×1680 — square is its native shape
-    color: 'linear-gradient(160deg,#1c1c3e 0%,#0f0f2e 100%)',
     hoverColor: '#BEFFF7', // soft blend over the animated thumbnail background
     hoverMotion: 0.55, // optional: 0 = static, higher = more movement
     hoverOpacity: 0.26, // optional: strength of the animated background
     media: {
       hero: 'assets/projects/byond/BYOND-Thumbnail.jpg',
-      video: 'assets/projects/byond/byond-showcase.mp4',
       videoAfterGallery: 'assets/projects/byond/byond-showcase.mp4',
       // Add, remove, or reorder gallery sections here. Available layouts:
       // full | split-square-left | split-square-right
@@ -151,7 +147,6 @@ const PROJECTS = [
     subtitle: 'Al-YasiniQu',
     title: 'Digitizing the Pesantren Ecosystem',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Al Yasini/Al Yasini-thumbnail.jpg',
       gallery: [
@@ -169,11 +164,10 @@ const PROJECTS = [
     slug: 'mytelkomsel-basic',
     period: '2025',
     sourceUrl: 'https://apps.apple.com/id/app/mytelkomsel-basic/id6502852832',
-    summary: "MyTelkomsel Basic is a lightweight alternative to the main MyTelkomsel application, designed around self-serve principles. Efficient, lightweight, and fast, it was built to give customers access to essential account information, purchasing, and basic connectivity services without the complexity of a full-featured app.\n\nAs the Product Designer, I owned the end-to-end experience from early exploration through launch, translating a lean product strategy into a clear and accessible interface. The result was a more focused experience for customers with simpler needs.",
+    summary: "MyTelkomsel Basic is a lightweight alternative to the main MyTelkomsel application, designed around SELF principles: Simple, Efficient, Lightweight, and Fast. It was built to give customers access to essential account information, purchasing, and basic connectivity services without the complexity of a full-featured app.\n\nAs the Product Designer, I owned the end-to-end experience from early exploration through launch, translating a lean product strategy into a clear and accessible interface. The result was a more focused experience for customers with simpler needs.",
     subtitle: 'MyTelkomsel Basic',
     title: 'A Lightweight Multitask, Made for Everyone',
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTB/MTB-Thumbnail.jpg',
       gallery: [
@@ -188,7 +182,7 @@ const PROJECTS = [
         { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB7.png', alt: 'MyTelkomsel Basic showcase 8' }] }
       ]
     },
-    meta: { role: 'Product Designer', client: 'Telkomsel', year: '2025' }
+    meta: { role: 'Lead Designer', client: 'Telkomsel', year: '2025' }
   },
   {
     slug: 'mytelkomsel-app',
@@ -198,7 +192,6 @@ const PROJECTS = [
     subtitle: 'MyTelkomsel App',
     title: 'MyTelkomsel, Built Around Discovery',
     shape: 'is-portrait',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTA/MTA.jpg',
       gallery: [
@@ -211,7 +204,7 @@ const PROJECTS = [
         { layout: 'full', items: [{ src: 'assets/projects/MTA/MTA5.png', alt: 'MyTelkomsel App showcase 5' }] }
       ]
     },
-    meta: { role: 'Product Designer', client: 'Telkomsel', year: '2025' }
+    meta: { role: 'Lead Designer', client: 'Telkomsel', year: '2025' }
   },
   {
     slug: 'mytelkomsel-web',
@@ -221,7 +214,6 @@ const PROJECTS = [
     subtitle: 'MyTelkomsel Web',
     title: "Redesigning Telkomsel's Web Experience",
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/MTW/MTW-Thumbnail.jpg',
       gallery: [
@@ -235,7 +227,7 @@ const PROJECTS = [
         { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW6.png', alt: 'MyTelkomsel Web showcase 6' }] }
       ]
     },
-    meta: { role: 'Product Designer', client: 'Telkomsel', year: '2024' }
+    meta: { role: 'Lead Designer', client: 'Telkomsel', year: '2024' }
   },
   {
     slug: 'maybank',
@@ -245,7 +237,6 @@ const PROJECTS = [
     subtitle: 'Maybank',
     title: 'Building a New Digital Experience to Maybank Indonesia',
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#2db8a3,#1a7a6e)',
     media: {
       hero: 'assets/projects/Maybank/maybank-thumbnail.jpg',
       gallery: [
@@ -254,7 +245,7 @@ const PROJECTS = [
         { layout: 'full', items: [{ src: 'assets/projects/Maybank/maybank-3.png', alt: 'Maybank showcase 3' }] }
       ]
     },
-    meta: { role: 'Product Designer', client: 'Maybank Indonesia', year: '2025' }
+    meta: { role: 'Lead Designer', client: 'Maybank Indonesia', year: '2025' }
   },
   {
     slug: 'bri-tennis',
@@ -265,7 +256,6 @@ const PROJECTS = [
     title: 'Connecting Beyond the Office',
     titleLines: ['Connecting Beyond', 'the Office'],
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#1f65b7,#123b74)',
     media: {
       hero: 'assets/projects/BRI Tennis/BRI Tennis-thumbnail.jpg',
       gallery: [
@@ -295,7 +285,6 @@ const PROJECTS = [
     title: 'One App for Every Side of Tutoring',
     titleLines: ['One App for Every Side', 'of Tutoring'],
     shape: 'is-portrait',
-    color: 'linear-gradient(160deg,#32a8ff,#1764bd)',
     media: {
       hero: 'assets/projects/MyTutorApp/MyTutorApp-Thumbnail.jpg',
       gallery: [
@@ -319,7 +308,6 @@ const PROJECTS = [
     title: 'A Shared Space for Tutors and Parents',
     titleLines: ['A Shared Space for', 'Tutors and Parents'],
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#32a8ff,#1764bd)',
     media: {
       hero: 'assets/projects/MyTutorWeb/MyTw-Thumbnail.jpg',
       gallery: [
@@ -341,7 +329,6 @@ const PROJECTS = [
     title: 'The Workday, Built for the Field',
     titleLines: ['The Workday,', 'Built for the Field'],
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Mango/MANGO-Thumbnail.jpg',
       gallery: [
@@ -364,7 +351,6 @@ const PROJECTS = [
     subtitle: 'MantisHub',
     title: 'One Hub for Every Role',
     shape: 'is-landscape',
-    color: 'linear-gradient(160deg,#4648bf,#24256f)',
     media: {
       hero: 'assets/projects/Mhub/MHUB-Thumbnail.jpg',
       gallery: [
@@ -388,7 +374,6 @@ const PROJECTS = [
     title: 'The Brighter Side of Insurance',
     titleLines: ['The Brighter Side', 'of Insurance'],
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#58f0e0,#178b84)',
     media: {
       hero: 'assets/projects/Fatberry/Fatberry-Thumbnail.jpg',
       gallery: [
@@ -412,7 +397,6 @@ const PROJECTS = [
     title: 'Beauty Sales, All in One Place',
     titleLines: ['Beauty Sales,', 'All in One Place'],
     shape: 'is-square',
-    color: 'linear-gradient(160deg,#8f72d8,#513696)',
     media: {
       hero: 'assets/projects/Adleesya/adleesya-thumbnail.jpg',
       gallery: [

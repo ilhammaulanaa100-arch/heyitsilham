@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var awayTitle = "Let's Collaboration! Message me.";
+  var awayTitle = "Let's collaborate! Message me.";
   var pageTitle = document.title;
   var titleEl = document.querySelector('title');
 

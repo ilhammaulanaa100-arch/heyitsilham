@@ -108,16 +108,13 @@
   padding: 32px 140px 0;
 }
 
-/* Row holding the right-panel close control + "Source ↗" link */
+/* Row holding the right-panel close control */
 .cs-top-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 48px;
-  /* Pull the left edge out to the video block's left (48px from panel edge) so
-     the close control lines up with the media; width grows to hold source in place. */
+  /* Pull the left edge out to the media block's left (48px from panel edge). */
   margin-left: -92px;
-  width: calc(100% + 92px);
 }
 
 /* "× Close" — right-panel close control, top-left, mirrors .cs-close's action */
@@ -146,32 +143,6 @@
 
 .cs-right-close:hover {
   opacity: 1;
-}
-
-/* "Source ↗" link — mono, underlined, hidden when sourceUrl is empty */
-.cs-source {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #000;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  opacity: 0.5;
-  transition: opacity 0.18s;
-}
-
-.cs-source:hover {
-  opacity: 1;
-}
-
-.cs-source[hidden] {
-  display: none;
-}
-
-.cs-top-row:has(.cs-source[hidden]) {
-  justify-content: flex-start;
 }
 
 /* Detail container */
@@ -678,8 +649,7 @@ html.lenis {
 }
 
 .cs-close:focus-visible,
-.cs-right-close:focus-visible,
-.cs-source:focus-visible {
+.cs-right-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   opacity: 1;
@@ -693,13 +663,12 @@ html.dark #page-wipe { background: #020202; }
 html.dark .cs-right { background: #020202; }
 html.dark .cs-close,
 html.dark .cs-right-close,
-html.dark .cs-source,
 html.dark .cs-applink,
 html.dark .cs-headline,
 html.dark .cs-meta-item-value { color: #fff; }
 html.dark .cs-slide-title { color: #d9d9d9; }
 html.dark .cs-slider-counter { color: #d9d9d9; }
-html.dark .cs-meta-item-label { color: rgba(255, 255, 255, 0.4); }
+html.dark .cs-meta-item-label { color: rgba(255, 255, 255, 0.5); }
 html.dark .cs-body-para { color: rgba(255, 255, 255, 0.82); }
 html.dark .cs-g-fig { background: #1c1b1b; }
 
@@ -716,7 +685,7 @@ html.dark .cs-g-fig { background: #1c1b1b; }
   #cs-right-content { padding: 32px 48px 0; }
   .cs-video-block { width: calc(100% + 96px); margin-left: -48px; }
   .cs-gallery { width: calc(100% + 96px); margin-left: -48px; }
-  .cs-top-row { width: calc(100% + 48px); margin-left: -48px; }
+  .cs-top-row { margin-left: -48px; }
 }
 
 /* ── Mobile (≤900px): bottom project-navigation overlay ── */
@@ -784,7 +753,7 @@ html.dark .cs-g-fig { background: #1c1b1b; }
     opacity: 1;
   }
   .cs-close { top: 20px; left: 20px; }
-  .cs-top-row { margin-bottom: 32px; margin-left: 0; width: auto; }
+  .cs-top-row { margin-bottom: 32px; margin-left: 0; }
   .cs-headline { margin-bottom: 32px; }
   .cs-body-block { margin-bottom: 48px; }
   .cs-video-block { margin-bottom: 16px; }

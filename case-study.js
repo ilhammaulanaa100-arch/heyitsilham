@@ -14,11 +14,10 @@
   var _onWindowResize      = null;
   var _onSliderTouchStart  = null;
   var _onSliderTouchEnd    = null;
-  var _onWheelLeft         = null;
+  var _onLeftMouseEnter    = null;
+  var _onLeftMouseLeave    = null;
   var _leftPanelEl         = null;
   var _scrollWrapper       = null;
-  var _contentEl           = null;
-  var _exitFn              = null;
 
   function trackSkeletonImage(img, host) {
     if (!img || !host) return;
@@ -77,8 +76,8 @@
     if (!p) p = PROJECTS[0];
 
     // Safety normalizer — fills missing fields with safe defaults.
-    // Intentionally mutates the shared PROJECTS entry in place; harmless because
-    // case-study.html only ever loads one project per page load.
+    // Intentionally mutates the shared PROJECTS entry in place. The operation is
+    // idempotent, so it is safe for both standalone and in-page overlay renders.
     p.sourceUrl = p.sourceUrl || '';
     p.period    = p.period    || (p.meta && p.meta.year) || '';
     if (p.media && Array.isArray(p.media.gallery)) {
@@ -95,7 +94,7 @@
 
   // ── render ────────────────────────────────────────────────────────────────
   // Builds left slider + right detail, wires interactions, inits Lenis + reveals.
-  // opts = { sliderEl, detailEl, scrollWrapper, contentEl, exitFn }
+  // opts = { sliderEl, detailEl, scrollWrapper, contentEl }
   // Returns { teardown }.
   function render(project, opts) {
     opts = opts || {};
@@ -103,18 +102,19 @@
     var detailEl      = opts.detailEl      || document.getElementById('cs-detail');
     var scrollWrapper = opts.scrollWrapper || document.getElementById('cs-right');
     var contentEl     = opts.contentEl     || document.getElementById('cs-right-content');
-    var exitFn        = opts.exitFn        || function (href) { window.location.href = href; };
+
+    if (!project || !sliderEl || !detailEl || !scrollWrapper || !contentEl) {
+      throw new Error('CaseStudy.render requires a project and complete panel elements.');
+    }
 
     _sliderEl      = sliderEl;
     _detailEl      = detailEl;
     _scrollWrapper = scrollWrapper;
-    _contentEl     = contentEl;
-    _exitFn        = exitFn;
 
     var activeIndex = (typeof PROJECTS !== 'undefined') ? PROJECTS.indexOf(project) : 0;
     if (activeIndex < 0) activeIndex = 0;
     buildSlider(project, sliderEl, activeIndex);
-    buildDetail(project, detailEl, exitFn);
+    buildDetail(project, detailEl);
     initScrollAndReveals(scrollWrapper, contentEl);
 
     return { teardown: teardown };
@@ -129,7 +129,8 @@
     if (_onWindowResize)      { window.removeEventListener('resize',       _onWindowResize);       _onWindowResize      = null; }
     if (_onSliderTouchStart && _sliderEl)    { _sliderEl.removeEventListener('touchstart', _onSliderTouchStart); _onSliderTouchStart = null; }
     if (_onSliderTouchEnd   && _sliderEl)    { _sliderEl.removeEventListener('touchend',   _onSliderTouchEnd);   _onSliderTouchEnd   = null; }
-    if (_onWheelLeft        && _leftPanelEl) { _leftPanelEl.removeEventListener('wheel',   _onWheelLeft);        _onWheelLeft        = null; }
+    if (_onLeftMouseEnter   && _leftPanelEl) { _leftPanelEl.removeEventListener('mouseenter', _onLeftMouseEnter); _onLeftMouseEnter = null; }
+    if (_onLeftMouseLeave   && _leftPanelEl) { _leftPanelEl.removeEventListener('mouseleave', _onLeftMouseLeave); _onLeftMouseLeave = null; }
     _leftPanelEl = null;
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
     if (_lenis)    { _lenis.destroy(); _lenis = null; if (_scrollWrapper) _scrollWrapper.style.overflowY = ''; }
@@ -143,6 +144,7 @@
     if (_detailEl) _detailEl.innerHTML = '';
     _sliderEl = null;
     _detailEl = null;
+    _scrollWrapper = null;
   }
 
   // ── buildSlider ───────────────────────────────────────────────────────────
@@ -151,11 +153,11 @@
     var allProjects = (typeof PROJECTS !== 'undefined' && PROJECTS && PROJECTS.length) ? PROJECTS : [p_data];
     activeIndex = (activeIndex >= 0 && activeIndex < allProjects.length) ? activeIndex : 0;
 
-    var slides = allProjects.map(function (pr, i) {
+    var slides = allProjects.map(function (pr) {
       var src = (pr.media && pr.media.hero) ? pr.media.hero : '';
       var per = pr.period   || (pr.meta && pr.meta.year) || '';
       var caption = per || pr.subtitle || '';
-      return { src: src, caption: caption, color: pr.color, name: pr.subtitle || pr.title || '',
+      return { src: src, caption: caption, name: pr.subtitle || pr.title || '',
                shape: pr.shape || 'is-square' }; // same field that sizes the homepage card
     });
 
@@ -288,8 +290,11 @@
     var leftHovered = false;
     var leftPanel   = document.getElementById('cs-left');
     if (leftPanel) {
-      leftPanel.addEventListener('mouseenter', function () { leftHovered = true;  });
-      leftPanel.addEventListener('mouseleave', function () { leftHovered = false; });
+      _leftPanelEl = leftPanel;
+      _onLeftMouseEnter = function () { leftHovered = true; };
+      _onLeftMouseLeave = function () { leftHovered = false; };
+      leftPanel.addEventListener('mouseenter', _onLeftMouseEnter);
+      leftPanel.addEventListener('mouseleave', _onLeftMouseLeave);
     }
     _onSliderKeydown = function (e) {
       if (!leftHovered || TOTAL < 2) return;
@@ -352,7 +357,7 @@
   } // end buildSlider
 
   // ── buildDetail ───────────────────────────────────────────────────────────
-  function buildDetail(p_data, detail, exitFn) {
+  function buildDetail(p_data, detail) {
     if (!detail) return;
 
     function mkEl(tag, cls, text) {
@@ -561,7 +566,7 @@
   // Above-fold text whisper-fades on the `cs-entered` entrance event (fired by
   // both the standalone page and the homepage overlay). Below-fold blocks fade
   // on scroll. Split hero headline into lines first.
-  function rewireReveals(sw) {
+  function rewireReveals() {
     if (_onCsEntered) { document.removeEventListener('cs-entered', _onCsEntered); _onCsEntered = null; }
     if (_observer)    { _observer.disconnect(); _observer = null; }
     if (typeof Motion === 'undefined') {
@@ -587,23 +592,12 @@
     if (!_detailEl) return;
 
     var doSwap = function () {
-      var sourceLink = document.getElementById('cs-source');
-      if (sourceLink) {
-        if (project.sourceUrl && project.sourceUrl.trim()) {
-          sourceLink.href = project.sourceUrl;
-          sourceLink.removeAttribute('hidden');
-        } else {
-          sourceLink.href = '';
-          sourceLink.setAttribute('hidden', '');
-        }
-      }
-
       document.title = 'Heyitsilham';
       history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
 
       if (window.gsap) { gsap.killTweensOf(_detailEl); }
       _detailEl.innerHTML = '';
-      buildDetail(project, _detailEl, _exitFn);
+      buildDetail(project, _detailEl);
 
       if (_lenis) {
         _lenis.scrollTo(0, { immediate: true });
@@ -611,7 +605,7 @@
         _scrollWrapper.scrollTop = 0;
       }
 
-      rewireReveals(_scrollWrapper);
+      rewireReveals();
 
       if (window.gsap) {
         gsap.to(_detailEl, { opacity: 1, duration: 0.25, ease: 'power1.out',
@@ -634,9 +628,8 @@
   function initScrollAndReveals(scrollWrapper, contentEl) {
 
     // ── 1. Lenis smooth scroll ────────────────────────────
-    // Lenis v2 requires the wrapper to have overflow:hidden so it exclusively
-    // owns scrollTop. With overflow-y:auto Lenis intercepts wheel events but
-    // never scrolls (v2 conflict). We set it here and restore in teardown.
+    // Give Lenis exclusive ownership of the panel's scroll position, then
+    // restore the native overflow behavior during teardown.
     if (window.Lenis) {
       scrollWrapper.style.overflowY = 'hidden';
       _lenis = new Lenis({
@@ -656,7 +649,7 @@
     }
 
     // ── 2–4. Reveal observer + entrance events ────────────
-    rewireReveals(scrollWrapper);
+    rewireReveals();
 
   } // end initScrollAndReveals
 

@@ -177,6 +177,7 @@
       previousFocus = document.activeElement;
       updateMorphGeometry();
       menu.classList.add('is-preparing');
+      menu.removeAttribute('inert');
       menu.setAttribute('aria-hidden', 'false');
       trigger.setAttribute('aria-expanded', 'true');
       trigger.setAttribute('aria-label', 'Close menu');
@@ -195,11 +196,12 @@
       menu.classList.remove('is-open', 'is-preparing');
       trigger.setAttribute('aria-expanded', 'false');
       trigger.setAttribute('aria-label', 'Open menu');
-      menu.setAttribute('aria-hidden', 'true');
       if (restoreFocus !== false) {
         var focusTarget = previousFocus && previousFocus !== document.body ? previousFocus : trigger;
         if (focusTarget && focusTarget.focus) focusTarget.focus({ preventScroll: true });
       }
+      menu.setAttribute('aria-hidden', 'true');
+      menu.setAttribute('inert', '');
       closeTimer = window.setTimeout(function () {
         menu.classList.remove('is-closing');
         document.body.classList.remove('menu-open');
@@ -216,6 +218,7 @@
       trigger.setAttribute('aria-expanded', 'false');
       trigger.setAttribute('aria-label', 'Open menu');
       menu.setAttribute('aria-hidden', 'true');
+      menu.setAttribute('inert', '');
       if (aboutLink) {
         aboutLink.classList.remove('is-route-target');
         aboutLink.removeAttribute('aria-current');
@@ -243,7 +246,9 @@
       aboutLink.classList.add('is-route-target');
       aboutLink.setAttribute('aria-current', 'page');
       menu.classList.add('is-selecting-about');
+      trigger.focus({ preventScroll: true });
       menu.setAttribute('aria-hidden', 'true');
+      menu.setAttribute('inert', '');
 
       try { sessionStorage.setItem('porto-about-curtain', '1'); } catch (storageError) {}
 
@@ -514,6 +519,10 @@
     if (!_prevFocus) _prevFocus = document.activeElement;
     var porto = document.querySelector('.porto');
     if (porto) porto.setAttribute('aria-hidden', 'true');
+    ['.porto', '.navbar', '#grid-view', '#view-tabs'].forEach(function (selector) {
+      var element = document.querySelector(selector);
+      if (element) element.setAttribute('inert', '');
+    });
     var closeBtn = document.getElementById('cs-right-close');
     if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
     _trapHandler = function (e) {
@@ -533,22 +542,14 @@
     if (_trapHandler) { document.removeEventListener('keydown', _trapHandler, true); _trapHandler = null; }
     var porto = document.querySelector('.porto');
     if (porto) porto.removeAttribute('aria-hidden');
+    ['.porto', '.navbar', '#grid-view', '#view-tabs'].forEach(function (selector) {
+      var element = document.querySelector(selector);
+      if (element) element.removeAttribute('inert');
+    });
     if (_prevFocus && typeof _prevFocus.focus === 'function') {
       try { _prevFocus.focus({ preventScroll: true }); } catch (e) { _prevFocus.focus(); }
     }
     _prevFocus = null;
-  }
-
-  function navigateFromOverlay(href) {
-    var match = href && href.match(/[?&]p=([^&]+)/);
-    var slug = match && decodeURIComponent(match[1]);
-    var nextProject = slug && window.CaseStudy && CaseStudy.resolveProject(slug);
-    if (nextProject) {
-      showOverlay(nextProject);
-      history.pushState({ csOverlay: nextProject.slug }, '', 'case-study.html?p=' + nextProject.slug);
-    } else {
-      window.location.href = href;
-    }
   }
 
   // Opens the case-study overlay. fromCard (optional) drives the FLIP glide:
@@ -564,35 +565,25 @@
     document.body.classList.add('cs-open');
     if (convObserver) convObserver.disable();
 
-    var sourceLink = document.getElementById('cs-source');
-    if (sourceLink) {
-      if (project.sourceUrl && project.sourceUrl.trim() !== '') {
-        sourceLink.href = project.sourceUrl;
-        sourceLink.removeAttribute('hidden');
-      } else {
-        sourceLink.setAttribute('hidden', '');
-      }
-    }
-
     CaseStudy.render(project, {
       sliderEl:      document.getElementById('cs-slider'),
       detailEl:      document.getElementById('cs-detail'),
       scrollWrapper: document.getElementById('cs-right'),
-      contentEl:     document.getElementById('cs-right-content'),
-      exitFn:        navigateFromOverlay
+      contentEl:     document.getElementById('cs-right-content')
     });
 
     var overlay = document.getElementById('cs-overlay');
     var shell   = document.getElementById('cs-shell');
     var csRight = document.getElementById('cs-right');
     overlay.classList.add('is-open');
+    overlay.removeAttribute('inert');
+    overlay.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (window.CaseStudy && CaseStudy.relayout) CaseStudy.relayout();
       });
     });
     trapOverlayFocus();
-    overlay.setAttribute('aria-hidden', 'false');
     if (shell)   shell.style.opacity = '1';
     if (csRight) csRight.scrollTop   = 0;
     _currentSlug = project.slug;
@@ -801,6 +792,7 @@
         CaseStudy.teardown();
         overlay.classList.remove('is-open');
         overlay.setAttribute('aria-hidden', 'true');
+        overlay.setAttribute('inert', '');
         if (shell) shell.style.opacity = '0';
         _sourceCard = null;
         _sourceProjectIndex = -1;
@@ -894,6 +886,7 @@
         var shell   = document.getElementById('cs-shell');
         overlay.classList.remove('is-open');
         overlay.setAttribute('aria-hidden', 'true');
+        overlay.setAttribute('inert', '');
         if (shell) shell.style.opacity = '0';
         if (convObserver) convObserver.enable();
         isOverlayOpen = false;
@@ -1128,8 +1121,16 @@
           history.pushState({ csOverlay: slug }, '', 'case-study.html?p=' + slug);
         } catch (e) {
           console.error('[porto] showOverlay failed:', e);
+          CaseStudy.teardown();
+          var failedOverlay = document.getElementById('cs-overlay');
+          if (failedOverlay) {
+            failedOverlay.classList.remove('is-open');
+            failedOverlay.setAttribute('aria-hidden', 'true');
+            failedOverlay.setAttribute('inert', '');
+          }
+          releaseOverlayFocus();
           isOverlayOpen = false;
-        document.body.classList.remove('cs-open');
+          document.body.classList.remove('cs-open');
           _currentSlug = null;
           if (convObserver) convObserver.enable();
         }

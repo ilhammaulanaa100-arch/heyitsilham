@@ -76,7 +76,7 @@
   <!-- Favicons -->
   <link rel="icon" href="/assets/images/favicon.png?v=2" type="image/png" sizes="180x180" />
   <link rel="apple-touch-icon" href="/assets/images/favicon.png?v=2" />
-  <script src="tab-title.js"></script>
+  <script src="tab-title.js?v=2"></script>
 
   <!-- Warm the transparent logo still so the splash can paint before the
        matching alpha video finishes decoding. -->
@@ -104,8 +104,8 @@
   </noscript>
 
   <!-- Styles: case-study.css (overlay) first, home.css overrides after -->
-  <link rel="stylesheet" href="case-study.css?v=50" />
-  <link rel="stylesheet" href="home.css?v=53" />
+  <link rel="stylesheet" href="case-study.css?v=52" />
+  <link rel="stylesheet" href="home.css?v=62" />
 </head>
 <body>
   <div class="home-entry-curtain" id="home-entry-curtain" aria-hidden="true"></div>
@@ -340,7 +340,7 @@
 
   <!-- Persistent UI: outside .porto — position:fixed makes .porto its own stacking
        context in Chrome, so anything inside it can't rise above #grid-view (z 900) -->
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Site controls">
       <div class="navbar-left">
         <div class="logo" aria-hidden="true">
           <img src="assets/images/logo%20ilham%20baru-small.png" alt="" width="128" height="160" decoding="async" />
@@ -367,7 +367,7 @@
     </nav>
 
   <!-- Full-screen menu -->
-  <div class="site-menu" id="site-menu" aria-hidden="true">
+  <div class="site-menu" id="site-menu" aria-hidden="true" inert>
     <section class="site-menu-panel" id="site-menu-panel" role="dialog" aria-modal="true" aria-label="Site menu" tabindex="-1">
       <img class="site-menu-panel-bg site-menu-panel-bg-open" src="assets/images/site-menu/menu-panel-bg.svg" alt="" aria-hidden="true" />
 
@@ -381,8 +381,14 @@
       </nav>
 
       <div class="site-menu-connect">
-        <p>Connect with me</p>
-        <div class="site-menu-socials" aria-label="Social links">
+        <div class="site-menu-email">
+          <p class="site-menu-email-label">Email me directly</p>
+          <button class="site-menu-email-copy" type="button" data-copy-email="works@heyitsilham.com" aria-label="Copy works@heyitsilham.com to clipboard">
+            <span class="site-menu-email-value">Works@heyitsilham.com</span>
+            <img class="site-menu-email-icon" src="assets/images/site-menu/copy.svg" alt="" width="16" height="16" />
+          </button>
+        </div>
+        <div class="site-menu-socials" role="group" aria-label="Social links">
           <a class="site-menu-social" href="https://www.linkedin.com/in/ilham-maulana2110/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <img src="assets/images/site-menu/social-linkedin.svg" alt="" />
           </a>
@@ -398,6 +404,7 @@
         </div>
       </div>
     </section>
+    <div class="site-menu-toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </div>
 
   <!-- Grid view (phantom.land-style infinite curved grid, WebGL) -->
@@ -426,7 +433,7 @@
   </button>
 
   <!-- Case-study overlay (SPA, in-place) -->
-  <div class="cs-overlay" id="cs-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Case study">
+  <div class="cs-overlay" id="cs-overlay" aria-hidden="true" inert role="dialog" aria-modal="true" aria-label="Case study">
     <div class="cs-shell" id="cs-shell">
       <div class="cs-left" id="cs-left">
         <div class="cs-slider" id="cs-slider"></div>
@@ -440,7 +447,6 @@
               </svg>
               Close
             </button>
-            <a class="cs-source" id="cs-source" href="index.html" target="_blank" rel="noopener noreferrer">Source ↗</a>
           </div>
           <div class="cs-detail" id="cs-detail"></div>
         </div>
@@ -450,14 +456,15 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@2.0.0/dist/lenis.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
-  <script src="case-study.js?v=2"></script>
-  <script src="content.js?v=2"></script>
-  <script src="grid.js?v=3"></script>
-  <script src="home.js?v=26"></script>
+  <script src="menu-contact.js?v=2"></script>
+  <script src="content.js?v=5"></script>
+  <script src="case-study.js?v=7"></script>
+  <script src="grid.js?v=5"></script>
+  <script src="home.js?v=29"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>

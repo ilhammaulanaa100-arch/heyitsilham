@@ -57,7 +57,7 @@
   <!-- Favicons -->
   <link rel="icon" href="/assets/images/favicon.png?v=2" type="image/png" sizes="180x180" />
   <link rel="apple-touch-icon" href="/assets/images/favicon.png?v=2" />
-  <script src="tab-title.js"></script>
+  <script src="tab-title.js?v=2"></script>
 
   <!-- Fonts (same set as index) -->
   <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
@@ -68,8 +68,8 @@
 
   <!-- Reuse the homepage navigation/menu component, then layer the scrolling
        About page styles on top. -->
-  <link rel="stylesheet" href="home.css?v=53" />
-  <link rel="stylesheet" href="about.css?v=42" />
+  <link rel="stylesheet" href="home.css?v=62" />
+  <link rel="stylesheet" href="about.css?v=46" />
 </head>
 <body>
 
@@ -105,7 +105,7 @@
   })();
   </script>
 
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Site controls">
     <div class="navbar-left">
       <div class="logo" aria-hidden="true">
         <img src="assets/images/logo%20ilham%20baru-small.png" alt="" width="128" height="160" decoding="async" />
@@ -131,7 +131,7 @@
     </div>
   </nav>
 
-  <div class="site-menu" id="site-menu" aria-hidden="true">
+  <div class="site-menu" id="site-menu" aria-hidden="true" inert>
     <section class="site-menu-panel" id="site-menu-panel" role="dialog" aria-modal="true" aria-label="Site menu" tabindex="-1">
       <img class="site-menu-panel-bg site-menu-panel-bg-open" src="assets/images/site-menu/menu-panel-bg.svg" alt="" aria-hidden="true" />
 
@@ -145,8 +145,14 @@
       </nav>
 
       <div class="site-menu-connect">
-        <p>Connect with me</p>
-        <div class="site-menu-socials" aria-label="Social links">
+        <div class="site-menu-email">
+          <p class="site-menu-email-label">Email me directly</p>
+          <button class="site-menu-email-copy" type="button" data-copy-email="works@heyitsilham.com" aria-label="Copy works@heyitsilham.com to clipboard">
+            <span class="site-menu-email-value">Works@heyitsilham.com</span>
+            <img class="site-menu-email-icon" src="assets/images/site-menu/copy.svg" alt="" width="16" height="16" />
+          </button>
+        </div>
+        <div class="site-menu-socials" role="group" aria-label="Social links">
           <a class="site-menu-social" href="https://www.linkedin.com/in/ilham-maulana2110/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <img src="assets/images/site-menu/social-linkedin.svg" alt="" />
           </a>
@@ -162,6 +168,7 @@
         </div>
       </div>
     </section>
+    <div class="site-menu-toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </div>
 
   <main class="about-page">
@@ -189,9 +196,9 @@
         <h2 class="ab-split-title">[About]</h2>
       </div>
       <div class="ab-split-right ab-about-copy">
-        <p data-blur-reveal>Currently at Aleph Labs (part of AKQA) as a Senior Product Designer, based in Jakarta and working on large-scale digital products.</p>
-        <p data-blur-reveal>Most of my 6+ years in product design have been focused on banking and telco, with work for BRI, BSI, Maybank, and Telkomsel. I spend most of my time untangling complex flows, piecing together design systems, and crafting the visual experience.</p>
-        <p data-blur-reveal>Lately, I’ve been learning to build beyond Figma through vibe coding, mostly experimenting with interactive web experiences using Three.js, WebGL, GSAP, and other creative coding tools.</p>
+        <p data-blur-reveal>Currently at Aleph Labs, part of AKQA, as a Senior Product Designer based in Jakarta, leading design across large-scale banking and telco products.</p>
+        <p data-blur-reveal>Over the past 6+ years, I’ve worked on digital products for BSI, BRI, Telkomsel, and Maybank. My work sits at the intersection of product thinking, user research, design systems, and visual craft, turning complex requirements into experiences that are inclusive, scalable, and meaningful.</p>
+        <p data-blur-reveal>Lately, I’ve been exploring how design can move beyond static screens through vibe coding, experimenting with interactive web experiences using Three.js, WebGL, GSAP, and other creative coding tools.</p>
       </div>
     </section>
 
@@ -212,10 +219,11 @@
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Aleph-Labs (Part of AKQA)</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Senior Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2022-Present</span></p>
+                <h3 data-blur-reveal>Aleph Labs (Part of AKQA)</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Senior Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>January 2022–Present</span></p>
               </div>
               <p class="ab-work-description" data-blur-reveal>Joined Aleph Labs as a Product Designer and grew into a Senior Product Designer role, leading design across large-scale banking and telco products for BSI, BRI, Telkomsel, and Maybank.</p>
+              <p class="ab-work-description" data-blur-reveal>Across these projects, I’ve led small design teams, shaped design direction, developed scalable design systems, and maintained design quality from discovery and concepting through developer handoff.</p>
             </div>
           </div>
         </article>
@@ -226,9 +234,10 @@
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>PT Mandala Multifinance (Now Adira)</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2021-2022</span></p>
+                <h3 data-blur-reveal>Mandala Multifinance (Now Adira Finance)</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>July 2021–January 2022</span></p>
               </div>
+              <p class="ab-work-description" data-blur-reveal>Worked across the MantisHUB and MantisGO teams, collaborating with product, engineering, and QA to translate product requirements into clear user flows, visual concepts, and implementation-ready designs.</p>
             </div>
           </div>
         </article>
@@ -239,35 +248,38 @@
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>PrimaClouds Solutions Sdn Bhd</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2021</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>Part-Time</span></p>
+                <h3 data-blur-reveal>PrimaClouds Solutions</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>July–September 2021</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>Part-time</span></p>
               </div>
+              <p class="ab-work-description" data-blur-reveal>Worked closely with the product team to define user journeys, conduct competitive research, explore visual directions, and introduce reusable design system components across project files.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="4">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/logo%20upwork.png" alt="Upwork logo" width="80" height="80" />
+              <img src="assets/images/company-logos/logo%20tanahair.svg" alt="Tanah Air Studio logo" width="80" height="80" />
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Ex-Top Rated Upwork</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Product Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2021</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>Freelance</span></p>
+                <h3 data-blur-reveal>Tanah Air Studio</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>UX Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>September 2020–July 2021</span></p>
               </div>
+              <p class="ab-work-description" data-blur-reveal>Researched and benchmarked interface patterns, defined components for product UI kits, and created wireframes and user flows before collaborating with the visual design team during handoff.</p>
             </div>
           </div>
         </article>
         <article class="ab-work-item" data-index="5">
           <div class="ab-work-card">
             <div class="ab-work-logo" aria-hidden="true" data-blur-block>
-              <img src="assets/images/company-logos/logo%20tanahair.svg" alt="Tanah Air logo" width="80" height="80" />
+              <span class="ab-work-logo-placeholder" aria-hidden="true">PS</span>
             </div>
             <div class="ab-work-copy">
               <div class="ab-work-heading">
-                <h3 data-blur-reveal>Tanah Air Studio</h3>
-                <p class="ab-work-meta" data-blur-reveal><span>Junior UX Designer</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>2020-2021</span></p>
+                <h3 data-blur-reveal>Plainthing Studio</h3>
+                <p class="ab-work-meta" data-blur-reveal><span>UI Designer Intern</span> <span class="ab-work-meta-separator" aria-hidden="true">•</span> <span>October–December 2020</span></p>
               </div>
+              <p class="ab-work-description" data-blur-reveal>Explored visual directions and high-fidelity interface concepts for studio projects, refining selected designs into presentation-ready work.</p>
             </div>
           </div>
         </article>
@@ -281,49 +293,49 @@
         <h2 class="ab-outside-title" id="outside-design-title" data-blur-reveal>Things that keep me moving and curious.</h2>
       </header>
 
-      <div class="ab-gallery" aria-label="Outside design interests">
+      <div class="ab-gallery">
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
             <img src="assets/images/outside-design/moreofme1.png" alt="More of Me image 1" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
-            <figcaption class="ab-gallery-info">
-              <h3>Science Things</h3>
-              <p>Astronomy, History, etc</p>
-            </figcaption>
           </div>
+          <figcaption class="ab-gallery-info">
+            <h3>Science Things</h3>
+            <p>Astronomy, History, etc</p>
+          </figcaption>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
             <img src="assets/images/outside-design/moreofme2.png" alt="More of Me image 2" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
-            <figcaption class="ab-gallery-info">
-              <h3>Running</h3>
-              <p>Road to VHalf Marathon JRF 2026</p>
-            </figcaption>
           </div>
+          <figcaption class="ab-gallery-info">
+            <h3>Running</h3>
+            <p>Road to VHalf Marathon JRF 2026</p>
+          </figcaption>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
             <img src="assets/images/outside-design/moreofme3.png" alt="More of Me image 3" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
-            <figcaption class="ab-gallery-info">
-              <h3>Books</h3>
-              <p>Currently reading Guns, Germs and Steel</p>
-            </figcaption>
           </div>
+          <figcaption class="ab-gallery-info">
+            <h3>Books</h3>
+            <p>Currently reading Guns, Germs and Steel</p>
+          </figcaption>
         </figure>
 
         <figure class="ab-gallery-card">
           <div class="ab-gallery-visual" data-blur-block>
             <img src="assets/images/outside-design/moreofme4.png" alt="More of Me image 4" loading="lazy" decoding="async" />
             <span class="ab-gallery-overlay" aria-hidden="true"></span>
-            <figcaption class="ab-gallery-info">
-              <h3>Video Games</h3>
-              <p>Ex Dota 2, CSGO, PubG Player</p>
-            </figcaption>
           </div>
+          <figcaption class="ab-gallery-info">
+            <h3>Video Games</h3>
+            <p>Ex Dota 2, CSGO, PubG Player</p>
+          </figcaption>
         </figure>
       </div>
     </section>
@@ -340,12 +352,13 @@
       </svg>
     </a>
     <div class="ab-peek-wrap">
-      <div class="ab-peek" id="home-peek" role="link" tabindex="0" aria-label="Back to homepage"></div>
+      <a class="ab-peek" id="home-peek" href="index.html" aria-label="Back to homepage"></a>
     </div>
   </footer>
 
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
-  <script src="about.js?v=26"></script>
+  <script src="menu-contact.js?v=2"></script>
+  <script src="about.js?v=29"></script>
 </body>
 </html>
