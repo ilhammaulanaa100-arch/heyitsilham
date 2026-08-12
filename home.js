@@ -3,6 +3,50 @@
 (function () {
   'use strict';
 
+  var gridLoadPromise = null;
+
+  function loadScriptOnce(src, id) {
+    var existing = document.getElementById(id);
+    if (existing) {
+      if (existing.getAttribute('data-loaded') === 'true') return Promise.resolve();
+      return new Promise(function (resolve, reject) {
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+      });
+    }
+    return new Promise(function (resolve, reject) {
+      var script = document.createElement('script');
+      script.id = id;
+      script.src = src;
+      script.async = true;
+      script.addEventListener('load', function () {
+        script.setAttribute('data-loaded', 'true');
+        resolve();
+      }, { once: true });
+      script.addEventListener('error', reject, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  function loadGridView() {
+    if (window.GridView) return Promise.resolve(window.GridView);
+    if (gridLoadPromise) return gridLoadPromise;
+    var threeReady = window.THREE
+      ? Promise.resolve()
+      : loadScriptOnce('https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js', 'three-runtime');
+    gridLoadPromise = threeReady
+      .then(function () { return loadScriptOnce('grid.js?v=6', 'grid-runtime'); })
+      .then(function () {
+        if (!window.GridView) throw new Error('Grid view failed to initialise.');
+        return window.GridView;
+      })
+      .catch(function (error) {
+        gridLoadPromise = null;
+        throw error;
+      });
+    return gridLoadPromise;
+  }
+
   function markHomeReady() {
     if (window.__portoHomeReady) return;
     window.__portoHomeReady = true;
@@ -62,6 +106,33 @@
     }
   }
 
+  // Keep the first paint lean: cards outside the active/adjacent window do not
+  // receive a network source until navigation brings them close to view.
+  function hydrateCardImage(index, highPriority) {
+    if (!PROJECTS.length) return;
+    index = (index + PROJECTS.length) % PROJECTS.length;
+    var section = document.querySelector('.page-section[data-index="' + index + '"]');
+    var card = section && section.querySelector('.proj-card');
+    var img = card && card.querySelector('img[data-src]');
+    if (!img || img.getAttribute('src')) return;
+
+    var source = card.querySelector('source[data-srcset]');
+    card.classList.remove('is-empty', 'is-error', 'is-loaded');
+    card.classList.add('is-loading');
+    card.setAttribute('aria-busy', 'true');
+    img.loading = highPriority ? 'eager' : 'lazy';
+    img.fetchPriority = highPriority ? 'high' : 'auto';
+    trackCardImage(img, card);
+    if (source) source.srcset = source.getAttribute('data-srcset');
+    img.src = img.getAttribute('data-src');
+  }
+
+  function hydrateCardWindow(index) {
+    hydrateCardImage(index, true);
+    hydrateCardImage(index - 1, false);
+    hydrateCardImage(index + 1, false);
+  }
+
   // ── Build sections from PROJECTS ────────────────────────
   (function () {
     function esc(str) {
@@ -71,14 +142,18 @@
     PROJECTS.forEach(function (proj, i) {
       var shape  = proj.shape || (i < 2 ? 'is-square' : 'is-landscape');
       var titleTag = i === 0 ? 'h1' : 'div';
+      var heroAvif = proj.media && proj.media.heroAvif;
       var imgTag = (proj.media && proj.media.hero)
-        ? '<img src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" loading="' + (i < 2 ? 'eager' : 'lazy') + '" decoding="async" fetchpriority="' + (i === 0 ? 'high' : 'auto') + '" />'
+        ? '<picture>' +
+            (heroAvif ? '<source type="image/avif" data-srcset="' + heroAvif + '" />' : '') +
+            '<img data-src="' + proj.media.hero + '" alt="' + esc(proj.subtitle.replace(/\n/g, ' ')) + '" loading="lazy" decoding="async" />' +
+          '</picture>'
         : '';
       var loadingClass = imgTag ? ' is-loading' : ' is-empty';
       var busy = imgTag ? 'true' : 'false';
 
       wrap.insertAdjacentHTML('beforeend',
-        '<div class="page-section page-placeholder" data-slug="' + proj.slug + '">' +
+        '<div class="page-section page-placeholder" data-slug="' + proj.slug + '" data-index="' + i + '">' +
           '<div class="section-inner"><section class="ph-layout">' +
             '<div class="ph-text">' +
               '<p class="ph-label">' + esc(proj.period) + '</p>' +
@@ -99,9 +174,7 @@
       );
     });
 
-    Array.prototype.forEach.call(wrap.querySelectorAll('.proj-card.is-loading img'), function (img) {
-      trackCardImage(img, img.closest('.proj-card'));
-    });
+    hydrateCardWindow(0);
   })();
 
   // ── Full-screen menu ────────────────────────────────────
@@ -360,7 +433,8 @@
   // the screen, so skip the splash and let the intro reveal run immediately.
   var skipSplash = false;
   try {
-    skipSplash = sessionStorage.getItem('porto-skip-splash') === '1';
+    skipSplash = sessionStorage.getItem('porto-skip-splash') === '1' ||
+      sessionStorage.getItem('porto-splash-seen') === '1';
     if (skipSplash) {
       // Prerendered copy (speculation rules on about.html): consume the flag
       // only when actually shown, else a discarded prerender would eat it and
@@ -1225,6 +1299,7 @@
       if (outgoing.big)   gsap.killTweensOf(outgoing.big);
       if (outgoing.small) gsap.killTweensOf(outgoing.small);
       current = (prev + dir + TOTAL) % TOTAL;
+      hydrateCardWindow(current);
 
       sections.forEach(function (s) { s.classList.remove('is-active'); });
       sections[current].classList.add('is-active');
@@ -1293,6 +1368,7 @@
     _syncHomeToProject = function (index) {
       if (index < 0 || index >= TOTAL || index === current) return;
       current = index;
+      hydrateCardWindow(current);
       animating = false;
       sections.forEach(function (el, i) {
         gsap.killTweensOf(el);
@@ -1356,8 +1432,25 @@
     }
 
     function setView(view) {
-      if (!window.GridView) return;
       var isGrid = view === 'grid';
+      if (isGrid && !window.GridView) {
+        if (viewToggle) {
+          viewToggle.disabled = true;
+          viewToggle.setAttribute('aria-busy', 'true');
+        }
+        loadGridView().then(function () {
+          if (!isOverlayOpen) setView('grid');
+        }).catch(function (error) {
+          console.error('[porto] Unable to load grid view:', error);
+        }).then(function () {
+          if (viewToggle) {
+            viewToggle.disabled = false;
+            viewToggle.removeAttribute('aria-busy');
+          }
+        });
+        return;
+      }
+      if (!window.GridView) return;
       syncViewTabs(view);
       if (isGrid === GridView.isOpen()) return;
       if (isGrid) {
@@ -1372,11 +1465,11 @@
 
     if (viewToggle) {
       viewToggle.addEventListener('click', function () {
-        if (!isOverlayOpen && !animating && window.GridView) {
-          setView(GridView.isOpen() ? 'vertical' : 'grid');
+        if (!isOverlayOpen && !animating) {
+          setView(window.GridView && GridView.isOpen() ? 'vertical' : 'grid');
         }
       });
-      syncViewTabs(window.GridView && GridView.isOpen() ? 'grid' : 'vertical');
+      syncViewTabs('vertical');
     }
 
     // ── bfcache restore ──
@@ -1393,6 +1486,7 @@
       }
       animating = false;
       current = 0;
+      hydrateCardWindow(current);
       gsap.killTweensOf('.porto');
       gsap.set('.porto', { opacity: 1 });
       sections.forEach(function (s, i) {
@@ -1540,6 +1634,7 @@
       if (viewTabsEl) gsap.set(viewTabsEl, { opacity: 0, willChange: 'opacity' });
 
       var introTl = gsap.timeline({ onComplete: function () {
+        try { sessionStorage.setItem('porto-splash-seen', '1'); } catch (e) {}
         splashEl.style.display = 'none';
         gsap.set(portoEl, { clearProps: 'filter,transform,transformOrigin,willChange' });
         if (splashStatusEl) gsap.set(splashStatusEl, { clearProps: 'opacity,filter,willChange' });

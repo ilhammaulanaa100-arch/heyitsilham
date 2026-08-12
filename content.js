@@ -11,6 +11,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/Qita/qita-thumbnail.jpg',
+      heroAvif: 'assets/projects/Qita/qita-thumbnail-1080.avif',
       videoAfterGallery: 'assets/projects/Qita/QITA.mp4',
       gallery: [
         {
@@ -77,6 +78,7 @@ const PROJECTS = [
     hoverOpacity: 0.26, // optional: strength of the animated background
     media: {
       hero: 'assets/projects/byond/BYOND-Thumbnail.jpg',
+      heroAvif: 'assets/projects/byond/BYOND-Thumbnail-1080.avif',
       videoAfterGallery: 'assets/projects/byond/byond-showcase.mp4',
       // Add, remove, or reorder gallery sections here. Available layouts:
       // full | split-square-left | split-square-right
@@ -149,6 +151,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/Al Yasini/Al Yasini-thumbnail.jpg',
+      heroAvif: 'assets/projects/Al Yasini/Al Yasini-thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Al Yasini/Al-yasini 1.png', alt: 'Al-YasiniQu showcase 1' }] },
         { layout: 'full', items: [{ src: 'assets/projects/Al Yasini/al yasini 2.png', alt: 'Al-YasiniQu showcase 2' }] },
@@ -170,6 +173,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/MTB/MTB-Thumbnail.jpg',
+      heroAvif: 'assets/projects/MTB/MTB-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/MTB/MTB1.png', alt: 'MyTelkomsel Basic showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -194,6 +198,7 @@ const PROJECTS = [
     shape: 'is-portrait',
     media: {
       hero: 'assets/projects/MTA/MTA.jpg',
+      heroAvif: 'assets/projects/MTA/MTA-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/MTA/MTA1.png', alt: 'MyTelkomsel App showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -216,6 +221,7 @@ const PROJECTS = [
     shape: 'is-landscape',
     media: {
       hero: 'assets/projects/MTW/MTW-Thumbnail.jpg',
+      heroAvif: 'assets/projects/MTW/MTW-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/MTW/MTW1.png', alt: 'MyTelkomsel Web showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -239,6 +245,7 @@ const PROJECTS = [
     shape: 'is-landscape',
     media: {
       hero: 'assets/projects/Maybank/maybank-thumbnail.jpg',
+      heroAvif: 'assets/projects/Maybank/maybank-thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Maybank/maybank-1.png', alt: 'Maybank showcase 1' }] },
         { layout: 'full', items: [{ src: 'assets/projects/Maybank/maybank-2.png', alt: 'Maybank showcase 2' }] },
@@ -258,6 +265,7 @@ const PROJECTS = [
     shape: 'is-landscape',
     media: {
       hero: 'assets/projects/BRI Tennis/BRI Tennis-thumbnail.jpg',
+      heroAvif: 'assets/projects/BRI Tennis/BRI Tennis-thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/BRI Tennis/BRI Tennis1.png', alt: 'BRI Tennis showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -287,6 +295,7 @@ const PROJECTS = [
     shape: 'is-portrait',
     media: {
       hero: 'assets/projects/MyTutorApp/MyTutorApp-Thumbnail.jpg',
+      heroAvif: 'assets/projects/MyTutorApp/MyTutorApp-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/MyTutorApp/MyTutorApp1.png', alt: 'MyTutor App showcase 1' }] },
         { layout: 'split-square-right', items: [
@@ -310,6 +319,7 @@ const PROJECTS = [
     shape: 'is-landscape',
     media: {
       hero: 'assets/projects/MyTutorWeb/MyTw-Thumbnail.jpg',
+      heroAvif: 'assets/projects/MyTutorWeb/MyTw-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/MyTutorWeb/MyTw1.png', alt: 'MyTutor Web showcase 1' }] },
         { layout: 'full', items: [{ src: 'assets/projects/MyTutorWeb/MyTw2.png', alt: 'MyTutor Web showcase 2' }] },
@@ -331,6 +341,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/Mango/MANGO-Thumbnail.jpg',
+      heroAvif: 'assets/projects/Mango/MANGO-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Mango/MANGO1.png', alt: 'MantisGo showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -353,6 +364,7 @@ const PROJECTS = [
     shape: 'is-landscape',
     media: {
       hero: 'assets/projects/Mhub/MHUB-Thumbnail.jpg',
+      heroAvif: 'assets/projects/Mhub/MHUB-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Mhub/mhub1.png', alt: 'MantisHub showcase 1' }] },
         { layout: 'split-square-left', items: [
@@ -376,6 +388,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/Fatberry/Fatberry-Thumbnail.jpg',
+      heroAvif: 'assets/projects/Fatberry/Fatberry-Thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Fatberry/Fatberry1.png', alt: 'Fatberry showcase 1' }] },
         { layout: 'split-square-right', items: [
@@ -399,6 +412,7 @@ const PROJECTS = [
     shape: 'is-square',
     media: {
       hero: 'assets/projects/Adleesya/adleesya-thumbnail.jpg',
+      heroAvif: 'assets/projects/Adleesya/adleesya-thumbnail-1080.avif',
       gallery: [
         { layout: 'full', items: [{ src: 'assets/projects/Adleesya/adleesya1.png', alt: 'Adleesya showcase 1' }] },
         { layout: 'full', items: [{ src: 'assets/projects/Adleesya/adleesya2.png', alt: 'Adleesya showcase 2' }] },

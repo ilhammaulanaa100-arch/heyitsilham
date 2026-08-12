@@ -410,11 +410,18 @@ window.GridView = (function () {
         if (typeof img.decode === 'function') img.decode().then(commitImage, commitImage);
         else commitImage();
       };
+      var optimizedSrc = p.media.heroAvif || p.media.hero;
+      var triedFallback = optimizedSrc === p.media.hero;
       img.onerror = function () {
+        if (!triedFallback) {
+          triedFallback = true;
+          img.src = p.media.hero;
+          return;
+        }
         committed = true;
         cell.reveal = 1;
       };
-      img.src = p.media.hero;
+      img.src = optimizedSrc;
     }
     cells.push(cell);
     hoverTextures.push(hoverTex);

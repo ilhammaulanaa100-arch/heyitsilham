@@ -16,7 +16,8 @@
     var fromAboutMenu = new URLSearchParams(location.search).get('from') === 'about-menu' ||
       sessionStorage.getItem('porto-home-curtain') === '1';
     if (fromAboutMenu) document.documentElement.classList.add('from-about-curtain');
-    if (sessionStorage.getItem('porto-skip-splash') === '1') {
+    if (sessionStorage.getItem('porto-skip-splash') === '1' ||
+        sessionStorage.getItem('porto-splash-seen') === '1') {
       document.documentElement.classList.add('skip-splash');
       // Hold rendering until the parser reaches #page-ready at the end of body
       // — i.e. until home.js has built the sections — so the first painted
@@ -79,9 +80,18 @@
   <script src="tab-title.js?v=2"></script>
   <script src="analytics.js?v=1"></script>
 
-  <!-- Warm the transparent logo still so the splash can paint before the
-       matching alpha video finishes decoding. -->
-  <link rel="preload" as="image" href="assets/images/splash/splash-logo-center-alpha-poster-small.png" fetchpriority="high" />
+  <!-- Warm the transparent logo still only for a first-view splash. -->
+  <script>try {
+    if (sessionStorage.getItem('porto-splash-seen') !== '1' &&
+        sessionStorage.getItem('porto-skip-splash') !== '1') {
+      var splashPosterPreload = document.createElement('link');
+      splashPosterPreload.rel = 'preload';
+      splashPosterPreload.as = 'image';
+      splashPosterPreload.href = 'assets/images/splash/splash-logo-center-alpha-poster-small.png';
+      splashPosterPreload.fetchPriority = 'high';
+      document.head.appendChild(splashPosterPreload);
+    }
+  } catch (e) {}</script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
@@ -201,6 +211,7 @@
             preload="auto"
             poster="assets/images/splash/splash-logo-center-alpha-poster-small.png"
           >
+            <source src="assets/images/splash/splash-logo-center-alpha-mobile.webm" type="video/webm" media="(max-width: 900px)" />
             <source src="assets/images/splash/splash-logo-center-alpha.webm" type="video/webm" />
           </video>
           <img
@@ -239,7 +250,8 @@
     var counter = document.getElementById('splash-counter');
     var video = document.getElementById('splash-logo-video');
     var media = document.querySelector('.splash-logo-media');
-    var targetDuration = 2600;
+    var compactSplash = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    var targetDuration = compactSplash ? 1800 : 2600;
     var fallbackDuration = targetDuration;
     var completionHold = window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260;
@@ -464,14 +476,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js"></script>
   <script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
   <script src="menu-contact.js?v=2"></script>
-  <script src="content.js?v=5"></script>
-  <script src="case-study.js?v=8"></script>
-  <script src="grid.js?v=5"></script>
-  <script src="home.js?v=30"></script>
+  <script src="content.js?v=6"></script>
+  <script src="case-study.js?v=9"></script>
+  <script src="home.js?v=31"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>
