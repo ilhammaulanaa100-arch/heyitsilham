@@ -631,9 +631,17 @@
   function initScrollAndReveals(scrollWrapper, contentEl) {
 
     // ── 1. Lenis smooth scroll ────────────────────────────
-    // Give Lenis exclusive ownership of the panel's scroll position, then
-    // restore the native overflow behavior during teardown.
-    if (window.Lenis) {
+    // Keep native momentum scrolling on touch/coarse-pointer devices. Lenis
+    // with syncTouch:false does not handle those gestures, and hiding the
+    // wrapper overflow at the same time leaves iOS with no scroll path.
+    var usesTouchScrolling = (window.matchMedia && (
+      window.matchMedia('(hover: none)').matches ||
+      window.matchMedia('(pointer: coarse)').matches
+    )) || (navigator.maxTouchPoints > 0);
+
+    // On fine-pointer devices Lenis owns the panel scroll position. Teardown
+    // restores the CSS overflow declaration for subsequent overlay renders.
+    if (window.Lenis && !usesTouchScrolling) {
       scrollWrapper.style.overflowY = 'hidden';
       _lenis = new Lenis({
         wrapper:     scrollWrapper,
