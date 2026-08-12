@@ -120,7 +120,8 @@
 }
 
 /* "× Close" — right-panel close control, top-left, mirrors .cs-close's action */
-.cs-right-close {
+.cs-right-close,
+.cs-mobile-close {
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -139,13 +140,19 @@
   cursor: pointer;
 }
 
-.cs-right-close svg {
+.cs-right-close svg,
+.cs-mobile-close svg {
   display: block;
 }
 
-.cs-right-close:hover {
+.cs-right-close:hover,
+.cs-mobile-close:hover {
   opacity: 1;
 }
+
+/* Kept outside the native scroll container so Safari cannot clip it during
+   momentum scrolling. The mobile layout enables this duplicate control. */
+.cs-mobile-close { display: none; }
 
 /* Detail container */
 .cs-detail {
@@ -651,7 +658,8 @@ html.lenis {
 }
 
 .cs-close:focus-visible,
-.cs-right-close:focus-visible {
+.cs-right-close:focus-visible,
+.cs-mobile-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   opacity: 1;
@@ -665,6 +673,7 @@ html.dark #page-wipe { background: #020202; }
 html.dark .cs-right { background: #020202; }
 html.dark .cs-close,
 html.dark .cs-right-close,
+html.dark .cs-mobile-close,
 html.dark .cs-applink,
 html.dark .cs-headline,
 html.dark .cs-meta-item-value { color: #fff; }
@@ -746,7 +755,9 @@ html.dark .cs-g-fig { background: #1c1b1b; }
   }
   .cs-slider-arrow { pointer-events: auto; }
   .cs-slider-counter { display: none; }
-  .cs-right-close {
+  .cs-right-close { display: none; }
+  .cs-mobile-close {
+    display: inline-flex;
     position: fixed;
     bottom: max(24px, env(safe-area-inset-bottom));
     left: 24px;

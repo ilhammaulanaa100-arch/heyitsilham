@@ -523,7 +523,8 @@
       var element = document.querySelector(selector);
       if (element) element.setAttribute('inert', '');
     });
-    var closeBtn = document.getElementById('cs-right-close');
+    var mobileLayout = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    var closeBtn = document.getElementById(mobileLayout ? 'cs-mobile-close' : 'cs-right-close');
     if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
     _trapHandler = function (e) {
       if (e.key === 'Escape') { e.preventDefault(); closeOverlay(); return; }
@@ -1438,13 +1439,12 @@
     });
 
     // ── Close button for the in-place overlay ──
-    var csCloseBtn = document.getElementById('cs-right-close');
-    if (csCloseBtn) {
+    document.querySelectorAll('#cs-right-close, #cs-mobile-close').forEach(function (csCloseBtn) {
       csCloseBtn.addEventListener('click', function (e) {
         e.preventDefault();
         closeOverlay();
       });
-    }
+    });
 
     // ── History navigation (popstate) ──
     window.addEventListener('popstate', function (e) {
