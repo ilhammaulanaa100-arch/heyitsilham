@@ -604,6 +604,9 @@
       } else if (_scrollWrapper) {
         _scrollWrapper.scrollTop = 0;
       }
+      if (global.PortoAnalytics) {
+        global.PortoAnalytics.projectOpened(slugOf(project, index), 'case-study-nav', _scrollWrapper);
+      }
 
       rewireReveals();
 

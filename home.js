@@ -587,6 +587,13 @@
     if (shell)   shell.style.opacity = '1';
     if (csRight) csRight.scrollTop   = 0;
     _currentSlug = project.slug;
+    if (window.PortoAnalytics) {
+      PortoAnalytics.projectOpened(
+        project.slug,
+        fromCard && fromCard.isGrid ? 'grid' : (fromCard ? 'list' : 'history'),
+        csRight
+      );
+    }
 
     var prefersReduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isMobile       = window.matchMedia && matchMedia('(max-width: 900px)').matches;
@@ -758,6 +765,7 @@
   }
 
   function hideOverlay() {
+    if (window.PortoAnalytics) PortoAnalytics.projectClosed();
     releaseOverlayFocus();
     killGlides();
     document.dispatchEvent(new Event('cs-exit')); // whisper the left-panel title + nav out during the glide-back

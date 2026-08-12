@@ -31,6 +31,7 @@
   <link rel="icon" href="/assets/images/favicon.png?v=2" type="image/png" sizes="180x180" />
   <link rel="apple-touch-icon" href="/assets/images/favicon.png?v=2" />
   <script src="tab-title.js?v=2"></script>
+  <script src="analytics.js?v=1"></script>
 
   <!-- Recoleta (brand serif, same as index.html) -->
   <link href="https://api.fontshare.com/v2/css?f[]=recoleta@300&display=swap" rel="stylesheet" />
@@ -139,6 +140,9 @@
         scrollWrapper: document.getElementById('cs-right'),
         contentEl:     document.getElementById('cs-right-content')
       });
+      if (window.PortoAnalytics) {
+        PortoAnalytics.projectOpened(p_data.slug, 'direct', document.getElementById('cs-right'));
+      }
 
       // ── Entrance: direct URL load, no page transition ─────
       // (Homepage clicks open the in-place overlay in index.html instead of

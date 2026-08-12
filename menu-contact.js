@@ -58,6 +58,9 @@
       var email = button.getAttribute('data-copy-email');
       copyText(email).then(function () {
         showToast(toast, 'success', 'Email copied to clipboard');
+        if (window.PortoAnalytics) {
+          PortoAnalytics.track('contact_intent', { method: 'copy-email' }, { once: 'contact:copy-email' });
+        }
       }).catch(function () {
         showToast(toast, 'error', 'Couldn’t copy email');
       });
