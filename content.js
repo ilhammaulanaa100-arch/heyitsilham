@@ -12,7 +12,12 @@ const PROJECTS = [
     media: {
       hero: 'assets/projects/Qita/qita-thumbnail.jpg',
       heroAvif: 'assets/projects/Qita/qita-thumbnail-1080.avif',
-      videoAfterGallery: 'assets/projects/Qita/QITA.mp4',
+      videoAfterGallery: {
+        desktop: 'assets/optimized/videos/qita-1080.mp4',
+        mobile: 'assets/optimized/videos/qita-720.mp4',
+        poster: 'assets/optimized/videos/qita-poster.jpg',
+        fallback: 'assets/projects/Qita/QITA.mp4'
+      },
       gallery: [
         {
           layout: 'full',
@@ -79,7 +84,12 @@ const PROJECTS = [
     media: {
       hero: 'assets/projects/byond/BYOND-Thumbnail.jpg',
       heroAvif: 'assets/projects/byond/BYOND-Thumbnail-1080.avif',
-      videoAfterGallery: 'assets/projects/byond/byond-showcase.mp4',
+      videoAfterGallery: {
+        desktop: 'assets/optimized/videos/byond-1080.mp4',
+        mobile: 'assets/optimized/videos/byond-720.mp4',
+        poster: 'assets/optimized/videos/byond-poster.jpg',
+        fallback: 'assets/projects/byond/byond-showcase.mp4'
+      },
       // Add, remove, or reorder gallery sections here. Available layouts:
       // full | split-square-left | split-square-right
       // Split items are always written in visual order: left, then right.

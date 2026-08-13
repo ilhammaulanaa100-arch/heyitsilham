@@ -18,18 +18,42 @@
   var _onLeftMouseLeave    = null;
   var _leftPanelEl         = null;
   var _scrollWrapper       = null;
-  var _videoObservers      = [];
+  var _mediaObservers      = [];
   var _deferredVideos      = [];
 
-  function resetDeferredVideos() {
-    _videoObservers.forEach(function (observer) { observer.disconnect(); });
-    _videoObservers = [];
+  function resetDeferredMedia() {
+    _mediaObservers.forEach(function (observer) { observer.disconnect(); });
+    _mediaObservers = [];
     _deferredVideos.forEach(function (video) {
+      video.setAttribute('data-resetting', 'true');
       video.pause();
       video.removeAttribute('src');
       video.load();
     });
     _deferredVideos = [];
+  }
+
+  function optimizedGallerySrc(src, width) {
+    var prefix = 'assets/projects/';
+    if (!src || src.indexOf(prefix) !== 0) return '';
+    var dot = src.lastIndexOf('.');
+    if (dot <= prefix.length) return '';
+    return 'assets/optimized/projects/' + src.slice(prefix.length, dot) + '-' + width + '.avif';
+  }
+
+  function observeOnce(element, rootMargin, activate) {
+    if (!element) return;
+    if (!('IntersectionObserver' in window)) {
+      activate();
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      if (!entries.some(function (entry) { return entry.isIntersecting; })) return;
+      observer.disconnect();
+      activate();
+    }, { root: _scrollWrapper, rootMargin: rootMargin || '600px 0px' });
+    observer.observe(element);
+    _mediaObservers.push(observer);
   }
 
   function trackSkeletonImage(img, host) {
@@ -54,6 +78,17 @@
 
     function failed() {
       if (settled) return;
+      var fallbackSrc = img.getAttribute('data-fallback-src');
+      if (fallbackSrc && img.getAttribute('data-fallback-tried') !== 'true') {
+        img.setAttribute('data-fallback-tried', 'true');
+        var picture = img.closest && img.closest('picture');
+        if (picture) {
+          Array.prototype.forEach.call(picture.querySelectorAll('source'), function (source) { source.remove(); });
+        }
+        img.removeAttribute('src');
+        img.src = fallbackSrc;
+        return;
+      }
       settled = true;
       img.style.display = 'none';
       host.classList.remove('is-loading');
@@ -62,7 +97,7 @@
     }
 
     img.addEventListener('load', loaded, { once: true });
-    img.addEventListener('error', failed, { once: true });
+    img.addEventListener('error', failed);
     // A newly-created <img> with no src also reports complete=true. Only inspect
     // the cached state once a real source has actually been assigned.
     if (img.getAttribute('src') && img.complete) {
@@ -148,7 +183,7 @@
     if (_lenisRafId) { cancelAnimationFrame(_lenisRafId); _lenisRafId = null; }
     if (_lenis)    { _lenis.destroy(); _lenis = null; if (_scrollWrapper) _scrollWrapper.style.overflowY = ''; }
     if (_observer) { _observer.disconnect(); _observer = null; }
-    resetDeferredVideos();
+    resetDeferredMedia();
     if (window.gsap) {
       _slideEls.forEach(function (el) { gsap.killTweensOf(el); });
       if (_detailEl) { gsap.killTweensOf(_detailEl); }
@@ -456,6 +491,14 @@
     }
 
     function appendVideo(parent, src, revealOnScroll) {
+      var videoConfig = (typeof src === 'string')
+        ? { desktop: src, mobile: src, poster: '', fallback: src }
+        : (src || {});
+      var useMobileVideo = (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) ||
+        (navigator.connection && navigator.connection.saveData);
+      var selectedSrc = useMobileVideo
+        ? (videoConfig.mobile || videoConfig.desktop)
+        : (videoConfig.desktop || videoConfig.mobile);
       var videoBlock = div('cs-video-block');
       if (revealOnScroll) videoBlock.setAttribute('data-reveal-scroll', '');
       var vph = div('cs-video-ph');
@@ -466,7 +509,12 @@
       vid.autoplay = true; vid.muted = true;
       vid.setAttribute('muted', ''); vid.loop = true;
       vid.setAttribute('playsinline', '');
-      vid.style.cssText = 'opacity:0;transition:opacity 0.8s ease;';
+      if (videoConfig.poster) {
+        vid.poster = videoConfig.poster;
+        vid.fetchPriority = 'low';
+        vph.style.opacity = '0';
+      }
+      vid.style.cssText = 'opacity:' + (videoConfig.poster ? '1' : '0') + ';transition:opacity 0.8s ease;';
       vid.addEventListener('canplay', function () {
         vid.style.opacity       = '1';
         vph.style.opacity       = '0';
@@ -475,23 +523,38 @@
       videoBlock.appendChild(vid);
       parent.appendChild(videoBlock);
 
+      var fallbackTried = selectedSrc === videoConfig.fallback;
       function activateVideo() {
-        if (vid.getAttribute('src')) return;
-        vid.src = src;
+        if (!selectedSrc || vid.getAttribute('data-resetting') === 'true') return;
+        if (vid.getAttribute('src')) {
+          var resumedPlay = vid.play();
+          if (resumedPlay && typeof resumedPlay.catch === 'function') resumedPlay.catch(function () {});
+          return;
+        }
+        vid.src = selectedSrc;
         vid.load();
         var playPromise = vid.play();
         if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () {});
       }
 
+      vid.addEventListener('error', function () {
+        if (vid.getAttribute('data-resetting') === 'true' || fallbackTried || !videoConfig.fallback) return;
+        fallbackTried = true;
+        vid.src = videoConfig.fallback;
+        vid.load();
+        var playPromise = vid.play();
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function () {});
+      });
+
       _deferredVideos.push(vid);
       if ('IntersectionObserver' in window) {
         var observer = new IntersectionObserver(function (entries) {
-          if (!entries.some(function (entry) { return entry.isIntersecting; })) return;
-          observer.disconnect();
-          activateVideo();
+          var isNear = entries.some(function (entry) { return entry.isIntersecting; });
+          if (isNear) activateVideo();
+          else if (vid.getAttribute('src')) vid.pause();
         }, { root: _scrollWrapper, rootMargin: '400px 0px' });
         observer.observe(videoBlock);
-        _videoObservers.push(observer);
+        _mediaObservers.push(observer);
       } else {
         activateVideo();
       }
@@ -603,15 +666,35 @@
           frame.appendChild(ph);
 
           if (item.src) {
+            var picture = document.createElement('picture');
+            var avif768 = optimizedGallerySrc(item.src, 768);
+            var avif1600 = optimizedGallerySrc(item.src, 1600);
+            var source = null;
+            if (avif768 && avif1600) {
+              source = document.createElement('source');
+              source.type = 'image/avif';
+              source.setAttribute('data-srcset', avif768 + ' 768w, ' + avif1600 + ' 1600w');
+              source.sizes = layout === 'full'
+                ? '(max-width: 900px) 100vw, 50vw'
+                : '(max-width: 900px) 100vw, 30vw';
+              picture.appendChild(source);
+            }
             var img = document.createElement('img');
             img.className = 'cs-g-img';
             img.alt = item.alt || caption;
             img.loading = 'lazy';
             img.decoding = 'async';
+            img.fetchPriority = 'low';
+            img.setAttribute('data-src', item.src);
+            img.setAttribute('data-fallback-src', item.src);
             if (item.fit === 'contain') img.classList.add('is-contain');
             trackSkeletonImage(img, frame);
-            img.src = item.src;
-            frame.appendChild(img);
+            picture.appendChild(img);
+            frame.appendChild(picture);
+            observeOnce(frame, '600px 0px', function () {
+              if (source) source.srcset = source.getAttribute('data-srcset');
+              img.src = img.getAttribute('data-src');
+            });
           }
 
           fig.appendChild(frame);
@@ -661,7 +744,7 @@
       history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
 
       if (window.gsap) { gsap.killTweensOf(_detailEl); }
-      resetDeferredVideos();
+      resetDeferredMedia();
       _detailEl.innerHTML = '';
       buildDetail(project, _detailEl);
 

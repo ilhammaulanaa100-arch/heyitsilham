@@ -34,13 +34,24 @@ for (const project of projects) {
     for (const item of section.items) {
       assert.ok(item.src && item.alt, `${project.slug} gallery items require src and alt text`);
       assert.ok(fs.existsSync(path.join(projectRoot, item.src)), `${project.slug} gallery asset does not exist: ${item.src}`);
+      const relativeSource = item.src.replace(/^assets\/projects\//, '').replace(/\.[^.]+$/, '');
+      for (const width of [768, 1600]) {
+        const optimizedPath = `assets/optimized/projects/${relativeSource}-${width}.avif`;
+        assert.ok(fs.existsSync(path.join(projectRoot, optimizedPath)), `${project.slug} optimized gallery asset does not exist: ${optimizedPath}`);
+      }
     }
   }
 
   for (const videoField of ['video', 'videoAfterGallery']) {
-    const videoPath = project.media[videoField];
-    if (videoPath) {
-      assert.ok(fs.existsSync(path.join(projectRoot, videoPath)), `${project.slug} video does not exist: ${videoPath}`);
+    const video = project.media[videoField];
+    if (video) {
+      const videoPaths = typeof video === 'string'
+        ? [video]
+        : [video.desktop, video.mobile, video.poster, video.fallback].filter(Boolean);
+      assert.ok(videoPaths.length > 0, `${project.slug} video config is empty`);
+      for (const videoPath of videoPaths) {
+        assert.ok(fs.existsSync(path.join(projectRoot, videoPath)), `${project.slug} video asset does not exist: ${videoPath}`);
+      }
     }
   }
 }
