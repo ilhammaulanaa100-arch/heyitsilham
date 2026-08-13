@@ -6,7 +6,7 @@
   var menu = document.getElementById('site-menu');
   var panel = document.getElementById('site-menu-panel');
   var aboutButton = menu && menu.querySelector('[data-menu-action="about"]');
-  var worksLink = menu && menu.querySelector('.site-menu-nav a[href*="index.html"]');
+  var worksLink = menu && menu.querySelector('[data-route="works"]');
   var previousFocus = null;
   var closeTimer = null;
   var leavingForWorks = false;
@@ -122,7 +122,7 @@
     e.preventDefault();
     if (leavingForWorks) return;
 
-    var href = worksLink.getAttribute('href') || 'index.html';
+    var href = worksLink.getAttribute('href') || '/';
     try { sessionStorage.setItem('porto-skip-splash', '1'); } catch (storageError) {}
     if (reducedMotion) {
       window.location.href = href;
@@ -748,7 +748,7 @@
       // misses, the traversal becomes a normal load and the skip-splash
       // flag covers it.
       if (/(index\.html|\/)$/.test(document.referrer) && history.length > 1) history.back();
-      else window.location.href = 'index.html';
+      else window.location.href = '/';
     }, 820);
   }
 
@@ -816,7 +816,7 @@
     a.addEventListener('click', function (e) {
       var href = a.getAttribute('href');
       if (!href || href.charAt(0) === '#') return;    // skip in-page/placeholder
-      if (href.indexOf('index.html') !== -1) return;  // Work → home uses peek glide path elsewhere
+      if (a.getAttribute('data-route') === 'works') return; // Work → home uses peek glide path elsewhere
       e.preventDefault();
       Motion.exit(function () { window.location.href = href; });
     });

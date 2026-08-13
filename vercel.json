@@ -1,4 +1,20 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/our-work/porto2026",
+      "destination": "/our-work/qita-by-bri",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/our-work/:slug",
+      "destination": "/case-study"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

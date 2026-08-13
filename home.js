@@ -185,7 +185,7 @@
     var menu = document.getElementById('site-menu');
     var panel = document.getElementById('site-menu-panel');
     var worksButton = menu && menu.querySelector('[data-menu-action="works"]');
-    var aboutLink = menu && menu.querySelector('a[href*="about.html"]');
+    var aboutLink = menu && menu.querySelector('[data-route="about"]');
     var previousFocus = null;
     var closeTimer = null;
     var leavingForAbout = false;
@@ -308,7 +308,7 @@
       e.preventDefault();
       if (leavingForAbout) return;
 
-      var href = aboutLink.getAttribute('href') || 'about.html';
+      var href = aboutLink.getAttribute('href') || '/about';
       if (reducedMotion) {
         window.location.href = href;
         return;
@@ -838,7 +838,7 @@
       }
     }
     hideOverlay();
-    history.replaceState({ csOverlay: null }, '', location.pathname.replace(/case-study\.html.*$/, '') || 'index.html');
+    history.replaceState({ csOverlay: null }, '', '/');
   }
 
   function hideOverlay() {
@@ -1203,7 +1203,7 @@
 
         try {
           showOverlay(PROJECTS[i], fromCard);
-          history.pushState({ csOverlay: slug }, '', 'case-study.html?p=' + slug);
+          history.pushState({ csOverlay: slug }, '', CaseStudy.projectPath(slug));
         } catch (e) {
           console.error('[porto] showOverlay failed:', e);
           CaseStudy.teardown();
@@ -1519,7 +1519,7 @@
         showOverlay(p, e.detail.rect
           ? { card: null, rect: e.detail.rect, isGrid: true, cell: { col: e.detail.col, row: e.detail.row } }
           : null);
-        history.pushState({ csOverlay: p.slug }, '', 'case-study.html?p=' + p.slug);
+        history.pushState({ csOverlay: p.slug }, '', CaseStudy.projectPath(p));
       } catch (err) {
         console.error('[porto] showOverlay from grid failed:', err);
         returnToGrid = false;

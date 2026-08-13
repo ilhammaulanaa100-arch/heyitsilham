@@ -160,7 +160,7 @@
       try {
         sessionStorage.removeItem('porto-home-curtain');
         if (new URLSearchParams(location.search).get('from') === 'about-menu') {
-          history.replaceState(history.state, '', 'index.html');
+          history.replaceState(history.state, '', '/');
         }
       } catch (e) {}
 
@@ -389,7 +389,7 @@
           <span>Works</span>
           <img class="site-menu-active-dot" src="assets/images/site-menu/menu-active-dot.svg" alt="" aria-hidden="true" />
         </button>
-        <a class="site-menu-link" href="about.html">About</a>
+        <a class="site-menu-link" href="/about" data-route="about">About</a>
         <a class="site-menu-link" href="mailto:works@heyitsilham.com">Message</a>
       </nav>
 
@@ -479,9 +479,9 @@
   <script src="motion.js"></script>
   <script src="menu-button-hover.js?v=3"></script>
   <script src="menu-contact.js?v=2"></script>
-  <script src="content.js?v=7"></script>
-  <script src="case-study.js?v=10"></script>
-  <script src="home.js?v=32"></script>
+  <script src="content.js?v=8"></script>
+  <script src="case-study.js?v=11"></script>
+  <script src="home.js?v=33"></script>
   <!-- rel="expect" target: parsed only after every script above has run -->
   <div id="page-ready" hidden></div>
 </body>

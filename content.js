@@ -1,6 +1,6 @@
 const PROJECTS = [
   {
-    slug: 'porto2026',
+    slug: 'qita-by-bri',
     period: '2025',
     sourceUrl: 'https://apps.apple.com/id/app/qita-by-bri/id6747552980',
     summary: "Qita by BRI is a financial super app designed to simplify everyday banking and provide broader access to modern financial services. The platform brings together account onboarding, transfers, payments, purchases, investments, insurance, bill reminders, and card access within one integrated experience, helping users manage both their daily transactions and their financial future.\n\nI joined the project midway as the Squad Captain, leading the Daily Banking and Customer Assistance streams. My role involved improving the squad's workflow, maintaining design quality, and helping collaboration between the squad's product, engineering, and research teams. Within only three months to complete the full application revamp, I also stepped in to handle unassigned tasks and close critical design gaps to keep the project moving forward.",

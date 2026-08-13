@@ -155,6 +155,11 @@
   }
 
   function currentProjectSlug() {
+    var match = (global.location.pathname || '').match(/^\/our-work\/([^/]+)\/?$/);
+    if (match) {
+      try { return decodeURIComponent(match[1]); }
+      catch (error) { return match[1]; }
+    }
     try { return new URLSearchParams(global.location.search).get('p') || ''; }
     catch (error) { return ''; }
   }
@@ -187,7 +192,7 @@
 
   installInteractionTracking();
 
-  // Speculation Rules prerender index.html from the About page. Loading only
+  // Speculation Rules prerender the homepage from the About page. Loading only
   // after activation prevents an unseen prerender from becoming a pageview.
   if (document.prerendering) {
     document.addEventListener('prerenderingchange', startTracker, { once: true });

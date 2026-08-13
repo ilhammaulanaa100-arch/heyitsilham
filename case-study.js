@@ -20,6 +20,7 @@
   var _scrollWrapper       = null;
   var _mediaObservers      = [];
   var _deferredVideos      = [];
+  var LEGACY_PROJECT_SLUGS = { porto2026: 'qita-by-bri' };
 
   function resetDeferredMedia() {
     _mediaObservers.forEach(function (observer) { observer.disconnect(); });
@@ -110,12 +111,33 @@
     return project.slug || String(index + 1);
   }
 
+  function projectPath(projectOrSlug, index) {
+    var slug = typeof projectOrSlug === 'string'
+      ? projectOrSlug
+      : slugOf(projectOrSlug, index);
+    slug = LEGACY_PROJECT_SLUGS[slug] || slug;
+    return '/our-work/' + encodeURIComponent(slug);
+  }
+
+  function projectSlugFromLocation(locationLike) {
+    var locationValue = locationLike || global.location || {};
+    var pathname = locationValue.pathname || '';
+    var pathMatch = pathname.match(/^\/our-work\/([^/]+)\/?$/);
+    if (pathMatch) {
+      try { return decodeURIComponent(pathMatch[1]); }
+      catch (error) { return pathMatch[1]; }
+    }
+    try { return new URLSearchParams(locationValue.search || '').get('p') || ''; }
+    catch (error) { return ''; }
+  }
+
   // ── resolveProject ────────────────────────────────────────────────────────
-  // Given the ?p= value, return the matching project (slug → numeric → first).
+  // Given a route slug, return the matching project (slug → numeric → first).
   // Applies the field normalizer in-place. Returns null if PROJECTS unavailable.
   function resolveProject(param) {
     if (typeof PROJECTS === 'undefined' || !PROJECTS || !PROJECTS.length) return null;
 
+    param = LEGACY_PROJECT_SLUGS[param] || param;
     var p = PROJECTS.find(function (pr) { return pr.slug === param; });
     if (!p) {
       var idx = parseInt(param, 10);
@@ -562,7 +584,7 @@
 
     // ── 1. Headline (whisper fades per line via Motion.splitLines) ──
     var headlineEl = document.createElement('h1');
-    headlineEl.className = 'cs-headline' + (p_data.slug === 'porto2026' ? ' cs-headline--qita' : '');
+    headlineEl.className = 'cs-headline' + (p_data.slug === 'qita-by-bri' ? ' cs-headline--qita' : '');
     headlineEl.setAttribute('data-reveal', '');
     if (Array.isArray(p_data.titleLines) && p_data.titleLines.length) {
       p_data.titleLines.forEach(function (line, index) {
@@ -741,7 +763,11 @@
 
     var doSwap = function () {
       document.title = 'Heyitsilham';
-      history.replaceState({ csOverlay: slugOf(project, index) }, '', '?p=' + slugOf(project, index));
+      history.replaceState(
+        { csOverlay: slugOf(project, index) },
+        '',
+        projectPath(project, index)
+      );
 
       if (window.gsap) { gsap.killTweensOf(_detailEl); }
       resetDeferredMedia();
@@ -822,6 +848,8 @@
   // ── Public API ────────────────────────────────────────────────────────────
   global.CaseStudy = {
     resolveProject: resolveProject,
+    projectPath: projectPath,
+    projectSlugFromLocation: projectSlugFromLocation,
     render:         render,
     teardown:       teardown,
     relayout:       relayout

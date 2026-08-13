@@ -50,6 +50,7 @@ function createEnvironment(options = {}) {
     document,
     location: {
       hostname: options.hostname || 'heyitsilham.com',
+      pathname: options.pathname || '/',
       search: options.search || '',
       href: 'https://' + (options.hostname || 'heyitsilham.com') + '/'
     },
