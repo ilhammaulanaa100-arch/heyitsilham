@@ -122,9 +122,11 @@
     card.setAttribute('aria-busy', 'true');
     img.loading = highPriority ? 'eager' : 'lazy';
     img.fetchPriority = highPriority ? 'high' : 'auto';
-    trackCardImage(img, card);
     if (source) source.srcset = source.getAttribute('data-srcset');
     img.src = img.getAttribute('data-src');
+    // Attach the tracker after assigning a source. An <img> without src is
+    // already `complete` with naturalWidth 0, which looks like a failed load.
+    trackCardImage(img, card);
   }
 
   function hydrateCardWindow(index) {
