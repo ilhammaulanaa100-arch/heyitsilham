@@ -50,6 +50,9 @@
   function markHomeReady() {
     if (window.__portoHomeReady) return;
     window.__portoHomeReady = true;
+    if (window.PortoAnalytics && PortoAnalytics.viewSwitchImpression) {
+      PortoAnalytics.viewSwitchImpression();
+    }
     document.dispatchEvent(new CustomEvent('porto:home-ready'));
   }
 
@@ -1433,7 +1436,7 @@
       viewToggle.setAttribute('aria-label', isGrid ? 'Switch to list view' : 'Switch to grid view');
     }
 
-    function setView(view) {
+    function setView(view, trackSwitch) {
       var isGrid = view === 'grid';
       if (isGrid && !window.GridView) {
         if (viewToggle) {
@@ -1441,7 +1444,7 @@
           viewToggle.setAttribute('aria-busy', 'true');
         }
         loadGridView().then(function () {
-          if (!isOverlayOpen) setView('grid');
+          if (!isOverlayOpen) setView('grid', trackSwitch);
         }).catch(function (error) {
           console.error('[porto] Unable to load grid view:', error);
         }).then(function () {
@@ -1453,8 +1456,9 @@
         return;
       }
       if (!window.GridView) return;
+      var wasGrid = GridView.isOpen();
       syncViewTabs(view);
-      if (isGrid === GridView.isOpen()) return;
+      if (isGrid === wasGrid) return;
       if (isGrid) {
         if (window._resetProjectTilt) window._resetProjectTilt(null, true);
         if (convObserver) convObserver.disable();
@@ -1463,12 +1467,15 @@
         GridView.hide();
         if (convObserver && !isOverlayOpen) convObserver.enable();
       }
+      if (trackSwitch && window.PortoAnalytics && PortoAnalytics.viewSwitchChanged) {
+        PortoAnalytics.viewSwitchChanged(wasGrid ? 'grid' : 'list', isGrid ? 'grid' : 'list');
+      }
     }
 
     if (viewToggle) {
       viewToggle.addEventListener('click', function () {
         if (!isOverlayOpen && !animating) {
-          setView(window.GridView && GridView.isOpen() ? 'vertical' : 'grid');
+          setView(window.GridView && GridView.isOpen() ? 'vertical' : 'grid', true);
         }
       });
       syncViewTabs('vertical');

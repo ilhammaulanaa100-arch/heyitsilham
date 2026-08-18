@@ -159,9 +159,28 @@ function createEnvironment(options = {}) {
   assert.equal(sent.length, 2, 'project events must be deduplicated per session');
 }
 
+{
+  const env = createEnvironment();
+  const sent = [];
+  env.window.umami = { track(...args) { sent.push(args); } };
+  env.appendedScripts[0].dispatch('load');
+
+  assert.equal(env.window.PortoAnalytics.viewSwitchImpression(), true);
+  assert.equal(env.window.PortoAnalytics.viewSwitchImpression(), false);
+  assert.equal(env.window.PortoAnalytics.viewSwitchChanged('list', 'grid'), true);
+  assert.equal(env.window.PortoAnalytics.viewSwitchChanged('grid', 'list'), true);
+  assert.equal(env.window.PortoAnalytics.viewSwitchChanged('list', 'list'), false);
+
+  assert.equal(JSON.stringify(sent), JSON.stringify([
+    ['view_switch_impression', { default_view: 'list' }],
+    ['view_switch_click', { from: 'list', to: 'grid' }],
+    ['view_switch_click', { from: 'grid', to: 'list' }]
+  ]));
+}
+
 for (const htmlFile of ['index.html', 'about.html', 'case-study.html']) {
   const html = fs.readFileSync(path.join(projectRoot, htmlFile), 'utf8');
-  assert.match(html, /<script src="analytics\.js\?v=1"><\/script>/, `${htmlFile} must load analytics.js`);
+  assert.match(html, /<script src="analytics\.js\?v=2"><\/script>/, `${htmlFile} must load analytics.js`);
 }
 
 console.log('OK analytics');

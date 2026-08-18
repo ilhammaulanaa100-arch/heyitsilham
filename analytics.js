@@ -148,6 +148,17 @@
     currentProject.timer = global.setInterval(maybeTrackEngagement, 1000);
   }
 
+  function viewSwitchImpression() {
+    return track('view_switch_impression', { default_view: 'list' }, {
+      once: 'view-switch-impression'
+    });
+  }
+
+  function viewSwitchChanged(from, to) {
+    if (!from || !to || from === to) return false;
+    return track('view_switch_click', { from: from, to: to });
+  }
+
   function closestLink(target) {
     if (!target) return null;
     if (typeof target.closest === 'function') return target.closest('a[href]');
@@ -204,6 +215,8 @@
     track: track,
     projectOpened: projectOpened,
     projectClosed: stopProjectEngagement,
+    viewSwitchImpression: viewSwitchImpression,
+    viewSwitchChanged: viewSwitchChanged,
     enabled: analyticsEnabled
   };
 })(window);
